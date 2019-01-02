@@ -107,3 +107,45 @@ def update_filler(pairs, where_key):
     qmarks = 'SET {setters} WHERE {where_key} == ?'
     qmarks = qmarks.format(setters=setters, where_key=where_key)
     return (qmarks, bindings)
+
+def hex_byte(byte):
+    if byte not in range (0, 256):
+        raise ValueError(byte)
+    return hex(byte)[2:].rjust(2, '0')
+
+def literal(item):
+    '''
+    Return a string depicting the SQL literal for this item.
+
+    Example:
+    0 -> "0"
+    'hello' -> "'hello'"
+    b'hello' -> "X'68656c6c6f'"
+    [3, 'hi'] -> "(3, 'hi')"
+    '''
+    if item is None:
+        return 'NULL'
+
+    elif isinstance(item, bool):
+        return f'{int(item)}'
+
+    elif isinstance(item, int):
+        return f'{item}'
+
+    elif isinstance(item, float):
+        return f'{item:f}'
+
+    elif isinstance(item, str):
+        return f"'{item}'"
+
+    elif isinstance(item, bytes):
+        item = ''.join(hex_byte(byte) for byte in item)
+        return f"X'{item}'"
+
+    elif isinstance(item, (list, tuple, set)):
+        output = ', '.join(literal(element) for element in item)
+        output = f'({output})'
+        return output
+
+    else:
+        raise ValueError(f'Unrecognized type {type(item)} {item}.')
