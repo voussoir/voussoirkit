@@ -1,3 +1,5 @@
+import types
+
 def delete_filler(pairs):
     '''
     Manually aligning the bindings for DELETE statements is annoying.
@@ -142,10 +144,13 @@ def literal(item):
         item = ''.join(hex_byte(byte) for byte in item)
         return f"X'{item}'"
 
-    elif isinstance(item, (list, tuple, set)):
-        output = ', '.join(literal(element) for element in item)
-        output = f'({output})'
-        return output
+    elif isinstance(item, (list, tuple, set, types.GeneratorType)):
+        return listify(item)
 
     else:
         raise ValueError(f'Unrecognized type {type(item)} {item}.')
+
+def listify(items):
+    output = ', '.join(literal(item) for item in items)
+    output = f'({output})'
+    return output
