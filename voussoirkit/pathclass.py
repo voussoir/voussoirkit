@@ -66,7 +66,7 @@ class Path:
 
     @property
     def depth(self):
-        return len(self.absolute_path.split(os.sep))
+        return len(self.absolute_path.rstrip(os.sep).split(os.sep))
 
     @property
     def exists(self):
@@ -121,15 +121,21 @@ class Path:
             return '.'
 
         if self in other:
-            return self.absolute_path.replace(other.absolute_path, '.')
+            relative = self.absolute_path
+            relative = relative.replace(other.absolute_path, '', 1)
+            relative = relative.lstrip(os.sep)
+            relative = '.' + os.sep + relative
+            return relative
 
         common = common_path([other.absolute_path, self.absolute_path], fallback=None)
-        print(common)
+
         if common is None:
             return self.absolute_path
+
         backsteps = other.depth - common.depth
         backsteps = os.sep.join('..' for x in range(backsteps))
-        return self.absolute_path.replace(common.absolute_path, backsteps)
+        unique = self.absolute_path.replace(common.absolute_path, '')
+        return os.path.join(backsteps, unique)
 
     def replace_extension(self, extension):
         extension = extension.rsplit('.', 1)[-1]
