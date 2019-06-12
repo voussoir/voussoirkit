@@ -2,6 +2,7 @@ import re
 import sys
 
 from voussoirkit import clipext
+from voussoirkit import pipeable
 
 
 __VERSION__ = '0.0.1'
@@ -113,7 +114,6 @@ def parsebytes(string):
     if not string.startswith(byte_value):
         raise ValueError('Number is not at start of string')
 
-
     # if the string has no text besides the number, just return that int.
     string = string.replace(byte_value, '')
     byte_value = float(byte_value)
@@ -126,16 +126,9 @@ def parsebytes(string):
     return int(byte_value * multiplier)
 
 def main(args=None):
-    if args is None:
-        args = sys.argv[1:]
-
-    if len(args) != 1:
-        print('Usage: bytestring.py <number>')
-        return 1
-    number = clipext.resolve(sys.argv[1])
-    n = int(number)
-    print(bytestring(n))
-    return 0
+    for line in pipeable.go(args, strip=True, skip_blank=True):
+        n = int(line)
+        pipeable.output(bytestring(n))
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))

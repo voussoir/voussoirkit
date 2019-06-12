@@ -157,6 +157,18 @@ class Path:
     def stat(self):
         return os.stat(self.absolute_path)
 
+    def walk(self):
+        directories = []
+        for child in self.listdir():
+            if child.is_dir:
+                directories.append(child)
+            else:
+                yield child
+
+        for directory in directories:
+            yield directory
+            yield from directory.walk()
+
     def with_child(self, basename):
         return self.join(os.path.basename(basename))
 
