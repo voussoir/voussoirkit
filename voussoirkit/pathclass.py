@@ -33,9 +33,17 @@ class Path:
             self.absolute_path = path
 
     def __contains__(self, other):
-        if isinstance(other, Path):
-            other = other.normcase
-        return other.startswith(self.normcase)
+        if isinstance(other, str):
+            other_norm = os.path.normcase(other)
+        elif isinstance(other, Path):
+            other_norm = other.normcase
+        else:
+            raise TypeError(other)
+
+        self_norm = self.normcase
+        if not self_norm.endswith(os.sep):
+            self_norm += os.sep
+        return other_norm.startswith(self_norm)
 
     def __eq__(self, other):
         if not hasattr(other, 'absolute_path'):
