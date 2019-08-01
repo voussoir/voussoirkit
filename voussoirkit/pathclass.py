@@ -149,7 +149,10 @@ class Path:
 
         backsteps = other.depth - common.depth
         backsteps = os.sep.join('..' for x in range(backsteps))
-        unique = self.absolute_path.replace(common.absolute_path, '')
+        common = common.absolute_path
+        if not common.endswith(os.sep):
+            common += os.sep
+        unique = self.absolute_path.replace(common, '', 1)
         return os.path.join(backsteps, unique)
 
     def replace_extension(self, extension):
