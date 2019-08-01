@@ -126,7 +126,7 @@ class Path:
     def relative_path(self):
         return self.relative_to(os.getcwd())
 
-    def relative_to(self, other):
+    def relative_to(self, other, simple=False):
         other = Path(other)
 
         if self == other:
@@ -139,7 +139,8 @@ class Path:
             relative = self.absolute_path
             relative = relative.replace(other.absolute_path, '', 1)
             relative = relative.lstrip(os.sep)
-            relative = '.' + os.sep + relative
+            if not simple:
+                relative = '.' + os.sep + relative
             return relative
 
         common = common_path([other.absolute_path, self.absolute_path], fallback=None)
