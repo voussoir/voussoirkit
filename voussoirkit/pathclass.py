@@ -122,11 +122,12 @@ class Path:
 
     def relative_to(self, other):
         other = Path(other)
-        other.correct_case()
-        self.correct_case()
 
         if self == other:
             return '.'
+
+        self.correct_case()
+        other.correct_case()
 
         if self in other:
             relative = self.absolute_path
