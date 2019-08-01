@@ -64,6 +64,12 @@ class Path:
         if not self.is_dir:
             raise NotDirectory(self)
 
+    def add_extension(self, extension):
+        extension = extension.strip('.')
+        if extension == '':
+            return self
+        return Path(self.absolute_path + '.' + extension)
+
     @property
     def basename(self):
         return os.path.basename(self.absolute_path)
