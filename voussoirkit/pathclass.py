@@ -19,31 +19,31 @@ class Path:
     '''
     I started to use pathlib.Path, but it was too much of a pain.
     '''
-    def __init__(self, path):
+    def __init__(self, path, force_sep=None):
+        self.force_sep = force_sep
+        self.sep = force_sep or os.sep
+
         if isinstance(path, Path):
             self.absolute_path = path.absolute_path
         else:
             path = path.strip()
             if re.search('[A-Za-z]:$', path):
                 # Bare Windows drive letter.
-                path += os.sep
+                path += self.sep
             path = normalize_sep(path)
             path = os.path.normpath(path)
             path = os.path.abspath(path)
             self.absolute_path = path
 
+        self.absolute_path = self.absolute_path.replace('/', self.sep).replace('\\', self.sep)
+
     def __contains__(self, other):
-        if isinstance(other, str):
-            other_norm = os.path.normcase(other)
-        elif isinstance(other, Path):
-            other_norm = other.normcase
-        else:
-            raise TypeError(other)
+        other = Path(other, force_sep=self.force_sep)
 
         self_norm = self.normcase
-        if not self_norm.endswith(os.sep):
-            self_norm += os.sep
-        return other_norm.startswith(self_norm)
+        if not self_norm.endswith(self.sep):
+            self_norm += self.sep
+        return other.normcase.startswith(self_norm)
 
     def __eq__(self, other):
         if not hasattr(other, 'absolute_path'):
@@ -68,7 +68,7 @@ class Path:
         extension = extension.strip('.')
         if extension == '':
             return self
-        return Path(self.absolute_path + '.' + extension)
+        return self.parent.with_child(self.basename + '.' + extension)
 
     @property
     def basename(self):
@@ -76,11 +76,12 @@ class Path:
 
     def correct_case(self):
         self.absolute_path = get_path_casing(self.absolute_path)
+        self.absolute_path = self.absolute_path.replace('/', self.sep).replace('\\', self.sep)
         return self.absolute_path
 
     @property
     def depth(self):
-        return len(self.absolute_path.rstrip(os.sep).split(os.sep))
+        return len(self.absolute_path.rstrip(self.sep).split(self.sep))
 
     @property
     def exists(self):
@@ -105,7 +106,7 @@ class Path:
     def join(self, subpath):
         if not isinstance(subpath, str):
             raise TypeError('subpath must be a string')
-        return Path(os.path.join(self.absolute_path, subpath))
+        return Path(os.path.join(self.absolute_path, subpath), force_sep=self.force_sep)
 
     def listdir(self):
         children = os.listdir(self.absolute_path)
@@ -114,12 +115,14 @@ class Path:
 
     @property
     def normcase(self):
-        return os.path.normcase(self.absolute_path)
+        norm = os.path.normcase(self.absolute_path)
+        norm = norm.replace('/', self.sep).replace('\\', self.sep)
+        return norm
 
     @property
     def parent(self):
         parent = os.path.dirname(self.absolute_path)
-        parent = self.__class__(parent)
+        parent = self.__class__(parent, force_sep=self.force_sep)
         return parent
 
     @property
@@ -127,7 +130,7 @@ class Path:
         return self.relative_to(os.getcwd())
 
     def relative_to(self, other, simple=False):
-        other = Path(other)
+        other = Path(other, force_sep=self.force_sep)
 
         if self == other:
             return '.'
@@ -138,9 +141,9 @@ class Path:
         if self in other:
             relative = self.absolute_path
             relative = relative.replace(other.absolute_path, '', 1)
-            relative = relative.lstrip(os.sep)
+            relative = relative.lstrip(self.sep)
             if not simple:
-                relative = '.' + os.sep + relative
+                relative = '.' + self.sep + relative
             return relative
 
         common = common_path([other.absolute_path, self.absolute_path], fallback=None)
@@ -148,22 +151,25 @@ class Path:
         if common is None:
             return self.absolute_path
 
+        common = Path(common, force_sep=self.force_sep)
         backsteps = other.depth - common.depth
-        backsteps = os.sep.join('..' for x in range(backsteps))
+        backsteps = self.sep.join('..' for x in range(backsteps))
         common = common.absolute_path
-        if not common.endswith(os.sep):
-            common += os.sep
+        if not common.endswith(self.sep):
+            common += self.sep
         unique = self.absolute_path.replace(common, '', 1)
-        return os.path.join(backsteps, unique)
+        relative_path = os.path.join(backsteps, unique)
+        relative_path = relative_path.replace('/', self.sep).replace('\\', self.sep)
+        return relative_path
 
     def replace_extension(self, extension):
         extension = extension.rsplit('.', 1)[-1]
-        base = os.path.splitext(self.absolute_path)[0]
+        base = os.path.splitext(self.basename)[0]
 
         if extension == '':
-            return Path(base)
+            return self.parent.with_child(base)
 
-        return Path(base + '.' + extension)
+        return self.parent.with_child(base + '.' + extension)
 
     @property
     def size(self):
