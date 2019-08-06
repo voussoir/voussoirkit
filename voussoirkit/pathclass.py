@@ -84,6 +84,13 @@ class Path:
         return len(self.absolute_path.rstrip(self.sep).split(self.sep))
 
     @property
+    def dot_extension(self):
+        extension = self.extension
+        if extension:
+            return '.' + extension
+        return ''
+
+    @property
     def exists(self):
         return os.path.exists(self.absolute_path)
 
