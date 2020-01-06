@@ -13,8 +13,8 @@ from voussoirkit import ratelimiter
 logging.basicConfig(level=logging.CRITICAL)
 log = logging.getLogger(__name__)
 
-CHUNK_SIZE = 2 * bytestring.MIBIBYTE
 # Number of bytes to read and write at a time
+CHUNK_SIZE = 2 * bytestring.MIBIBYTE
 
 HASH_CLASS = hashlib.md5
 
@@ -90,6 +90,7 @@ def copy_dir(
         callback_exclusion=None,
         callback_file=None,
         callback_permission_denied=None,
+        chunk_size=CHUNK_SIZE,
         destination_new_root=None,
         dry_run=False,
         exclude_directories=None,
@@ -255,6 +256,7 @@ def copy_dir(
             bytes_per_second=bytes_per_second,
             callback_progress=callback_file,
             callback_permission_denied=callback_permission_denied,
+            chunk_size=chunk_size,
             dry_run=dry_run,
             overwrite_old=overwrite_old,
             validate_hash=validate_hash,
@@ -282,6 +284,7 @@ def copy_file(
         callback_progress=None,
         callback_permission_denied=None,
         callback_validate_hash=None,
+        chunk_size=CHUNK_SIZE,
         dry_run=False,
         overwrite_old=True,
         validate_hash=False,
@@ -319,7 +322,7 @@ def copy_file(
 
     callback_progress:
         If provided, this function will be called after writing
-        each CHUNK_SIZE bytes to destination with three parameters:
+        each chunk_size bytes to destination with three parameters:
         the Path object being copied, number of bytes written so far,
         total number of bytes needed.
 
@@ -416,7 +419,7 @@ def copy_file(
     written_bytes = 0
     while True:
         try:
-            data_chunk = source_handle.read(CHUNK_SIZE)
+            data_chunk = source_handle.read(chunk_size)
         except PermissionError as e:
             print(source)
             raise
