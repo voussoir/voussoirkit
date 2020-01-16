@@ -3,7 +3,7 @@ import setuptools
 setuptools.setup(
     name='voussoirkit',
     packages=setuptools.find_packages(),
-    version='0.0.38',
+    version='0.0.39',
     author='voussoir',
     author_email='ethan@voussoir.net',
     description='voussoir\'s toolkit',
