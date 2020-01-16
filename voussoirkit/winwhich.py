@@ -20,7 +20,7 @@ def which(cmd, *args, **kwargs):
     if path is None:
         return None
 
-    if os.name == 'nt' and path.endswith('.lnk'):
+    if os.name == 'nt' and path.lower().endswith('.lnk'):
         path = winshell.Shortcut(path).path
 
     return path
