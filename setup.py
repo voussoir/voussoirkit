@@ -8,5 +8,9 @@ setuptools.setup(
     author_email='pypi@voussoir.net',
     description='voussoir\'s toolkit',
     url='https://github.com/voussoir/voussoirkit',
-    install_requires=['pyperclip', 'pywin32', 'winshell']
+    install_requires=[
+        'pyperclip',
+        'pywin32;platform_system=="Windows"',
+        'winshell;platform_system=="Windows"',
+    ]
 )
