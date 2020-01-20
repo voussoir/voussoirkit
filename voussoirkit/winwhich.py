@@ -12,7 +12,10 @@ return the exe path, otherwise behaves the same as normal shutil which.
 '''
 import os
 import shutil
-import winshell
+try:
+    import winshell
+except ImportError:
+    winshell = None
 
 def which(cmd, *args, **kwargs):
     path = shutil.which(cmd, *args, **kwargs)
@@ -20,7 +23,7 @@ def which(cmd, *args, **kwargs):
     if path is None:
         return None
 
-    if os.name == 'nt' and path.lower().endswith('.lnk'):
+    if os.name == 'nt' and winshell and path.lower().endswith('.lnk'):
         path = winshell.Shortcut(path).path
 
     return path
