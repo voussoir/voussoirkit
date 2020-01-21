@@ -35,7 +35,7 @@ class Path:
             path = os.path.abspath(path)
             self.absolute_path = path
 
-        self.absolute_path = self.absolute_path.replace('/', self.sep).replace('\\', self.sep)
+        self.absolute_path = normalize_sep(self.absolute_path, self.sep)
 
     def __contains__(self, other):
         other = Path(other, force_sep=self.force_sep)
@@ -307,10 +307,11 @@ def glob_patternize(piece):
             break
     return piece
 
-def normalize_sep(path):
-    for char in ('\\', '/'):
-        if char != os.sep:
-            path = path.replace(char, os.sep)
+def normalize_sep(path, sep=None):
+    sep = sep or os.sep
+    path = path.replace('/', sep)
+    path = path.replace('\\', sep)
+
     return path
 
 def system_root():
