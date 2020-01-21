@@ -38,7 +38,7 @@ class Path:
         self.absolute_path = normalize_sep(self.absolute_path, self.sep)
 
     def __contains__(self, other):
-        other = Path(other, force_sep=self.force_sep)
+        other = self.spawn(other)
 
         self_norm = self.normcase
         if not self_norm.endswith(self.sep):
@@ -113,7 +113,8 @@ class Path:
     def join(self, subpath):
         if not isinstance(subpath, str):
             raise TypeError('subpath must be a string')
-        return Path(os.path.join(self.absolute_path, subpath), force_sep=self.force_sep)
+        path = os.path.join(self.absolute_path, subpath)
+        return self.spawn(path)
 
     def listdir(self):
         children = os.listdir(self.absolute_path)
@@ -129,15 +130,14 @@ class Path:
     @property
     def parent(self):
         parent = os.path.dirname(self.absolute_path)
-        parent = self.__class__(parent, force_sep=self.force_sep)
-        return parent
+        return self.spawn(parent)
 
     @property
     def relative_path(self):
         return self.relative_to(os.getcwd())
 
     def relative_to(self, other, simple=False):
-        other = Path(other, force_sep=self.force_sep)
+        other = self.spawn(other)
 
         if self == other:
             return '.'
@@ -158,7 +158,7 @@ class Path:
         if common is None:
             return self.absolute_path
 
-        common = Path(common, force_sep=self.force_sep)
+        common = self.spawn(common)
         backsteps = other.depth - common.depth
         backsteps = self.sep.join('..' for x in range(backsteps))
         common = common.absolute_path
@@ -184,6 +184,9 @@ class Path:
             return os.path.getsize(self.absolute_path)
         else:
             return None
+
+    def spawn(self, path):
+        return self.__class__(path, force_sep=self.force_sep)
 
     @property
     def stat(self):
@@ -212,6 +215,7 @@ def common_path(paths, fallback):
     '''
     if isinstance(paths, (str, Path)):
         raise TypeError('`paths` must be a collection')
+
     paths = [Path(f) for f in paths]
 
     if len(paths) == 0:
