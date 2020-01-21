@@ -7,6 +7,8 @@ setuptools.setup(
     author='voussoir',
     author_email='pypi@voussoir.net',
     description='voussoir\'s toolkit',
+    long_description=open('README.md', 'r').read(),
+    long_description_content_type='text/markdown',
     url='https://github.com/voussoir/voussoirkit',
     install_requires=[
         'pyperclip',
