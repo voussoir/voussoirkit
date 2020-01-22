@@ -1,3 +1,5 @@
+import math
+import os
 import string
 import random
 import sys
@@ -127,6 +129,11 @@ def make_sentence(length=None, joiner=' '):
     result = joiner.join(words)
     return result
 
+def urandom_hex(length):
+    randbytes = os.urandom(math.ceil(length / 2))
+    token = ''.join('{:02x}'.format(x) for x in randbytes)
+    token = token[:length]
+    return token
 if __name__ == '__main__':
     args = sys.argv[1:]
     argc = len(args)
