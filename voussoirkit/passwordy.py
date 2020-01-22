@@ -1,7 +1,7 @@
 import math
 import os
-import string
 import random
+import string
 import sys
 
 DEFAULT_LENGTH = 32
@@ -134,59 +134,74 @@ def urandom_hex(length):
     token = ''.join('{:02x}'.format(x) for x in randbytes)
     token = token[:length]
     return token
-if __name__ == '__main__':
-    args = sys.argv[1:]
-    argc = len(args)
 
-    mode = listget(args, 0, 'password')
+
+def main_password(argv):
+    length  = listget(argv, 0, DEFAULT_LENGTH)
+    options = [a.lower() for a in argv[1:]]
+
+    if '-' in length:
+        length = length.replace(' ', '')
+        length = [int(x) for x in length.split('-', 1)]
+        length = random.randint(*length)
+
+    elif not length.isdigit() and options == []:
+        options = [length]
+        length = DEFAULT_LENGTH
+
+    length = int(length)
+
+    passtype = 'standard'
+    if 'dd' in options:
+        passtype = 'digit_only'
+    if 'b' in options:
+        passtype = 'binary'
+    if 'h' in options:
+        passtype = 'hex'
+
+    if 'l' in options:
+        passtype += '+lowercase'
+    elif 'u' in options:
+        passtype += '+uppercase'
+    if 'p' in options:
+        passtype += '+punctuation'
+    if 'd' in options:
+        passtype += '+digits'
+    if 'nd' in options:
+        passtype += '+noduplicates'
+
+    return make_password(length, passtype=passtype)
+
+def main_sentence(argv):
+    length = listget(argv, 1, DEFAULT_SENTENCE)
+    joiner = listget(argv, 2, ' ')
+
+    try:
+        length = int(length)
+    except ValueError:
+        joiner = length
+        length = DEFAULT_SENTENCE
+
+    return make_sentence(length, joiner)
+
+def main_urandom(argv):
+    length = listget(argv, 1, DEFAULT_LENGTH)
+    length = int(length)
+    return urandom_hex(length)
+
+def main(argv):
+    mode = listget(argv, 0, 'password')
     if 'help' in mode:
         print(HELP_MESSAGE)
         quit()
 
-    if 'sent' not in mode:
-        length  = listget(args, 0, str(DEFAULT_LENGTH))
-        options = [a.lower() for a in args[1:]]
-
-        if '-' in length:
-            length = length.replace(' ', '')
-            length = [int(x) for x in length.split('-', 1)]
-            length = random.randint(*length)
-
-        elif not length.isdigit() and options == []:
-            options = [length]
-            length = DEFAULT_LENGTH
-
-        length = int(length)
-
-        passtype = 'standard'
-        if 'dd' in options:
-            passtype = 'digit_only'
-        if 'b' in options:
-            passtype = 'binary'
-        if 'h' in options:
-            passtype = 'hex'
-
-        if 'l' in options:
-            passtype += '+lowercase'
-        elif 'u' in options:
-            passtype += '+uppercase'
-        if 'p' in options:
-            passtype += '+punctuation'
-        if 'd' in options:
-            passtype += '+digits'
-        if 'nd' in options:
-            passtype += '+noduplicates'
-
-        print(make_password(length, passtype=passtype))
-        
+    if 'sent' in mode:
+        print(main_sentence(argv))
+    elif 'urandom' in mode:
+        print(main_urandom(argv))
     else:
-        length = listget(args, 1, str(DEFAULT_SENTENCE))
-        joiner = listget(args, 2, ' ')
+        print(main_password(argv))
 
-        if not length.isdigit():
-            joiner = length
-            length = DEFAULT_SENTENCE
 
-        length = int(length)
-
-        print(make_sentence(length, joiner))
+if __name__ == '__main__':
+    raise SystemExit(main(sys.argv[1:]))
