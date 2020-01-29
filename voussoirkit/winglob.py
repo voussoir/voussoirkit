@@ -18,8 +18,8 @@ def fix(pattern):
         pattern = re.sub(r'(\[|\])', r'[\1]', pattern)
     return pattern
 
-def glob(pattern):
-    return python_glob.glob(fix(pattern))
+def glob(pathname, *, recursive=False):
+    return python_glob.glob(fix(pathname), recursive=recursive)
 
 def fnmatch(name, pat):
     return python_fnmatch.fnmatch(name, fix(pat))
