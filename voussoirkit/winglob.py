@@ -8,11 +8,18 @@ But calling glob.escape would also escape asterisk which may not be desired.
 So this module just provides a modified version of glob.glob which will escape
 only square brackets when called on windows, and behave normally on linux.
 '''
+import fnmatch as python_fnmatch
 import glob as python_glob
 import os
 import re
 
-def glob(pattern):
+def fix(pattern):
     if os.name == 'nt':
         pattern = re.sub(r'(\[|\])', r'[\1]', pattern)
-    return python_glob.glob(pattern)
+    return pattern
+
+def glob(pattern):
+    return python_glob.glob(fix(pattern))
+
+def fnmatch(name, pat):
+    return python_fnmatch.fnmatch(name, fix(pat))
