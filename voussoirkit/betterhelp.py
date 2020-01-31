@@ -10,7 +10,7 @@ def docstring_preview(text):
     For example:
 
         cookbacon = """
-        Cooks all nearby bacon to a specified temperature.
+        cookbacon: Cooks all nearby bacon to a specified temperature.
 
         Usage:
             > cookbacon 350F
@@ -29,6 +29,11 @@ def listget(li, index, fallback=None):
         return fallback
 
 def add_previews(docstring, sub_docstrings):
+    '''
+    Given a primary docstring which contains {command_name} formatting elements,
+    and a dict of sub_docstrings of {command_name: docstring}, insert previews
+    of each command into the primary docstring.
+    '''
     previews = {
         sub_name: docstring_preview(sub_text)
         for (sub_name, sub_text) in sub_docstrings.items()
