@@ -4,7 +4,7 @@ import textwrap
 HELPSTRINGS = {'', 'help', '-h', '--help'}
 
 def docstring_preview(text):
-    text = text.split('\n\n')[0]
+    text = text.split('\n\n')[0].strip()
     return text
 
 def listget(li, index, fallback=None):
