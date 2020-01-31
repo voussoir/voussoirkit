@@ -4,6 +4,21 @@ import textwrap
 HELPSTRINGS = {'', 'help', '-h', '--help'}
 
 def docstring_preview(text):
+    '''
+    This function assumes that your docstring is formatted with a single blank
+    line separating the command's primary summary and the rest of the text.
+    For example:
+
+        cookbacon = """
+        Cooks all nearby bacon to a specified temperature.
+
+        Usage:
+            > cookbacon 350F
+            > cookbacon 175C
+        """
+
+    and will return the first portion.
+    '''
     text = text.split('\n\n')[0].strip()
     return text
 
