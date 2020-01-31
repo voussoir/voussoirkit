@@ -1,17 +1,11 @@
 import functools
+import textwrap
 
 HELPSTRINGS = {'', 'help', '-h', '--help'}
 
-def docstring_preview(text, indent=None):
+def docstring_preview(text):
     text = text.split('\n\n')[0]
-    if indent:
-        text = _indent(text, spaces=indent)
     return text
-
-def indent(text, spaces=4):
-    spaces = ' ' * spaces
-    return '\n'.join(spaces + line if line.strip() != '' else line for line in text.split('\n'))
-_indent = indent
 
 def listget(li, index, fallback=None):
     try:
