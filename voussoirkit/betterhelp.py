@@ -30,8 +30,8 @@ def listget(li, index, fallback=None):
 
 def add_previews(docstring, sub_docstrings):
     previews = {
-        key: docstring_preview(value)
-        for (key, value) in sub_docstrings.items()
+        sub_name: docstring_preview(sub_text)
+        for (sub_name, sub_text) in sub_docstrings.items()
     }
     docstring = docstring.format(**previews)
     return docstring
