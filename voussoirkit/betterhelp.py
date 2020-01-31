@@ -43,6 +43,7 @@ def add_previews(docstring, sub_docstrings):
 
 def betterhelp(docstring):
     def wrapper(main):
+        @functools.wraps(main)
         def wrapped(argv):
             argument = listget(argv, 0, '').lower()
 
@@ -56,6 +57,7 @@ def betterhelp(docstring):
 
 def subparser_betterhelp(main_docstring, sub_docstrings):
     def wrapper(main):
+        @functools.wraps(main)
         def wrapped(argv):
             command = listget(argv, 0, '').lower()
 
