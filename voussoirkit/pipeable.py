@@ -1,4 +1,4 @@
-#import pyperclip moved to stay lazy.
+# import pyperclip moved to stay lazy.
 import sys
 
 builtin_input = input

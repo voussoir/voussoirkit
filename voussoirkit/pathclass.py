@@ -312,12 +312,10 @@ def get_path_casing(path):
 
     imaginary_portion = input_path.absolute_path
     imaginary_portion = imaginary_portion[len(cased):]
-    #real_portion = os.path.normcase(cased)
-    #imaginary_portion = imaginary_portion.replace(real_portion, '')
     imaginary_portion = imaginary_portion.lstrip(os.sep)
     cased = os.path.join(cased, imaginary_portion)
     cased = cased.rstrip(os.sep)
-    if not os.sep in cased:
+    if os.sep not in cased:
         cased += os.sep
     return cased
 
@@ -341,7 +339,6 @@ def glob_patternize(piece):
     for character in piece:
         if character not in '![]':
             replacement = '[%s]' % character
-            #print(piece, character, replacement)
             piece = piece.replace(character, replacement, 1)
             break
     return piece

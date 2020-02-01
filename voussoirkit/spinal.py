@@ -1,4 +1,3 @@
-import collections
 import hashlib
 import logging
 import os
@@ -420,9 +419,12 @@ def copy_file(
     while True:
         try:
             data_chunk = source_handle.read(chunk_size)
-        except PermissionError as e:
-            print(source)
-            raise
+        except PermissionError as exception:
+            if callback_permission_denied is not None:
+                callback_permission_denied(source, exception)
+                return [destination, 0]
+            else:
+                raise
         data_bytes = len(data_chunk)
         if data_bytes == 0:
             break

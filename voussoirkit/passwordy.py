@@ -137,7 +137,7 @@ def urandom_hex(length):
 
 
 def main_password(argv):
-    length  = listget(argv, 0, DEFAULT_LENGTH)
+    length = listget(argv, 0, DEFAULT_LENGTH)
     options = [a.lower() for a in argv[1:]]
 
     if '-' in length:

@@ -1,5 +1,4 @@
 import datetime
-import time
 
 EPOCH = datetime.datetime(
     year=1993,

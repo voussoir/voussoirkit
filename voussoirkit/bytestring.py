@@ -1,9 +1,7 @@
 import re
 import sys
 
-from voussoirkit import clipext
 from voussoirkit import pipeable
-
 
 __VERSION__ = '0.0.1'
 

@@ -111,7 +111,7 @@ def update_filler(pairs, where_key):
     return (qmarks, bindings)
 
 def hex_byte(byte):
-    if byte not in range (0, 256):
+    if byte not in range(0, 256):
         raise ValueError(byte)
     return hex(byte)[2:].rjust(2, '0')
 

@@ -14,12 +14,14 @@ class Landmark:
 def barsplit(chars):
     wordlist = []
     wordbuff = []
+
     def flush():
         if not wordbuff:
             return
         word = fusk_join(wordbuff)
         wordlist.append(word)
         wordbuff.clear()
+
     for item in chars:
         if item == '|':
             flush()

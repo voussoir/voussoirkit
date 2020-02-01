@@ -1,13 +1,9 @@
 import argparse
 import os
-import pyperclip
 import requests
-import sys
-import time
 import urllib
 import warnings
 
-# pip install voussoirkit
 from voussoirkit import bytestring
 from voussoirkit import ratelimiter
 from voussoirkit import clipext
@@ -15,7 +11,7 @@ from voussoirkit import clipext
 warnings.simplefilter('ignore')
 
 HEADERS = {
-'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.152 Safari/537.36'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.152 Safari/537.36'
 }
 
 FILENAME_BADCHARS = '*?"<>|\r\n'
@@ -72,7 +68,6 @@ def download_file(
         timeout=timeout,
         verify_ssl=verify_ssl,
     )
-    #print(plan)
     if plan is None:
         return
 
@@ -291,7 +286,6 @@ class Progress1:
         self.solid_char = '█'
 
     def step(self, bytes_downloaded):
-        #print(self.limiter.balance)
         percent = bytes_downloaded / self.total_bytes
         percent = min(1, percent)
         if self.limiter.limit(1) is False and percent < 1:
@@ -350,7 +344,7 @@ def basename_from_url(url):
     localname = localname.split('?')[0]
     localname = localname.split('/')[-1]
     return localname
-    
+
 def get_permission(prompt='y/n\n>', affirmative=['y', 'yes']):
     permission = input(prompt)
     return permission.lower() in affirmative

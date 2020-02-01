@@ -1,4 +1,3 @@
-import time
 ESCAPE_SEQUENCES = {
     '\\': '\\',
     '"': '"',
@@ -83,7 +82,6 @@ class ExpressionTree:
             if child.token in OPERATORS:
                 childstring = '(%s)' % childstring
             children.append(childstring)
-        #children = [str(child) for child in self.children]
 
         if len(children) == 1:
             return '%s %s' % (self.token, children[0])
@@ -106,12 +104,10 @@ class ExpressionTree:
             current = cls(token=tokens[0])
 
         for token in tokens[1:]:
-            ##print('  '*spaces, 'cur', current, current.token)
             if isinstance(token, list):
                 new = cls.parse(token, spaces=spaces+1)
             else:
                 new = cls(token=token)
-            ##print('  '*spaces, 'new', new)
 
             if 0 == 1:
                 pass
@@ -175,10 +171,7 @@ class ExpressionTree:
                 else:
                     raise Exception('Expected new to be my operand or parent binary.')
 
-            ##print('  '*spaces, 'fin:', current.rootmost(), '\n')
-
         current = current.rootmost()
-        ##print('---', current)
         return current
 
     def _evaluate(self, text, match_function=None):
@@ -187,7 +180,6 @@ class ExpressionTree:
                 match_function = DEFAULT_MATCH_FUNCTION
 
             value = match_function(text, self.token)
-            #print(self.token, value)
             return value
 
         operator_function = OPERATOR_FUNCTIONS[self.token]
@@ -319,7 +311,6 @@ def implied_tokens(tokens):
         if skip_this:
             continue
 
-        #print('tk:', token, 'hu:', has_unary_operator, 'hb:', has_binary_operator, 'ho:', has_operand)
         if isinstance(token, str) and token in OPERATORS:
             this_binary = token in BINARY_OPERATORS
             this_unary = not this_binary
@@ -370,7 +361,6 @@ def order_operations(tokens):
     slice_end = None
     precedence_stack = []
     while index < len(tokens):
-        #time.sleep(0.1)
         token = tokens[index]
         try:
             precedence = PRECEDENCE.index(token)
@@ -382,7 +372,6 @@ def order_operations(tokens):
             continue
         precedence_stack.append(precedence)
 
-
         if token in UNARY_OPERATORS:
             slice_start = index
             slice_end = index + 2
@@ -393,8 +382,6 @@ def order_operations(tokens):
                 slice_end = None
             elif precedence_stack[-2] < precedence_stack[-1]:
                 slice_end = index
-
-        #print(tokens, index, token, precedence_stack, slice_start, slice_end, sep=' || ')
 
         if slice_start is None or slice_end is None:
             index += 1
@@ -432,7 +419,6 @@ def sublist_tokens(tokens, _from_index=0, depth=0):
     index = _from_index
     while index < len(tokens):
         token = tokens[index]
-        #print(index, token)
         index += 1
         if token is PAREN_OPEN:
             (token, index) = sublist_tokens(tokens, _from_index=index, depth=depth+1)
@@ -466,10 +452,9 @@ def tokenize(expression):
     tokens = []
     for character in expression:
         if in_escape:
-            #character = ESCAPE_SEQUENCES.get(character, '\\'+character)
             in_escape = False
 
-        elif character in  {'(', ')'} and not in_quotes:
+        elif character in {'(', ')'} and not in_quotes:
             if character == '(':
                 sentinel = PAREN_OPEN
                 paren_depth += 1
@@ -509,27 +494,10 @@ def tokenize(expression):
 
 if __name__ == '__main__':
     tests = [
-    #'test you AND(1 OR "harrison ford") AND (where are you) AND pg',
-    #'(you OR "AND ME")',
-    #'(3 XOR 2 OR 4',
-    #'1 NOT OR AND (2 OR (3 OR 4) OR (5 OR 6)))',
-    #'3 OR (5 OR)',
-    #'1 AND(4 OR "5 6")OR \\(test) 2',
-    #'1 2 AND (3 OR 4)',
-    #'AND 2',
-    #'1 AND 2 AND ("3 7" OR 6)AND (4 OR 5)',
-    #'NOT 1 AND NOT (2 OR 3)',
-    #'1 AND 2 AND 3 AND 4',
-    #'NOT 1 AND 2 OR 3 OR (5 AND 6)',
-    #'5 OR 6 AND 7 OR 8',
-    #'1 OR 2 AND 3 AND 4 OR 5 AND 6 OR 7 OR 8 AND 9',
-    #'2 XOR 3 AND 4',
-    #'1 OR (2 OR 3 AND 4)',
-    #'NOT XOR 4 7'
-    '[sci-fi] OR [pg-13]',
-    '([sci-fi] OR [war]) AND [r]',
-    '[r] XOR [sci-fi]',
-    '"mark hamill" "harrison ford"',
+        '[sci-fi] OR [pg-13]',
+        '([sci-fi] OR [war]) AND [r]',
+        '[r] XOR [sci-fi]',
+        '"mark hamill" "harrison ford"',
     ]
     teststrings = {
         'Star Wars': '[harrison ford] [george lucas] [sci-fi] [pg] [carrie fisher] [mark hamill] [space]',

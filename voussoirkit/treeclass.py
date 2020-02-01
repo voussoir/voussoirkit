@@ -1,5 +1,3 @@
-import os
-
 class ExistingChild(Exception):
     pass
 

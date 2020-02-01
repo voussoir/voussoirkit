@@ -19,8 +19,10 @@ def from_base(number, base, alphabet=None):
     if number.count('.') > 1:
         raise ValueError('Too many decimal points')
 
-    mixed_case = any(c in string.ascii_uppercase for c in alphabet) and \
-                 any(c in string.ascii_lowercase for c in alphabet)
+    mixed_case = (
+        any(c in string.ascii_uppercase for c in alphabet) and
+        any(c in string.ascii_lowercase for c in alphabet)
+    )
     if not mixed_case:
         alphabet = alphabet.upper()
         number = number.upper()
@@ -30,7 +32,7 @@ def from_base(number, base, alphabet=None):
     differences = char_set.difference(alpha_set)
     if len(differences) > 0:
         raise ValueError('Unknown characters for base', base, differences)
-    alpha_dict = {character:index for (index, character) in enumerate(alphabet)}
+    alpha_dict = {character: index for (index, character) in enumerate(alphabet)}
 
     try:
         decimal_pos = number.index('.')
@@ -45,7 +47,6 @@ def from_base(number, base, alphabet=None):
         if index < decimal_pos:
             power -= 1
         value = alpha_dict[character] * (base ** power)
-        #print(value)
         result += value
     return result
 
