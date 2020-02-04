@@ -409,7 +409,13 @@ def copy_file(
     log.debug('Opening handles.')
     source_handle = handlehelper(source, 'rb')
     destination_handle = handlehelper(destination, 'wb')
-    if None in (source_handle, destination_handle):
+
+    if source_handle is None and destination_handle:
+        destination_handle.close()
+        return [destination, 0]
+
+    if destination_handle is None:
+        source_handle.close()
         return [destination, 0]
 
     if validate_hash:
