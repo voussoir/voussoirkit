@@ -684,12 +684,18 @@ def walk_generator(
         yield (current_location, directories, files)
 
     def walkstep_flat(current_location, child_dirs, child_files):
-        if yield_directories:
-            for child_dir in child_dirs:
-                child_dir_abspath = f'{current_location}{os.sep}{child_dir}'
-                if handle_exclusion(exclude_directories, child_dir, child_dir_abspath, 'directory'):
-                    continue
+        new_child_dirs = []
+        for child_dir in child_dirs:
+            child_dir_abspath = f'{current_location}{os.sep}{child_dir}'
+            if handle_exclusion(exclude_directories, child_dir, child_dir_abspath, 'directory'):
+                continue
+
+            new_child_dirs.append(child_dir)
+            if yield_directories:
                 yield pathclass.Path(child_dir_abspath)
+
+        # This will actually affect the results of the os.walk going forward!
+        child_dirs[:] = new_child_dirs
 
         if yield_files:
             for child_file in child_files:
