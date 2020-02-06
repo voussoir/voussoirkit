@@ -30,6 +30,8 @@ class Extension:
         return bool(self.ext)
 
     def __eq__(self, other):
+        if isinstance(other, Extension):
+            return self.ext == other.ext
         other = self.prep(other)
         return self.ext == other
 
