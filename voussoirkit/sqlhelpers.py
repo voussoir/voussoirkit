@@ -48,13 +48,16 @@ def insert_filler(column_names, values, require_all=True):
     cur.execute(query, bindings)
     '''
     values = values.copy()
+    missings = []
     for column in column_names:
         if column in values:
             continue
         if require_all:
-            raise ValueError('Missing column "%s"' % column)
+            missings.append(column)
         else:
             values[column] = None
+    if missings:
+        raise ValueError(f'Missing columns {missings}.')
     qmarks = '?' * len(column_names)
     qmarks = ', '.join(qmarks)
     bindings = [values[column] for column in column_names]
