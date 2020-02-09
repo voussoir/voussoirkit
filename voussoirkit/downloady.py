@@ -459,4 +459,4 @@ if __name__ == '__main__':
     parser.set_defaults(func=download_argparse)
 
     args = parser.parse_args()
-    args.func(args)
+    return args.func(args)
