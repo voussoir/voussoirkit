@@ -30,20 +30,20 @@ def september_day(date):
     days = diff.days + 1
     return days
 
-def september_string(date, strftime):
+def september_string(date, strf):
     '''
     Return the ES formatted string for this date.
     '''
     date = normalize_date(date)
     day = str(september_day(date))
 
-    strftime = strftime.replace('%a', date.strftime('%a'))
-    strftime = strftime.replace('%A', date.strftime('%A'))
-    strftime = strftime.replace('%d', day)
-    strftime = strftime.replace('%-d', day)
+    strf = strf.replace('%a', date.strftime('%a'))
+    strf = strf.replace('%A', date.strftime('%A'))
+    strf = strf.replace('%d', day)
+    strf = strf.replace('%-d', day)
 
     date = date.replace(month=EPOCH.month, year=EPOCH.year)
-    return date.strftime(strftime)
+    return date.strftime(strf)
 
 if __name__ == '__main__':
     print(september_string(now(), '%Y %B %d %H:%M:%S'))
