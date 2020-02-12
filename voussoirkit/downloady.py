@@ -443,7 +443,7 @@ def download_argparse(args):
             break
 
 
-if __name__ == '__main__':
+def main(argv):
     parser = argparse.ArgumentParser()
 
     parser.add_argument('url')
@@ -458,5 +458,8 @@ if __name__ == '__main__':
     parser.add_argument('--no-ssl', dest='no_ssl', action='store_true')
     parser.set_defaults(func=download_argparse)
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     return args.func(args)
+
+if __name__ == '__main__':
+    raise SystemExit(main(sys.argv[1:]))
