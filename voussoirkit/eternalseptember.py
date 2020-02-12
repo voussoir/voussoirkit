@@ -30,6 +30,9 @@ def september_day(date):
     days = diff.days + 1
     return days
 
+def september_now(strf):
+    return september_string(now(), strf)
+
 def september_string(date, strf):
     '''
     Return the ES formatted string for this date.
@@ -46,4 +49,4 @@ def september_string(date, strf):
     return date.strftime(strf)
 
 if __name__ == '__main__':
-    print(september_string(now(), '%Y %B %d %H:%M:%S'))
+    print(september_now('%Y %B %d %H:%M:%S'))
