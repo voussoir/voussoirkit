@@ -97,21 +97,20 @@ class ThreadPool:
             a human friendly name string.
         '''
         self.assert_not_closed()
-        self._job_manager_lock.acquire()
 
-        job = Job(
-            pool=self,
-            function=function,
-            name=name,
-            args=args,
-            kwargs=kwargs,
-        )
-        self._jobs.append(job)
+        with self._job_manager_lock:
+            job = Job(
+                pool=self,
+                function=function,
+                name=name,
+                args=args,
+                kwargs=kwargs,
+            )
+            self._jobs.append(job)
 
-        if not self.paused:
-            self._clear_done_and_start_jobs()
+            if not self.paused:
+                self._clear_done_and_start_jobs()
 
-        self._job_manager_lock.release()
         return job
 
     def add_many(self, kwargss):
@@ -127,19 +126,18 @@ class ThreadPool:
         ]
         '''
         self.assert_not_closed()
-        self._job_manager_lock.acquire()
 
-        these_jobs = []
-        for kwargs in kwargss:
-            kwargs.pop('pool', None)
-            job = Job(pool=self, **kwargs)
-            these_jobs.append(job)
-            self._jobs.append(job)
+        with self._job_manager_lock:
+            these_jobs = []
+            for kwargs in kwargss:
+                kwargs.pop('pool', None)
+                job = Job(pool=self, **kwargs)
+                these_jobs.append(job)
+                self._jobs.append(job)
 
-        if not self.paused:
-            self._clear_done_and_start_jobs()
+            if not self.paused:
+                self._clear_done_and_start_jobs()
 
-        self._job_manager_lock.release()
         return these_jobs
 
     def clear_done_and_start_jobs(self):
@@ -154,10 +152,9 @@ class ThreadPool:
         Because the pool's internal job queue is flushed regularly, you should
         store your own references to jobs to get their return values.
         '''
-        self._job_manager_lock.acquire()
-        self._clear_done_and_start_jobs()
-        self.paused = False
-        self._job_manager_lock.release()
+        with self._job_manager_lock:
+            self._clear_done_and_start_jobs()
+            self.paused = False
 
     def join(self):
         '''
