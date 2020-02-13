@@ -187,12 +187,12 @@ class Job:
         self.exception = NO_EXCEPTION
         self._thread = None
 
-        # joinme_lock works because it is possible for a single thread to block
+        # _joinme_lock works because it is possible for a single thread to block
         # itself by calling `lock.acquire()` twice. The first call is here,
         # and the second call is in `join` so that join will block until the
         # lock is released by the job's finishing phase.
-        self.joinme_lock = threading.Lock()
-        self.joinme_lock.acquire()
+        self._joinme_lock = threading.Lock()
+        self._joinme_lock.acquire()
 
     def __repr__(self):
         if self.name:
@@ -204,8 +204,8 @@ class Job:
         '''
         Block until this job runs and completes.
         '''
-        self.joinme_lock.acquire()
-        self.joinme_lock.release()
+        self._joinme_lock.acquire()
+        self._joinme_lock.release()
 
     def start(self):
         '''
@@ -223,7 +223,7 @@ class Job:
                 self.status = RAISED
             self._thread = None
             self.pool._job_finished()
-            self.joinme_lock.release()
+            self._joinme_lock.release()
 
         self.status = RUNNING
         self._thread = threading.Thread(target=do_it)
