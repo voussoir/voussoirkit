@@ -157,7 +157,7 @@ class Job:
         self.kwargs = kwargs
         self.value = NO_RETURN
         self.exception = NO_EXCEPTION
-        self.thread = None
+        self._thread = None
 
         # joinme_lock works because it is possible for a single thread to block
         # itself by calling `lock.acquire()` twice. The first call is here,
@@ -193,10 +193,11 @@ class Job:
                 # print(exc)
                 self.exception = exc
                 self.status = RAISED
+            self._thread = None
             self.pool._job_finished()
             self.joinme_lock.release()
 
         self.status = RUNNING
-        self.thread = threading.Thread(target=do_it)
-        self.thread.daemon = True
-        self.thread.start()
+        self._thread = threading.Thread(target=do_it)
+        self._thread.daemon = True
+        self._thread.start()
