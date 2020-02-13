@@ -70,8 +70,9 @@ class ThreadPool:
         '''
         When a job finishes, it will call here.
         '''
-        if self.closed or self.paused:
+        if self.paused:
             return
+
         self.clear_done_and_start_jobs()
 
     def assert_not_closed(self):
@@ -136,15 +137,9 @@ class ThreadPool:
         and block until all jobs are complete.
         '''
         self.closed = True
-        self.job_manager_lock.acquire()
-        while self.unfinished_count() > 0:
-            print('round')
-            for job in self.jobs:
-                if job.thread:
-                    print(job)
-                    job.thread.join()
-            self._clear_done_and_start_jobs()
-        self.job_manager_lock.release()
+        self.clear_done_and_start_jobs()
+        for job in self.jobs:
+            job.join()
 
     def running_count(self):
         return sum(1 for job in list(self.jobs) if job.status is RUNNING)
