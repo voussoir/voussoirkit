@@ -32,10 +32,7 @@ class ThreadPool:
         This function assumes that job_manager_lock is acquired!!
         You should call clear_done_and_start_jobs instead!
         '''
-        for job in list(self.jobs):
-            if job.status in {FINISHED, RAISED}:
-                # print('Removing done job', job)
-                self.jobs.remove(job)
+        self.jobs[:] = [j for j in self.jobs if j.status in {PENDING, RUNNING}]
 
     def _start_jobs(self):
         '''
