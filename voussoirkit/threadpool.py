@@ -30,7 +30,7 @@ class ThreadPool:
         self.max_size = size
         self.closed = False
         self.paused = paused
-        self.jobs = []
+        self._jobs = []
         self.job_manager_lock = threading.Lock()
 
     def _clear_done_jobs(self):
@@ -38,7 +38,7 @@ class ThreadPool:
         This function assumes that job_manager_lock is acquired!!
         You should call clear_done_and_start_jobs instead!
         '''
-        self.jobs[:] = [j for j in self.jobs if j.status in {PENDING, RUNNING}]
+        self._jobs[:] = [j for j in self._jobs if j.status in {PENDING, RUNNING}]
 
     def _start_jobs(self):
         '''
@@ -50,7 +50,7 @@ class ThreadPool:
         if available == 0:
             return
         # print(f'Gonna start me some {available} jobs.')
-        for job in list(self.jobs):
+        for job in list(self._jobs):
             if job.status == PENDING:
                 # print('starting', job)
                 job.start()
@@ -106,7 +106,7 @@ class ThreadPool:
             args=args,
             kwargs=kwargs,
         )
-        self.jobs.append(job)
+        self._jobs.append(job)
 
         if not self.paused:
             self._clear_done_and_start_jobs()
@@ -134,7 +134,7 @@ class ThreadPool:
             kwargs.pop('pool', None)
             job = Job(pool=self, **kwargs)
             these_jobs.append(job)
-            self.jobs.append(job)
+            self._jobs.append(job)
 
         if not self.paused:
             self._clear_done_and_start_jobs()
@@ -166,14 +166,14 @@ class ThreadPool:
         '''
         self.closed = True
         self.clear_done_and_start_jobs()
-        for job in self.jobs:
+        for job in self._jobs:
             job.join()
 
     def running_count(self):
-        return sum(1 for job in list(self.jobs) if job.status is RUNNING)
+        return sum(1 for job in list(self._jobs) if job.status is RUNNING)
 
     def unfinished_count(self):
-        return sum(1 for job in list(self.jobs) if job.status in {PENDING, RUNNING})
+        return sum(1 for job in list(self._jobs) if job.status in {PENDING, RUNNING})
 
 class Job:
     def __init__(self, pool, function, *, name=None, args=tuple(), kwargs=dict()):
