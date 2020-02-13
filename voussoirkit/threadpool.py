@@ -31,18 +31,18 @@ class ThreadPool:
         self.closed = False
         self.paused = paused
         self._jobs = []
-        self.job_manager_lock = threading.Lock()
+        self._job_manager_lock = threading.Lock()
 
     def _clear_done_jobs(self):
         '''
-        This function assumes that job_manager_lock is acquired!!
+        This function assumes that _job_manager_lock is acquired!!
         You should call clear_done_and_start_jobs instead!
         '''
         self._jobs[:] = [j for j in self._jobs if j.status in {PENDING, RUNNING}]
 
     def _start_jobs(self):
         '''
-        This function assumes that job_manager_lock is acquired!!
+        This function assumes that _job_manager_lock is acquired!!
         You should call clear_done_and_start_jobs instead!
         '''
         available = self.max_size - self.running_count()
@@ -60,7 +60,7 @@ class ThreadPool:
 
     def _clear_done_and_start_jobs(self):
         '''
-        This function assumes that job_manager_lock is acquired!!
+        This function assumes that _job_manager_lock is acquired!!
         You should call clear_done_and_start_jobs instead!
         '''
         self._clear_done_jobs()
@@ -97,7 +97,7 @@ class ThreadPool:
             a human friendly name string.
         '''
         self.assert_not_closed()
-        self.job_manager_lock.acquire()
+        self._job_manager_lock.acquire()
 
         job = Job(
             pool=self,
@@ -111,7 +111,7 @@ class ThreadPool:
         if not self.paused:
             self._clear_done_and_start_jobs()
 
-        self.job_manager_lock.release()
+        self._job_manager_lock.release()
         return job
 
     def add_many(self, kwargss):
@@ -127,7 +127,7 @@ class ThreadPool:
         ]
         '''
         self.assert_not_closed()
-        self.job_manager_lock.acquire()
+        self._job_manager_lock.acquire()
 
         these_jobs = []
         for kwargs in kwargss:
@@ -139,7 +139,7 @@ class ThreadPool:
         if not self.paused:
             self._clear_done_and_start_jobs()
 
-        self.job_manager_lock.release()
+        self._job_manager_lock.release()
         return these_jobs
 
     def clear_done_and_start_jobs(self):
@@ -154,10 +154,10 @@ class ThreadPool:
         Because the pool's internal job queue is flushed regularly, you should
         store your own references to jobs to get their return values.
         '''
-        self.job_manager_lock.acquire()
+        self._job_manager_lock.acquire()
         self._clear_done_and_start_jobs()
         self.paused = False
-        self.job_manager_lock.release()
+        self._job_manager_lock.release()
 
     def join(self):
         '''
