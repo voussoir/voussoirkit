@@ -114,6 +114,34 @@ class ThreadPool:
         self.job_manager_lock.release()
         return job
 
+    def add_many(self, kwargss):
+        '''
+        Add multiple new jobs to the pool at once. Useful to prevent the
+        excessive lock-waiting that you get from calling regular `add` in a
+        loop while other jobs are finishing and triggering queue maintenance.
+
+        Provide an iterable of kwarg dictionaries. That is:
+        [
+            {'function': print, 'args': [4], 'name': '4'},
+            {'function': sample, 'kwargs': {'x': 2}},
+        ]
+        '''
+        self.assert_not_closed()
+        self.job_manager_lock.acquire()
+
+        these_jobs = []
+        for kwargs in kwargss:
+            kwargs.pop('pool', None)
+            job = Job(pool=self, **kwargs)
+            these_jobs.append(job)
+            self.jobs.append(job)
+
+        if not self.paused:
+            self._clear_done_and_start_jobs()
+
+        self.job_manager_lock.release()
+        return these_jobs
+
     def clear_done_and_start_jobs(self):
         '''
         Remove finished and raised jobs from the queue and start some new jobs.
