@@ -97,6 +97,7 @@ def copy_dir(
         files_per_second=None,
         overwrite_old=True,
         precalcsize=False,
+        stop_event=None,
         validate_hash=False,
     ):
     '''
@@ -186,6 +187,12 @@ def copy_dir(
 
         Default = False
 
+    stop_event:
+        If provided, a threading.Event object which when set indicates that we
+        should finish the current file and then stop the remainder of the copy.
+
+        Default = None
+
     validate_hash:
         Passed directly into each `copy_file`.
 
@@ -234,6 +241,9 @@ def copy_dir(
         exclude_filenames=exclude_filenames,
     )
     for source_file in walker:
+        if stop_event and stop_event.is_set():
+            break
+
         if source_file.is_link:
             continue
 
