@@ -15,11 +15,6 @@ class PipeableException(Exception):
 
 class NoArguments(PipeableException):
     pass
-def argv(index):
-    try:
-        return sys.argv[index]
-    except IndexError:
-        return None
 
 def multi_line_input(prompt=None):
     if prompt is not None and not IN_PIPE:
