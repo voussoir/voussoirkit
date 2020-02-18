@@ -539,7 +539,13 @@ def normalize(text):
     '''
     return os.path.normpath(os.path.normcase(text))
 
-def verify_hash(path, known_size, known_hash, callback=None):
+def verify_hash(
+        path,
+        known_hash,
+        *,
+        known_size=None,
+        callback=None,
+    ):
     '''
     callback:
         A function that takes three parameters:
@@ -562,6 +568,11 @@ def verify_hash(path, known_size, known_hash, callback=None):
             checked_bytes += len(chunk)
             if callback is not None:
                 callback(path, checked_bytes, file_size)
+
+    if known_size is not None:
+        file_size = os.path.getsize(path.absolute_path)
+        if file_size != known_size:
+            raise ValidationError(f'File size {file_size} != known size {known_size}.')
 
     file_hash = hasher.hexdigest()
     if file_hash != known_hash:
