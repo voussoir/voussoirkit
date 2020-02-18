@@ -2,6 +2,19 @@ import threading
 import time
 
 class Ratelimiter:
+    '''
+    The Ratelimiter class is used to limit how often you perform some other
+    action. Just create a Ratelimiter object with the allowance you need, then
+    call `limit()` before doing the thing you wish to ratelimit.
+
+    Example:
+
+        download_limiter = Ratelimiter(allowance=1, period=3)
+
+        for file_url in file_urls:
+            download_limiter.limit()
+            download(file_url)
+    '''
     def __init__(self, allowance, period=1, operation_cost=1, mode='sleep'):
         '''
         allowance:
@@ -16,12 +29,17 @@ class Ratelimiter:
 
         mode:
             'sleep':
-                If we do not have the balance for an operation, sleep until we do.
-                Return True every time.
+                If we do not have the balance for an operation, sleep until we
+                do. Then return True every time.
 
             'reject':
-                If we do not have the balance for an operation, return False.
-                The cost is not subtracted, so hopefully we have enough next time.
+                If we do not have the balance for an operation, do nothing and
+                return False. Otherwise subtract the cost and return True.
+
+        Although (allowance=1, period=1) and (allowance=30, period=30) can both
+        be described as "once per second", the latter allows for much greater
+        burstiness of operation. You could spend the whole allowance in a
+        single second, then relax for 29 seconds, for example.
         '''
         if mode not in ('sleep', 'reject'):
             raise ValueError('Invalid mode %s' % repr(mode))
