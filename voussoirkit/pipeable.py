@@ -17,20 +17,36 @@ class NoArguments(PipeableException):
     pass
 
 def multi_line_input(prompt=None):
+    '''
+    Yield multiple lines of input from the user, until they submit EOF.
+    EOF is usually Ctrl+D on linux and Ctrl+Z on windows.
+
+    The prompt is only shown for non-pipe situations, so you do not need to
+    adjust your `prompt` argument for pipe/non-pipe usage.
+    '''
     if prompt is not None and not IN_PIPE:
         sys.stderr.write(prompt)
         sys.stderr.flush()
 
-    has_eof = False
-    while not has_eof:
+    while True:
         line = sys.stdin.readline()
         parts = line.split(EOF)
         line = parts[0]
         has_eof = len(parts) > 1
+
+        # Note that just by hitting enter you always get \n, so this does NOT
+        # mean that input finishes by submitting a blank line! It means that you
+        # submitted EOF as the first character of a line, so there was nothing
+        # in parts[0]. If EOF is in the middle of the line we'll still yield the
+        # first bit before breaking the loop.
         if line == '':
             break
+
         line = line.rstrip('\n')
         yield line
+
+        if has_eof:
+            break
 
 def input(arg=None, *, input_prompt=None, skip_blank=False, strip=False):
     if arg is not None:
@@ -46,6 +62,9 @@ def input(arg=None, *, input_prompt=None, skip_blank=False, strip=False):
         lines = multi_line_input(prompt=input_prompt)
         if not IN_PIPE:
             # Wait until the user finishes all their lines before continuing.
+            # The caller might be processing + printing these lines in a loop
+            # and it would be weird if they start outputting before the user has
+            # finished inputting.
             lines = list(lines)
 
     elif arg_lower in CLIPBOARD_STRINGS:
