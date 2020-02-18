@@ -52,15 +52,16 @@ class Ratelimiter:
         if self.balance >= cost:
             self.balance -= cost
             successful = True
+
+        elif self.mode == 'reject':
+            successful = False
+
         else:
-            if self.mode == 'reject':
-                successful = False
-            else:
-                deficit = cost - self.balance
-                time_needed = deficit / self.gain_rate
-                time.sleep(time_needed)
-                self.balance = 0
-                successful = True
+            deficit = cost - self.balance
+            time_needed = deficit / self.gain_rate
+            time.sleep(time_needed)
+            self.balance = 0
+            successful = True
 
         self.last_operation = time.time()
         return successful
