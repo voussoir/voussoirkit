@@ -13,16 +13,16 @@ def delete_filler(pairs):
 
     In context:
     (qmarks, bindings) = delete_filler(pairs)
-    query = 'DELETE FROM table %s' % qmarks
+    query = f'DELETE FROM table {qmarks}'
     cur.execute(query, bindings)
     '''
     qmarks = []
     bindings = []
     for (key, value) in pairs.items():
-        qmarks.append('%s = ?' % key)
+        qmarks.append(f'{key} = ?')
         bindings.append(value)
     qmarks = ' AND '.join(qmarks)
-    qmarks = 'WHERE %s' % qmarks
+    qmarks = f'WHERE {qmarks}'
     return (qmarks, bindings)
 
 def insert_filler(column_names, values, require_all=True):
@@ -44,7 +44,7 @@ def insert_filler(column_names, values, require_all=True):
 
     In context:
     (qmarks, bindings) = insert_filler(COLUMN_NAMES, data)
-    query = 'INSERT INTO table VALUES(%s)' % qmarks
+    query = f'INSERT INTO table VALUES({qmarks})'
     cur.execute(query, bindings)
     '''
     values = values.copy()
@@ -88,7 +88,7 @@ def update_filler(pairs, where_key):
 
     In context:
     (qmarks, bindings) = update_filler(data, where_key)
-    query = 'UPDATE table %s' % qmarks
+    query = f'UPDATE table {qmarks}'
     cur.execute(query, bindings)
     '''
     pairs = pairs.copy()
@@ -105,7 +105,7 @@ def update_filler(pairs, where_key):
     qmarks = []
     bindings = []
     for (key, value) in pairs.items():
-        qmarks.append('%s = ?' % key)
+        qmarks.append(f'{key} = ?')
         bindings.append(value)
     bindings.append(where_value)
     setters = ', '.join(qmarks)

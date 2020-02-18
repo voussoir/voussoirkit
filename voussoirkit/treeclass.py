@@ -22,7 +22,7 @@ class Tree:
         return hash(self.abspath())
 
     def __repr__(self):
-        return 'Tree(%s)' % self.identifier
+        return f'Tree({self.identifier})'
 
     @staticmethod
     def assert_identifier_ok(identifier):

@@ -65,28 +65,27 @@ class ExpressionTree:
             t = t.replace('(', '\\(')
             t = t.replace(')', '\\)')
             if ' ' in t:
-                t = '"%s"' % t
+                t = f'"{t}"'
             return t
 
         if len(self.children) == 1:
             child = self.children[0]
             childstring = str(child)
             if child.token in OPERATORS:
-                childstring = '(%s)' % childstring
-                return '%s%s' % (self.token, childstring)
-            return '%s %s' % (self.token, childstring)
+                return f'{self.token}({childstring})'
+            return f'{self.token} {childstring}'
 
         children = []
         for child in self.children:
             childstring = str(child)
             if child.token in OPERATORS:
-                childstring = '(%s)' % childstring
+                childstring = f'({childstring})'
             children.append(childstring)
 
         if len(children) == 1:
-            return '%s %s' % (self.token, children[0])
+            return f'{self.token} {children[0]}'
 
-        s = ' %s ' % self.token
+        s = f' {self.token} '
         s = s.join(children)
         return s
 
@@ -119,7 +118,7 @@ class ExpressionTree:
                         current.parent = new
                         current = new
                 else:
-                    raise Exception('Expected binary operator, got %s.' % new.token)
+                    raise Exception(f'Expected binary operator, got {new.token}.')
 
             elif current.token in BINARY_OPERATORS:
                 if new.token in BINARY_OPERATORS:
@@ -191,7 +190,7 @@ class ExpressionTree:
             return '""'
         t = self.token
         if ' ' in t:
-            t = '"%s"' % t
+            t = f'"{t}"'
 
         output = t
         indent = 1

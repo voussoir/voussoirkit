@@ -42,7 +42,7 @@ class Ratelimiter:
         single second, then relax for 29 seconds, for example.
         '''
         if mode not in ('sleep', 'reject'):
-            raise ValueError('Invalid mode %s' % repr(mode))
+            raise ValueError(f'Invalid mode {repr(mode)}.')
 
         self.allowance = allowance
         self.period = period

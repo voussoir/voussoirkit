@@ -59,7 +59,7 @@ def callback_v1(fpobj, written_bytes, total_bytes):
     else:
         ends = ''
     percent = (100 * written_bytes) / max(total_bytes, 1)
-    percent = '%07.3f' % percent
+    percent = f'{percent:07.3f}'
     written = '{:,}'.format(written_bytes)
     total = '{:,}'.format(total_bytes)
     written = written.rjust(len(total), ' ')
@@ -81,7 +81,7 @@ def copy(source, file_args=None, file_kwargs=None, dir_args=None, dir_kwargs=Non
         dir_args = dir_args or tuple()
         dir_kwargs = dir_kwargs or dict()
         return copy_dir(source, *dir_args, **dir_kwargs)
-    raise SpinalError('Neither file nor dir: %s' % source)
+    raise SpinalError(f'Neither file nor dir: {source}')
 
 def copy_dir(
         source,

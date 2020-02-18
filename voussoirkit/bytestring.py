@@ -90,7 +90,7 @@ def normalize_unit_string(string):
         unit_string_l = unit_string.lower()
         if string in (unit_string_l, unit_string_l[0], unit_string_l.replace('i', '')):
             return unit_string
-    raise ValueError('Unrecognized unit string "%s"' % string)
+    raise ValueError(f'Unrecognized unit string "{string}".')
 
 def parsebytes(string):
     '''

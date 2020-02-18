@@ -340,7 +340,7 @@ def glob_patternize(piece):
     piece = glob.escape(piece)
     for character in piece:
         if character not in '![]':
-            replacement = '[%s]' % character
+            replacement = f'[{character}]'
             piece = piece.replace(character, replacement, 1)
             break
     return piece

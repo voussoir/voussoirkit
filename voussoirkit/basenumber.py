@@ -63,7 +63,7 @@ def to_base(number, base, decimal_places=10, alphabet=None):
         alphabet = ALPHABET
 
     if base > len(alphabet):
-        raise ValueError('Not enough symbols in alphabet for base %d' % base)
+        raise ValueError(f'Not enough symbols in alphabet for base {base}.')
 
     result = ''
     whole_portion = int(number)
