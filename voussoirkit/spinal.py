@@ -549,7 +549,7 @@ def verify_hash(path, known_size, known_hash, callback=None):
     log.debug('Validating hash for "%s" against %s', path.absolute_path, known_hash)
     file_size = os.path.getsize(path.absolute_path)
     if file_size != known_size:
-        raise ValidationError('File size %d != known size %d' % (file_size, known_size))
+        raise ValidationError(f'File size {file_size} != known size {known_size}.')
     handle = open(path.absolute_path, 'rb')
     hasher = HASH_CLASS()
     checked_bytes = 0
@@ -565,7 +565,7 @@ def verify_hash(path, known_size, known_hash, callback=None):
 
     file_hash = hasher.hexdigest()
     if file_hash != known_hash:
-        raise ValidationError('File hash "%s" != known hash "%s"' % (file_hash, known_hash))
+        raise ValidationError(f'File hash "{file_hash}" != known hash "{known_hash}".')
     log.debug('Hash validation passed.')
 
 
