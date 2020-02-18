@@ -500,6 +500,35 @@ def get_dir_size(path):
 
     return total_bytes
 
+def hash_file(
+        path,
+        hash_class=HASH_CLASS,
+        *,
+        callback=do_nothing,
+        chunk_size=CHUNK_SIZE,
+    ):
+    '''
+    callback:
+        A function that takes three parameters:
+        path object, bytes ingested so far, bytes total
+    '''
+    path = pathclass.Path(path)
+    hasher = hash_class()
+    checked_bytes = 0
+    file_size = os.path.getsize(path.absolute_path)
+
+    handle = open(path.absolute_path, 'rb')
+    with handle:
+        while True:
+            chunk = handle.read(chunk_size)
+            if not chunk:
+                break
+            hasher.update(chunk)
+            checked_bytes += len(chunk)
+            callback(path, checked_bytes, file_size)
+
+    return hasher.hexdigest()
+
 def is_xor(*args):
     '''
     Return True if and only if one arg is truthy.
@@ -544,41 +573,20 @@ def verify_hash(
         known_hash,
         *,
         known_size=None,
-        callback=None,
+        **hash_kwargs,
     ):
-    '''
-    callback:
-        A function that takes three parameters:
-        path object, bytes ingested so far, bytes total
-    '''
     path = pathclass.Path(path)
     log.debug('Validating hash for "%s" against %s', path.absolute_path, known_hash)
-    file_size = os.path.getsize(path.absolute_path)
-    if file_size != known_size:
-        raise ValidationError(f'File size {file_size} != known size {known_size}.')
-    handle = open(path.absolute_path, 'rb')
-    hasher = HASH_CLASS()
-    checked_bytes = 0
-    with handle:
-        while True:
-            chunk = handle.read(CHUNK_SIZE)
-            if not chunk:
-                break
-            hasher.update(chunk)
-            checked_bytes += len(chunk)
-            if callback is not None:
-                callback(path, checked_bytes, file_size)
 
     if known_size is not None:
         file_size = os.path.getsize(path.absolute_path)
         if file_size != known_size:
             raise ValidationError(f'File size {file_size} != known size {known_size}.')
 
-    file_hash = hasher.hexdigest()
+    file_hash = hash_file(path, **hash_kwargs)
     if file_hash != known_hash:
         raise ValidationError(f'File hash "{file_hash}" != known hash "{known_hash}".')
     log.debug('Hash validation passed.')
-
 
 def walk_generator(
         path='.',
