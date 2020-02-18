@@ -129,4 +129,4 @@ def main(args=None):
         pipeable.output(bytestring(n))
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:]))
+    raise SystemExit(main(sys.argv[1:]))
