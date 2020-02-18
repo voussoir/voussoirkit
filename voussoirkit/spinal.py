@@ -471,7 +471,7 @@ def copy_file(
     if validate_hash:
         verify_hash(
             destination,
-            callback=callback_validate_hash,
+            callback_progress=callback_validate_hash,
             known_size=source_bytes,
             known_hash=hasher.hexdigest(),
         )
@@ -504,11 +504,11 @@ def hash_file(
         path,
         hash_class=HASH_CLASS,
         *,
-        callback=do_nothing,
+        callback_progress=do_nothing,
         chunk_size=CHUNK_SIZE,
     ):
     '''
-    callback:
+    callback_progress:
         A function that takes three parameters:
         path object, bytes ingested so far, bytes total
     '''
@@ -525,7 +525,7 @@ def hash_file(
                 break
             hasher.update(chunk)
             checked_bytes += len(chunk)
-            callback(path, checked_bytes, file_size)
+            callback_progress(path, checked_bytes, file_size)
 
     return hasher.hexdigest()
 
