@@ -500,14 +500,6 @@ def get_dir_size(path):
 
     return total_bytes
 
-def is_subfolder(parent, child):
-    '''
-    Determine whether parent contains child.
-    '''
-    parent = normalize(pathclass.Path(parent).absolute_path) + os.sep
-    child = normalize(pathclass.Path(child).absolute_path) + os.sep
-    return child.startswith(parent)
-
 def is_xor(*args):
     '''
     Return True if and only if one arg is truthy.
