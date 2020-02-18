@@ -3,8 +3,6 @@ import sys
 
 from voussoirkit import pipeable
 
-__VERSION__ = '0.0.1'
-
 BYTE = 1
 KIBIBYTE = 1024 * BYTE
 MIBIBYTE = 1024 * KIBIBYTE
