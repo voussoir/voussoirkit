@@ -10,9 +10,11 @@ EOF = '\x1a'
 IN_PIPE = not sys.stdin.isatty()
 OUT_PIPE = not sys.stdout.isatty()
 
-class NoArguments(Exception):
+class PipeableException(Exception):
     pass
 
+class NoArguments(PipeableException):
+    pass
 def argv(index):
     try:
         return sys.argv[index]
