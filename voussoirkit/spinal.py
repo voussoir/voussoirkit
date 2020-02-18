@@ -17,25 +17,28 @@ CHUNK_SIZE = 2 * bytestring.MIBIBYTE
 
 HASH_CLASS = hashlib.md5
 
-class DestinationIsDirectory(Exception):
+class SpinalException(Exception):
     pass
 
-class DestinationIsFile(Exception):
+class DestinationIsDirectory(SpinalException):
     pass
 
-class RecursiveDirectory(Exception):
+class DestinationIsFile(SpinalException):
     pass
 
-class SourceNotDirectory(Exception):
+class RecursiveDirectory(SpinalException):
     pass
 
-class SourceNotFile(Exception):
+class SourceNotDirectory(SpinalException):
     pass
 
-class SpinalError(Exception):
+class SourceNotFile(SpinalException):
     pass
 
-class ValidationError(Exception):
+class SpinalError(SpinalException):
+    pass
+
+class ValidationError(SpinalException):
     pass
 
 def callback_exclusion_v1(name, path_type):
