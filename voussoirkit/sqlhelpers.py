@@ -1,3 +1,5 @@
+import re
+import sqlparse
 import types
 
 def delete_filler(pairs):
@@ -162,9 +164,8 @@ def listify(items):
     return output
 
 def _extract_create_table_statements(script):
+    script = sqlparse.format(script, strip_comments=True)
     for statement in script.split(';'):
-        statement = statement.strip()
-        statement = statement.strip('-')
         statement = statement.strip()
         if statement.lower().startswith('create table'):
             yield statement
