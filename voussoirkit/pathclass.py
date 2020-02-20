@@ -6,10 +6,14 @@ import re
 class PathclassException(Exception):
     pass
 
+class Exists(PathclassException):
+    pass
+
+class NotExists(PathclassException):
+    pass
 
 class NotDirectory(PathclassException):
     pass
-
 
 class NotFile(PathclassException):
     pass
@@ -95,6 +99,14 @@ class Path:
 
     def __repr__(self):
         return '{c}({path})'.format(c=self.__class__.__name__, path=repr(self.absolute_path))
+
+    def assert_exists(self):
+        if not self.exists:
+            raise NotExists(self)
+
+    def assert_not_exists(self):
+        if self.exists:
+            raise Exists(self)
 
     def assert_is_file(self):
         if not self.is_file:
