@@ -25,6 +25,8 @@ def equal_handle(handle1, handle2, *args, **kwargs):
 def equal_file(filename1, filename2, *args, **kwargs):
     filename1 = os.path.abspath(filename1)
     filename2 = os.path.abspath(filename2)
+    if os.path.getsize(filename1) != os.path.getsize(filename2):
+        return False
     with open(filename1, 'rb') as handle1, open(filename2, 'rb') as handle2:
         return equal_handle(handle1, handle2, *args, **kwargs)
 
