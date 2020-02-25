@@ -12,7 +12,6 @@ setuptools.setup(
     url='https://github.com/voussoir/voussoirkit',
     install_requires=[
         'pyperclip',
-        'sqlparse',
         'pywin32;platform_system=="Windows"',
         'winshell;platform_system=="Windows"',
     ]
