@@ -8,8 +8,8 @@ import os
 import sys
 
 SEEK_END = 2
-CHUNK_SIZE = 2 * 2**20
-FORMAT = '{size}_{chunk_size}_{hash}'
+CHUNK_SIZE = 2**20
+FORMAT = '{size}_{hashtype}_{chunk_size}_{hash}'
 
 def equal_handle(handle1, handle2, *args, **kwargs):
     size1 = handle1.seek(0, SEEK_END)
@@ -28,13 +28,12 @@ def equal_file(filename1, filename2, *args, **kwargs):
     with open(filename1, 'rb') as handle1, open(filename2, 'rb') as handle2:
         return equal_handle(handle1, handle2, *args, **kwargs)
 
-def quickid_handle(handle, hashclass=None, chunk_size=None):
-    if hashclass is None:
-        hashclass = hashlib.md5
+def quickid_handle(handle, chunk_size=None):
     if chunk_size is None:
         chunk_size = CHUNK_SIZE
 
-    hasher = hashclass()
+    hashtype = 'md5'
+    hasher = hashlib.md5()
     size = handle.seek(0, SEEK_END)
     handle.seek(0)
 
@@ -45,7 +44,13 @@ def quickid_handle(handle, hashclass=None, chunk_size=None):
         handle.seek(-1 * chunk_size, SEEK_END)
         hasher.update(handle.read())
 
-    return FORMAT.format(size=size, chunk_size=chunk_size, hash=hasher.hexdigest())
+    output = FORMAT.format(
+        size=size,
+        hashtype=hashtype,
+        chunk_size=chunk_size,
+        hash=hasher.hexdigest(),
+    )
+    return output
 
 def quickid_file(filename, *args, **kwargs):
     filename = os.path.abspath(filename)
