@@ -11,22 +11,24 @@ SEEK_END = 2
 CHUNK_SIZE = 2 * 2**20
 FORMAT = '{size}_{chunk_size}_{hash}'
 
-def equal(handle1, handle2, *args, **kwargs):
+def equal_handle(handle1, handle2, *args, **kwargs):
     size1 = handle1.seek(0, SEEK_END)
     size2 = handle2.seek(0, SEEK_END)
     handle1.seek(0)
     handle2.seek(0)
     if size1 != size2:
         return False
-    return quickid(handle1, *args, **kwargs) == quickid(handle2, *args, **kwargs)
+    id1 = quickid_handle(handle1, *args, **kwargs)
+    id2 = quickid_handle(handle2, *args, **kwargs)
+    return id1 == id2
 
 def equal_file(filename1, filename2, *args, **kwargs):
     filename1 = os.path.abspath(filename1)
     filename2 = os.path.abspath(filename2)
     with open(filename1, 'rb') as handle1, open(filename2, 'rb') as handle2:
-        return equal(handle1, handle2, *args, **kwargs)
+        return equal_handle(handle1, handle2, *args, **kwargs)
 
-def quickid(handle, hashclass=None, chunk_size=None):
+def quickid_handle(handle, hashclass=None, chunk_size=None):
     if hashclass is None:
         hashclass = hashlib.md5
     if chunk_size is None:
@@ -48,7 +50,7 @@ def quickid(handle, hashclass=None, chunk_size=None):
 def quickid_file(filename, *args, **kwargs):
     filename = os.path.abspath(filename)
     with open(filename, 'rb') as handle:
-        return quickid(handle, *args, **kwargs)
+        return quickid_handle(handle, *args, **kwargs)
 
 def main(argv):
     print(quickid_file(argv[0]))
