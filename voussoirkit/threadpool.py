@@ -49,10 +49,8 @@ class ThreadPool:
         available = max(0, available)
         if available == 0:
             return
-        # print(f'Gonna start me some {available} jobs.')
         for job in list(self._jobs):
             if job.status == PENDING:
-                # print('starting', job)
                 job.start()
                 available -= 1
                 if available == 0:
@@ -217,7 +215,6 @@ class Job:
                 self.value = self.function(*self.args, **self.kwargs)
                 self.status = FINISHED
             except Exception as exc:
-                # print(exc)
                 self.exception = exc
                 self.status = RAISED
             self._thread = None
