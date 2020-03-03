@@ -21,7 +21,7 @@ class ThreadPool:
         '''
         paused:
             The pool will start in a paused state and you will have to call
-            `clear_done_and_start_jobs` to start it.
+            `start` to start it.
         '''
         if not isinstance(size, int):
             raise TypeError(f'size must be an int, not {type(size)}.')
@@ -36,14 +36,14 @@ class ThreadPool:
     def _clear_done_jobs(self):
         '''
         This function assumes that _job_manager_lock is acquired!!
-        You should call clear_done_and_start_jobs instead!
+        You should call start instead!
         '''
         self._jobs[:] = [j for j in self._jobs if j.status in {PENDING, RUNNING}]
 
     def _start_jobs(self):
         '''
         This function assumes that _job_manager_lock is acquired!!
-        You should call clear_done_and_start_jobs instead!
+        You should call start instead!
         '''
         available = self.max_size - self.running_count
         available = max(0, available)
@@ -59,7 +59,7 @@ class ThreadPool:
     def _clear_done_and_start_jobs(self):
         '''
         This function assumes that _job_manager_lock is acquired!!
-        You should call clear_done_and_start_jobs instead!
+        You should call start instead!
         '''
         self._clear_done_jobs()
         self._start_jobs()
@@ -71,7 +71,9 @@ class ThreadPool:
         if self.paused:
             return
 
-        self.clear_done_and_start_jobs()
+        # Although this method is private, we are calling the public `start`
+        # instead of the private method because we do not hold the lock.
+        self.start()
 
     @property
     def running_count(self):
@@ -146,7 +148,17 @@ class ThreadPool:
 
         return these_jobs
 
-    def clear_done_and_start_jobs(self):
+    def join(self):
+        '''
+        Permanently close the pool, preventing any new jobs from being added,
+        and block until all jobs are complete.
+        '''
+        self.closed = True
+        self.start()
+        for job in self._jobs:
+            job.join()
+
+    def start(self):
         '''
         Remove finished and raised jobs from the queue and start some new jobs.
 
@@ -161,16 +173,6 @@ class ThreadPool:
         with self._job_manager_lock:
             self._clear_done_and_start_jobs()
             self.paused = False
-
-    def join(self):
-        '''
-        Permanently close the pool, preventing any new jobs from being added,
-        and block until all jobs are complete.
-        '''
-        self.closed = True
-        self.clear_done_and_start_jobs()
-        for job in self._jobs:
-            job.join()
 
 class Job:
     def __init__(self, pool, function, *, name=None, args=tuple(), kwargs=dict()):
