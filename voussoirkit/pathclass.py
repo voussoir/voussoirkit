@@ -241,6 +241,12 @@ class Path:
     def stat(self):
         return os.stat(self.absolute_path)
 
+    def touch(self):
+        try:
+            os.utime(self.absolute_path)
+        except FileNotFoundError:
+            open(self.absolute_path, 'a').close()
+
     def walk(self):
         directories = []
         for child in self.listdir():
