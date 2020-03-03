@@ -1,3 +1,8 @@
+'''
+Overall, I like types.SimpleNamespace. But I decided to make dotdict because:
+1. SimpleNamespace is a cumbersome name to type and to look at.
+2. I wanted my class to support default values.
+'''
 from voussoirkit import sentinel
 
 NO_DEFAULT = sentinel.Sentinel('NO_DEFAULT')
