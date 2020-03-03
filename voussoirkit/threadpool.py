@@ -45,7 +45,7 @@ class ThreadPool:
         This function assumes that _job_manager_lock is acquired!!
         You should call clear_done_and_start_jobs instead!
         '''
-        available = self.max_size - self.running_count()
+        available = self.max_size - self.running_count
         available = max(0, available)
         if available == 0:
             return
@@ -74,6 +74,14 @@ class ThreadPool:
             return
 
         self.clear_done_and_start_jobs()
+
+    @property
+    def running_count(self):
+        return sum(1 for job in list(self._jobs) if job.status is RUNNING)
+
+    @property
+    def unfinished_count(self):
+        return sum(1 for job in list(self._jobs) if job.status in {PENDING, RUNNING})
 
     def assert_not_closed(self):
         '''
@@ -165,12 +173,6 @@ class ThreadPool:
         self.clear_done_and_start_jobs()
         for job in self._jobs:
             job.join()
-
-    def running_count(self):
-        return sum(1 for job in list(self._jobs) if job.status is RUNNING)
-
-    def unfinished_count(self):
-        return sum(1 for job in list(self._jobs) if job.status in {PENDING, RUNNING})
 
 class Job:
     def __init__(self, pool, function, *, name=None, args=tuple(), kwargs=dict()):
