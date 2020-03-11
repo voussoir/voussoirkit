@@ -3,6 +3,8 @@ import functools
 
 HELPSTRINGS = {'', 'help', '-h', '--help'}
 
+# INTERNALS
+################################################################################
 def can_use_bare(parser):
     has_func = bool(parser.get_default('func'))
     has_required_args = any(action.required for action in parser._actions)
@@ -53,30 +55,6 @@ def add_previews(docstring, sub_docstrings):
     docstring = docstring.format(**previews)
     return docstring
 
-def betterhelp(parser, docstring):
-    '''
-    This decorator actually doesn't need the `parser`, but the
-    subparser_betterhelp decorator does, so in the interest of having similar
-    function signatures I'm making it required here too. I figure it's the
-    lesser of two evils. Plus, maybe someday I'll find a need for it and won't
-    have to make any changes to do it.
-    '''
-    can_bare = can_use_bare(parser)
-    def wrapper(main):
-        @functools.wraps(main)
-        def wrapped(argv):
-            argument = listget(argv, 0, '').lower()
-
-            if argument == '' and can_bare:
-                pass
-            elif argument in HELPSTRINGS:
-                print(docstring)
-                return 1
-
-            return main(argv)
-        return wrapped
-    return wrapper
-
 def get_subparser_action(parser):
     for action in parser._actions:
         if isinstance(action, argparse._SubParsersAction):
@@ -112,6 +90,32 @@ def set_alias_docstrings(sub_docstrings, subparser_action):
             sub_docstrings[sp_alias] = sub_docstrings[primary_alias]
 
     return sub_docstrings
+
+# DECORATORS
+################################################################################
+def single_betterhelp(parser, docstring):
+    '''
+    This decorator actually doesn't need the `parser`, but the
+    subparser_betterhelp decorator does, so in the interest of having similar
+    function signatures I'm making it required here too. I figure it's the
+    lesser of two evils. Plus, maybe someday I'll find a need for it and won't
+    have to make any changes to do it.
+    '''
+    can_bare = can_use_bare(parser)
+    def wrapper(main):
+        @functools.wraps(main)
+        def wrapped(argv):
+            argument = listget(argv, 0, '').lower()
+
+            if argument == '' and can_bare:
+                pass
+            elif argument in HELPSTRINGS:
+                print(docstring)
+                return 1
+
+            return main(argv)
+        return wrapped
+    return wrapper
 
 def subparser_betterhelp(parser, main_docstring, sub_docstrings):
     subparser_action = get_subparser_action(parser)
