@@ -8,8 +8,10 @@ from voussoirkit import sentinel
 NO_DEFAULT = sentinel.Sentinel('NO_DEFAULT')
 
 class DotDict:
-    def __init__(self, default=NO_DEFAULT, **kwargs):
+    def __init__(self, __dict=None, *, default=NO_DEFAULT, **kwargs):
         self.__default = default
+        if __dict:
+            self.__dict__.update(__dict)
         self.__dict__.update(**kwargs)
 
     def __getattr__(self, key):
