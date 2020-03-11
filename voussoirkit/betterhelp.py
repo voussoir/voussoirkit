@@ -151,3 +151,17 @@ def subparser_betterhelp(parser, main_docstring, sub_docstrings):
             return main(argv)
         return wrapped
     return wrapper
+
+# EASY MAINS
+################################################################################
+def single_main(argv, parser, docstring):
+    def main(argv):
+        args = parser.parse_args(argv)
+        return args.func(args)
+    return single_betterhelp(parser, docstring)(main)(argv)
+
+def subparser_main(argv, parser, main_docstring, sub_docstrings):
+    def main(argv):
+        args = parser.parse_args(argv)
+        return args.func(args)
+    return subparser_betterhelp(parser, main_docstring, sub_docstrings)(main)(argv)
