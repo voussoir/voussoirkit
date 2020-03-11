@@ -24,4 +24,6 @@ class DotDict:
         self.__dict__[key] = value
 
     def __repr__(self):
-        return f'DotDict {self.__dict__}'
+        display = self.__dict__.copy()
+        display.pop('_DotDict__default')
+        return f'DotDict {display}'
