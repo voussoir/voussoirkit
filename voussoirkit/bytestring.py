@@ -56,6 +56,9 @@ def bytestring(size, decimal_places=3, force_unit=None):
 
     size_unit_string = UNIT_STRINGS[divisor]
 
+    if divisor == BYTE:
+        decimal_places = 0
+
     size_string = '{number:.0{decimal_places}f} {unit}'
     size_string = size_string.format(
         decimal_places=decimal_places,
