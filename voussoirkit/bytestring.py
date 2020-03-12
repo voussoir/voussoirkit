@@ -108,21 +108,21 @@ def parsebytes(string):
         raise ValueError('No numbers found.')
     if len(matches) > 1:
         raise ValueError('Too many numbers found.')
-    byte_value = matches[0]
+    number = matches[0]
 
-    if not string.startswith(byte_value):
+    if not string.startswith(number):
         raise ValueError('Number is not at start of string.')
 
-    # if the string has no text besides the number, just return that int.
-    string = string.replace(byte_value, '')
-    byte_value = float(byte_value)
-    if string == '':
-        return int(byte_value)
+    # if the string has no text besides the number, return that int of bytes.
+    unit_string = string.replace(number, '')
+    if unit_string == '':
+        return int(float(number))
 
-    unit_string = normalize_unit_string(string)
+    number = float(number)
+    unit_string = normalize_unit_string(unit_string)
     multiplier = REVERSED_UNIT_STRINGS[unit_string]
 
-    return int(byte_value * multiplier)
+    return int(number * multiplier)
 
 def main(args=None):
     for line in pipeable.go(args, strip=True, skip_blank=True):
