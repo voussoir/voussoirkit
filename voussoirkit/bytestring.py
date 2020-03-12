@@ -103,12 +103,12 @@ def parsebytes(string):
     string = string.lower().strip()
     string = string.replace(' ', '').replace(',', '')
 
-    matches = re.findall('((\\.|-|\\d)+)', string)
+    matches = re.findall(r'[\d\.-]+', string)
     if len(matches) == 0:
         raise ValueError('No numbers found')
     if len(matches) > 1:
         raise ValueError('Too many numbers found')
-    byte_value = matches[0][0]
+    byte_value = matches[0]
 
     if not string.startswith(byte_value):
         raise ValueError('Number is not at start of string')
