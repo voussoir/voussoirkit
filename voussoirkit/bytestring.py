@@ -124,8 +124,8 @@ def parsebytes(string):
 
     return int(number * multiplier)
 
-def main(args=None):
-    for line in pipeable.go(args, strip=True, skip_blank=True):
+def main(argv):
+    for line in pipeable.go(argv, strip=True, skip_blank=True):
         n = int(line)
         pipeable.output(bytestring(n))
 
