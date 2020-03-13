@@ -236,7 +236,7 @@ class Path:
         if self.is_file:
             return os.path.getsize(self.absolute_path)
         else:
-            return None
+            return sum(file.size for file in self.walk() if file.is_file)
 
     def spawn(self, path):
         return self.__class__(path, force_sep=self.force_sep)
