@@ -140,6 +140,10 @@ class Path:
         return self.extension.with_dot
 
     @property
+    def drive(self):
+        return os.path.splitdrive(self.absolute_path)[0]
+
+    @property
     def exists(self):
         return os.path.exists(self.absolute_path)
 
