@@ -40,7 +40,18 @@ UNIT_SIZES = sorted(UNIT_STRINGS.keys(), reverse=True)
 
 def bytestring(size, decimal_places=3, force_unit=None):
     '''
-    Convert a number into  string.
+    Convert a number into a string like "100 MiB".
+
+    >>> bytestring(1000)
+    '1000 b'
+    >>> bytestring(1024)
+    '1.000 KiB'
+    >>> bytestring(123456)
+    '120.562 KiB'
+    >>> bytestring(800000000)
+    '762.939 MiB'
+    >>> bytestring(800000000, decimal_places=0)
+    '763 MiB'
 
     force_unit:
         If None, an appropriate size unit is chosen automatically.
