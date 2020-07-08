@@ -2,6 +2,8 @@ import glob
 import os
 import re
 
+from voussoirkit import winglob
+
 
 class PathclassException(Exception):
     pass
@@ -150,6 +152,15 @@ class Path:
     @property
     def extension(self):
         return Extension(os.path.splitext(self.absolute_path)[1])
+
+    def glob(self, pattern):
+        if '/' in pattern or '\\' in pattern:
+            # If the user wants to glob names in a different path, they should
+            # create a Pathclass for that directory first and do it normally.
+            raise TypeError('glob pattern should not have path separators')
+        children = winglob.glob(pattern)
+        children = [self.with_child(child) for child in children]
+        return children
 
     @property
     def is_dir(self):
