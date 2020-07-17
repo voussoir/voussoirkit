@@ -158,7 +158,8 @@ class Path:
             # If the user wants to glob names in a different path, they should
             # create a Pathclass for that directory first and do it normally.
             raise TypeError('glob pattern should not have path separators')
-        children = winglob.glob(pattern)
+        pattern = self.with_child(pattern)
+        children = winglob.glob(pattern.absolute_path)
         children = [self.with_child(child) for child in children]
         return children
 
