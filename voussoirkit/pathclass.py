@@ -99,6 +99,9 @@ class Path:
     def __hash__(self):
         return hash(self.normcase)
 
+    def __lt__(self, other):
+        return self.absolute_path < other.absolute_path
+
     def __repr__(self):
         return '{c}({path})'.format(c=self.__class__.__name__, path=repr(self.absolute_path))
 
