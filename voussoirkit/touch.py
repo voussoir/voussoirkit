@@ -5,7 +5,6 @@ import os
 import sys
 
 from voussoirkit import clipext
-from voussoirkit import safeprint
 from voussoirkit import winglob
 
 def touch(glob_pattern):
