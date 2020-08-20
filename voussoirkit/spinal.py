@@ -250,11 +250,26 @@ def copy_dir(
         if source_file.is_link:
             continue
 
-        destination_abspath = source_file.absolute_path.replace(
-            source.absolute_path,
-            destination.absolute_path
-        )
-        destination_file = pathclass.Path(destination_abspath)
+        # The source abspath will only end in os.sep if it is the drive root.
+        # Non-root folders already have their trailing slash stripped by
+        # pathclass. Using rstrip helps us make the following transformation:
+        # source: A:\
+        # destination: B:\backup
+        # A:\myfile.txt
+        # -> replace(A:, B:\backup\A)
+        # -> B:\backup\A\myfile.txt
+        #
+        # Without disturbing the other case in which source is not drive root.
+        # source: A:\Documents
+        # destination: B:\backup\A\Documents
+        # A:\Documents\myfile.txt
+        # -> replace(A:\Documents, B:\backup\A\Documents)
+        # -> B:\backup\A\Documents\myfile.txt
+        destination_file = pathclass.Path(source_file.absolute_path.replace(
+            source.absolute_path.rstrip(os.sep),
+            destination.absolute_path,
+            1
+        ))
 
         if destination_file.is_dir:
             raise DestinationIsDirectory(destination_file)
