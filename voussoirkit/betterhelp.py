@@ -6,8 +6,17 @@ HELPSTRINGS = {'', 'help', '-h', '--help'}
 # INTERNALS
 ################################################################################
 def can_use_bare(parser):
+    def is_required(action):
+        # I found that positional arguments marked with nargs=* were still being
+        # considered 'required', which is not what I want as far as can_use_bare
+        # goes. I believe option_strings==[] is what indicates this action is
+        # positional. If I'm wrong let's fix it.
+        if action.option_strings == [] and action.nargs == '*':
+            return False
+        return action.required
+
     has_func = bool(parser.get_default('func'))
-    has_required_args = any(action.required for action in parser._actions)
+    has_required_args = any(is_required(action) for action in parser._actions)
     return has_func and not has_required_args
 
 def can_use_bare_subparsers(subparser_action):
