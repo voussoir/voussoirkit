@@ -1,4 +1,10 @@
-def fit_into_bounds(image_width, image_height, frame_width, frame_height, only_shrink=False):
+def fit_into_bounds(
+        image_width,
+        image_height,
+        frame_width,
+        frame_height,
+        only_shrink=False,
+    ):
     '''
     Given the w+h of the image and the w+h of the frame,
     return new w+h that fits the image into the frame
