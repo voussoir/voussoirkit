@@ -1,52 +1,40 @@
 import datetime
+import re
+import time
 
 EPOCH = datetime.datetime(
     year=1993,
     month=9,
     day=1,
-    tzinfo=datetime.timezone.utc,
 )
 
-def normalize_date(date):
-    if isinstance(date, datetime.datetime):
-        pass
-    elif isinstance(date, (int, float)):
-        date = datetime.datetime.utcfromtimestamp(date)
-        date = date.replace(tzinfo=datetime.timezone.utc)
+def strftime(format, tpl=None):
+    now = datetime.datetime.now()
+    diff = now - EPOCH
+
+    day = str(diff.days + 1)
+    day_of_year = str(244 + diff.days)
+
+    changes = {
+        r'%b': 'Sep',
+        r'%B': 'September',
+        r'%d': day,
+        r'%-d': day,
+        r'%j': day_of_year,
+        r'%-j': day_of_year,
+        r'%m': '09',
+        r'%-m': '9',
+        r'%Y': '1993',
+        r'%y': '93',
+    }
+    for (key, value) in changes.items():
+        key = r'(?<!%)' + key
+        format = re.sub(key, value, format)
+
+    if tpl is not None:
+        return time.strftime(format, tpl)
     else:
-        raise TypeError('Unrecognized date type.')
-
-    return date
-
-def now():
-    return datetime.datetime.now(datetime.timezone.utc)
-
-def september_day(date):
-    '''
-    Return the ES day of the month for this date.
-    '''
-    date = normalize_date(date)
-    diff = date - EPOCH
-    days = diff.days + 1
-    return days
-
-def september_now(strf):
-    return september_string(now(), strf)
-
-def september_string(date, strf):
-    '''
-    Return the ES formatted string for this date.
-    '''
-    date = normalize_date(date)
-    day = str(september_day(date))
-
-    strf = strf.replace('%a', date.strftime('%a'))
-    strf = strf.replace('%A', date.strftime('%A'))
-    strf = strf.replace('%d', day)
-    strf = strf.replace('%-d', day)
-
-    date = date.replace(month=EPOCH.month, year=EPOCH.year)
-    return date.strftime(strf)
+        return time.strftime(format)
 
 if __name__ == '__main__':
-    print(september_now('%Y %B %d %H:%M:%S'))
+    print(strftime('%Y-%m-%d %H:%M:%S'))
