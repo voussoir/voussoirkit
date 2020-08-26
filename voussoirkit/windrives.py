@@ -1,28 +1,63 @@
 '''
-NOTE: I have not yet figured out how to get a list of volumes that are mounted
-to folders instead of drive letters. I think this is the API I need:
-https://docs.microsoft.com/en-us/windows/win32/fileio/enumerating-volume-mount-points
+This module provides functions for getting information about logical drives
+on Windows.
 '''
 import ctypes
+import re
 import string
+kernel32 = ctypes.windll.kernel32
 
-def get_drive_info(letter):
+def get_all_volumes():
     '''
-    Given a drive letter, return a dictionary containing its attributes.
+    Return a list of volume paths like \\?\Volume{GUID}\ for all volumes,
+    whether they are mounted or not.
+
+    Note: This will include recovery / EFI partitions, which may not be what
+    you're looking for. Also see get_drive_letters and get_drive_mounts.
+
+    Thank you Duncan.
+    https://stackoverflow.com/a/3075879
+    '''
+    volumes = []
+    buf = ctypes.create_unicode_buffer(1024)
+    length = ctypes.c_int32()
+    handle = kernel32.FindFirstVolumeW(buf, ctypes.sizeof(buf))
+    if handle:
+        volumes.append(buf.value)
+        while kernel32.FindNextVolumeW(handle, buf, ctypes.sizeof(buf)):
+            volumes.append(buf.value)
+        kernel32.FindVolumeClose(handle)
+    return volumes
+
+def get_drive_info(path):
+    '''
+    Given a drive path as either:
+    - a letter like C or C:\, or
+    - a mount path, or
+    - a volume path like \\?\Volume{GUID},
+    return a dictionary containing its attributes.
 
     Thanks Nicholas Orlowski
     http://stackoverflow.com/a/12056414
     '''
-    kernel32 = ctypes.windll.kernel32
+    letter_match = re.match(r'^([A-Z])(|:|:\\)$', path)
+    if letter_match:
+        letter = letter_match.group(1)
+        path = f'{letter}:\\'
+
+    if path.startswith('\\\\?\\Volume{'):
+        mount = get_volume_mount(path)
+    else:
+        mount = path
+
     name_buffer = ctypes.create_unicode_buffer(1024)
     filesystem_buffer = ctypes.create_unicode_buffer(1024)
     serial_number = None
     max_component_length = None
     file_system_flags = None
 
-    letter = letter.rstrip(':\\/')
     drive_active = kernel32.GetVolumeInformationW(
-        ctypes.c_wchar_p(f'{letter}:\\'),
+        ctypes.c_wchar_p(path),
         name_buffer,
         ctypes.sizeof(name_buffer),
         serial_number,
@@ -35,21 +70,25 @@ def get_drive_info(letter):
         'active': bool(drive_active),
         'filesystem': filesystem_buffer.value,
         'name': name_buffer.value,
+        'mount': mount,
     }
     return info
 
 def get_drive_letters():
     '''
-    Return a list of all connected drive letters.
+    Return a list of all connected drive letters as single-character strings.
+
+    Drives which are mounted to paths instead of letters will not be returned.
+    Use get_drive_mounts instead.
 
     Thanks RichieHindle
     http://stackoverflow.com/a/827398
-
-    "If the function succeeds, the return value is a bitmask representing the
-    currently available disk drives. Bit position 0 (the least-significant bit)
-    is drive A, bit position 1 is drive B, bit position 2 is drive C, and so on."
-    https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getlogicaldrives
     '''
+    # "If the function succeeds, the return value is a bitmask representing the
+    # currently available disk drives. Bit position 0 (the least-significant
+    # bit) is drive A, bit position 1 is drive B, bit position 2 is drive C,
+    # and so on."
+    # https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getlogicaldrives
     letters = []
     bitmask = ctypes.windll.kernel32.GetLogicalDrives()
     for letter in string.ascii_uppercase:
@@ -58,22 +97,64 @@ def get_drive_letters():
         bitmask >>= 1
     return letters
 
-def get_drive_letter_by_name(name):
+def get_drive_map():
+    '''
+    Return a dict of {mount: info} for all connected drives, where mount is
+    either a drive letter or mount path, and info is the dict returned
+    by get_drive_info.
+    '''
+    drives = {mount: get_drive_info(mount) for mount in get_drive_mounts()}
+    return drives
+
+def get_drive_mounts():
+    '''
+    Return a list of all connected drives as either:
+    - a letter like C:\ if the volume has a letter, or
+    - a mount path if the volume does not have a letter.
+    '''
+    mounts = []
+    for volume in get_all_volumes():
+        mount = get_volume_mount(volume)
+        if mount:
+            mounts.append(mount)
+    return mounts
+
+def get_drive_mount_by_name(name):
     '''
     Given the name of a drive (the user-customizable name seen in Explorer),
-    return the letter of that drive.
+    return the letter or mount path of that drive.
 
     Raises KeyError if it is not found.
     '''
     drives = get_drive_map()
-    for (letter, info) in drives.items():
+    for (mount, info) in drives.items():
         if info['name'] == name:
-            return letter
+            return mount
     raise KeyError(name)
 
-def get_drive_map():
+def get_volume_mount(volume):
     '''
-    Return a dict of {letter: info}.
+    Given a volume path like \\?\Volume{GUID}\, return either:
+    - a letter like C:\ if the volume has a letter, or
+    - a mount path if the volume does not have a letter, or
+    - emptystring if the volume is not mounted at all.
+
+    Thank you Duncan.
+    https://stackoverflow.com/a/3075879
+
+    Note: The API function is named "GetVolumePathNames..." in the plural,
+    and Duncan's original answer uses .split('\0'), but in my testing the
+    drives always contain only a single name.
+    If the drive has a letter and mount path, only the letter is returned.
+    If it has two mount paths, only the first one is returned.
+    So, I'll just use a single return value until further notice.
     '''
-    drives = {letter: get_drive_info(letter) for letter in get_drive_letters()}
-    return drives
+    buf = ctypes.create_unicode_buffer(1024)
+    length = ctypes.c_int32()
+    kernel32.GetVolumePathNamesForVolumeNameW(
+        ctypes.c_wchar_p(volume),
+        buf,
+        ctypes.sizeof(buf),
+        ctypes.pointer(length),
+    )
+    return buf.value
