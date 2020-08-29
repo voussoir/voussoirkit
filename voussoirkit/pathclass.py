@@ -248,9 +248,10 @@ class Path:
 
     @property
     def size(self):
+        self.assert_exists()
         if self.is_file:
             return os.path.getsize(self.absolute_path)
-        else:
+        elif self.is_dir:
             return sum(file.size for file in self.walk() if file.is_file)
 
     def spawn(self, path):
