@@ -94,13 +94,17 @@ class Path:
     def __eq__(self, other):
         if not hasattr(other, 'absolute_path'):
             return False
+        # Compare by normcase so that Windows's case-insensitive filenames
+        # behave correctly.
         return self.normcase == other.normcase
 
     def __hash__(self):
         return hash(self.normcase)
 
     def __lt__(self, other):
-        return self.absolute_path < other.absolute_path
+        # Sort by normcase so that Windows's case-insensitive filenames sort
+        # alphabetically regardless of case.
+        return self.normcase < other.normcase
 
     def __repr__(self):
         return '{c}({path})'.format(c=self.__class__.__name__, path=repr(self.absolute_path))
