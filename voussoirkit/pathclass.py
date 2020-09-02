@@ -138,7 +138,7 @@ class Path:
     def correct_case(self):
         self.absolute_path = get_path_casing(self.absolute_path)
         self.absolute_path = self.absolute_path.replace('/', self.sep).replace('\\', self.sep)
-        return self.absolute_path
+        return self
 
     @property
     def depth(self):
