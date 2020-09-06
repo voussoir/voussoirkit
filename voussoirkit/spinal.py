@@ -387,12 +387,12 @@ def copy_file(
         raise ValueError(message)
 
     source = pathclass.Path(source)
+    source.correct_case()
 
     if not source.is_file:
         raise SourceNotFile(source)
 
     if destination_new_root is not None:
-        source.correct_case()
         destination = new_root(source, destination_new_root)
     destination = pathclass.Path(destination)
 
