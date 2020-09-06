@@ -88,7 +88,7 @@ def copy_dir(
         destination=None,
         *,
         bytes_per_second=None,
-        callback_directory=None,
+        callback_directory_progress=None,
         callback_exclusion=None,
         callback_file=None,
         callback_permission_denied=None,
@@ -121,7 +121,7 @@ def copy_dir(
 
         Default = None
 
-    callback_directory:
+    callback_directory_progress:
         This function will be called after each file copy with three parameters:
         name of file copied, number of bytes written to destination directory
         so far, total bytes needed (based on precalcsize).
@@ -182,11 +182,11 @@ def copy_dir(
         Default = True
 
     precalcsize:
-        If True, calculate the size of source before beginning the
-        operation. This number can be used in the callback_directory function.
-        Else, callback_directory will receive written bytes as total bytes
-        (showing 100% always).
-        This can take a long time.
+        If True, calculate the size of source before beginning the copy.
+        This number can be used in the callback_directory_progress function.
+        Else, callback_directory_progress will receive written bytes as total
+        bytes (showing 100% always).
+        This may take a while if the source directory is large.
 
         Default = False
 
@@ -231,7 +231,7 @@ def copy_dir(
     else:
         total_bytes = 0
 
-    callback_directory = callback_directory or do_nothing
+    callback_directory_progress = callback_directory_progress or do_nothing
     bytes_per_second = limiter_or_none(bytes_per_second)
     files_per_second = limiter_or_none(files_per_second)
 
@@ -293,9 +293,9 @@ def copy_dir(
         written_bytes += copied[1]
 
         if precalcsize is False:
-            callback_directory(copiedname, written_bytes, written_bytes)
+            callback_directory_progress(copiedname, written_bytes, written_bytes)
         else:
-            callback_directory(copiedname, written_bytes, total_bytes)
+            callback_directory_progress(copiedname, written_bytes, total_bytes)
 
         if files_per_second is not None:
             files_per_second.limit(1)
