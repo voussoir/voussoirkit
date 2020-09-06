@@ -119,8 +119,6 @@ def copy_dir(
         or an existing Ratelimiter object.
         The BYTE, KIBIBYTE, etc constants from module 'bytestring' may help.
 
-        Default = None
-
     callback_directory_progress:
         This function will be called after each file copy with three parameters:
         name of file copied, number of bytes written to destination directory
@@ -128,24 +126,17 @@ def copy_dir(
         If `precalcsize` is False, this function will receive written bytes
         for both written and total, showing 100% always.
 
-        Default = None
-
     callback_exclusion:
         Passed directly into `walk_generator`.
-
-        Default = None
 
     callback_file_progress:
         Will be passed into each individual `copy_file` operation as the
         `callback_progress` for that file.
 
-        Default = None
-
     callback_permission_denied:
         Will be passed into each individual `copy_file` operation as the
         `callback_permission_denied` for that file.
 
-        Default = None
 
     destination_new_root:
         Determine the destination path by calling
@@ -157,29 +148,19 @@ def copy_dir(
     dry_run:
         Do everything except the actual file copying.
 
-        Default = False
-
     exclude_filenames:
         Passed directly into `walk_generator`.
 
-        Default = None
-
     exclude_directories:
         Passed directly into `walk_generator`.
-
-        Default = None
 
     files_per_second:
         Maximum number of files to be processed per second. Helps to keep CPU
         usage low.
 
-        Default = None
-
     overwrite_old:
         If True, overwrite the destination file if the source file
         has a more recent "last modified" timestamp.
-
-        Default = True
 
     precalcsize:
         If True, calculate the size of source before beginning the copy.
@@ -188,13 +169,10 @@ def copy_dir(
         bytes (showing 100% always).
         This may take a while if the source directory is large.
 
-        Default = False
 
     stop_event:
         If provided, a threading.Event object which when set indicates that we
         should finish the current file and then stop the remainder of the copy.
-
-        Default = None
 
     validate_hash:
         Passed directly into each `copy_file`.
@@ -336,8 +314,6 @@ def copy_file(
         or an existing Ratelimiter object.
         The provided BYTE, KIBIBYTE, etc constants may help.
 
-        Default = None
-
     callback_permission_denied:
         If provided, this function will be called when a source file denies
         read access, with the file path and the exception object as parameters.
@@ -345,7 +321,6 @@ def copy_file(
 
         If not provided, the PermissionError is raised.
 
-        Default = None
 
     callback_progress:
         If provided, this function will be called after writing
@@ -353,29 +328,19 @@ def copy_file(
         the Path object being copied, number of bytes written so far,
         total number of bytes needed.
 
-        Default = None
-
     callback_validate_hash:
         Passed directly into `verify_hash`
 
-        Default = None
-
     dry_run:
         Do everything except the actual file copying.
-
-        Default = False
 
     overwrite_old:
         If True, overwrite the destination file if the source file
         has a more recent "last modified" timestamp.
 
-        Default = True
-
     validate_hash:
         If True, verify the file hash of the resulting file, using the
         `HASH_CLASS` global.
-
-        Default = False
 
     Returns: [destination filename, number of bytes written to destination]
     (Written bytes is 0 if the file already existed.)
@@ -624,23 +589,17 @@ def walk_generator(
         This function will be called when a file or directory is excluded with
         two parameters: the path, and 'file' or 'directory'.
 
-        Default = None
-
     exclude_filenames:
         A set of filenames that will not be copied. Entries can be absolute
         paths to exclude that particular file, or plain names to exclude
         all matches. For example:
         {'C:\\folder\\file.txt', 'desktop.ini'}
 
-        Default = None
-
     exclude_directories:
         A set of directories that will not be copied. Entries can be
         absolute paths to exclude that particular directory, or plain names
         to exclude all matches. For example:
         {'C:\\folder', 'thumbnails'}
-
-        Default = None
 
     recurse:
         Yield from subdirectories. If False, only immediate files are returned.
