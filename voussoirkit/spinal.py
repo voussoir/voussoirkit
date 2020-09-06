@@ -100,6 +100,7 @@ def copy_dir(
         files_per_second=None,
         overwrite_old=True,
         precalcsize=False,
+        skip_symlinks=True,
         stop_event=None,
         validate_hash=False,
     ):
@@ -169,6 +170,8 @@ def copy_dir(
         bytes (showing 100% always).
         This may take a while if the source directory is large.
 
+    skip_symlinks:
+        If True, symlink dirs are skipped and symlink files are not copied.
 
     stop_event:
         If provided, a threading.Event object which when set indicates that we
@@ -220,34 +223,45 @@ def copy_dir(
         callback_exclusion=callback_exclusion,
         exclude_directories=exclude_directories,
         exclude_filenames=exclude_filenames,
+        yield_style='nested',
     )
-    for source_file in walker:
+
+    def denester(walker):
+        for (directory, children, files) in walker:
+            if skip_symlinks and directory.is_link:
+                continue
+            # The source abspath will only end in os.sep if it is the drive root.
+            # Non-root folders already have their trailing slash stripped by
+            # pathclass. Using rstrip helps us make the following transformation:
+            # source: A:\
+            # destination_new_root: B:\backup
+            # A:\myfile.txt
+            # -> replace(A:, B:\backup\A)
+            # -> B:\backup\A\myfile.txt
+            #
+            # Without disturbing the other case in which source is not drive root.
+            # source: A:\Documents
+            # destination_new_root: B:\backup\A\Documents
+            # A:\Documents\myfile.txt
+            # -> replace(A:\Documents, B:\backup\A\Documents)
+            # -> B:\backup\A\Documents\myfile.txt
+            destination_dir = pathclass.Path(directory.absolute_path.replace(
+                source.absolute_path.rstrip(os.sep),
+                destination.absolute_path,
+                1
+            ))
+            destination_files = (destination_dir.with_child(file.basename) for file in files)
+            for (source_file, destination_file) in zip(files, destination_files):
+                yield (source_file, destination_file)
+
+    walker = denester(walker)
+
+    for (source_file, destination_file) in walker:
         if stop_event and stop_event.is_set():
             break
 
-        if source_file.is_link:
+        if skip_symlinks and source_file.is_link:
             continue
-
-        # The source abspath will only end in os.sep if it is the drive root.
-        # Non-root folders already have their trailing slash stripped by
-        # pathclass. Using rstrip helps us make the following transformation:
-        # source: A:\
-        # destination: B:\backup
-        # A:\myfile.txt
-        # -> replace(A:, B:\backup\A)
-        # -> B:\backup\A\myfile.txt
-        #
-        # Without disturbing the other case in which source is not drive root.
-        # source: A:\Documents
-        # destination: B:\backup\A\Documents
-        # A:\Documents\myfile.txt
-        # -> replace(A:\Documents, B:\backup\A\Documents)
-        # -> B:\backup\A\Documents\myfile.txt
-        destination_file = pathclass.Path(source_file.absolute_path.replace(
-            source.absolute_path.rstrip(os.sep),
-            destination.absolute_path,
-            1
-        ))
 
         if destination_file.is_dir:
             raise DestinationIsDirectory(destination_file)
@@ -708,7 +722,7 @@ def walk_generator(
 
                 yield pathclass.Path(child_file_abspath)
 
-    walker = os.walk(path.absolute_path, onerror=callback_permission_denied)
+    walker = os.walk(path.absolute_path, onerror=callback_permission_denied, followlinks=True)
     if yield_style == 'flat':
         for step in walker:
             yield from walkstep_flat(*step)
