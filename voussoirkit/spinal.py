@@ -90,7 +90,7 @@ def copy_dir(
         bytes_per_second=None,
         callback_directory_progress=None,
         callback_exclusion=None,
-        callback_file=None,
+        callback_file_progress=None,
         callback_permission_denied=None,
         chunk_size=CHUNK_SIZE,
         destination_new_root=None,
@@ -135,9 +135,9 @@ def copy_dir(
 
         Default = None
 
-    callback_file:
+    callback_file_progress:
         Will be passed into each individual `copy_file` operation as the
-        `callback` for that file.
+        `callback_progress` for that file.
 
         Default = None
 
@@ -281,7 +281,7 @@ def copy_dir(
             source_file,
             destination_file,
             bytes_per_second=bytes_per_second,
-            callback_progress=callback_file,
+            callback_progress=callback_file_progress,
             callback_permission_denied=callback_permission_denied,
             chunk_size=chunk_size,
             dry_run=dry_run,
