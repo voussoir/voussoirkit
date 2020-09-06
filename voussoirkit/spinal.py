@@ -420,9 +420,8 @@ def copy_file(
         return [destination, 0]
 
     source_bytes = source.size
-    destination_location = os.path.split(destination.absolute_path)[0]
-    os.makedirs(destination_location, exist_ok=True)
 
+    os.makedirs(destination.parent.absolute_path, exist_ok=True)
     def handlehelper(path, mode):
         try:
             handle = open(path.absolute_path, mode)
