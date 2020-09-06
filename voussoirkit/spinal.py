@@ -8,6 +8,9 @@ import sys
 from voussoirkit import bytestring
 from voussoirkit import pathclass
 from voussoirkit import ratelimiter
+from voussoirkit import sentinel
+
+BAIL = sentinel.Sentinel('BAIL')
 
 logging.basicConfig(level=logging.CRITICAL)
 log = logging.getLogger(__name__)
@@ -92,6 +95,8 @@ def copy_dir(
         callback_exclusion=None,
         callback_file_progress=None,
         callback_permission_denied=None,
+        callback_pre_directory=None,
+        callback_pre_file=None,
         chunk_size=CHUNK_SIZE,
         destination_new_root=None,
         dry_run=False,
@@ -121,7 +126,7 @@ def copy_dir(
         The BYTE, KIBIBYTE, etc constants from module 'bytestring' may help.
 
     callback_directory_progress:
-        This function will be called after each file copy with three parameters:
+        This function will be called after each file copy with three arguments:
         name of file copied, number of bytes written to destination directory
         so far, total bytes needed (based on precalcsize).
         If `precalcsize` is False, this function will receive written bytes
@@ -138,6 +143,19 @@ def copy_dir(
         Will be passed into each individual `copy_file` operation as the
         `callback_permission_denied` for that file.
 
+    callback_pre_directory:
+        This function will be called before each directory and subdirectory
+        begins copying their files. It will be called with three arguments:
+        source directory, destination directory, dry_run.
+        This function may return the BAIL sentinel (return spinal.BAIL) and
+        that directory will be skipped.
+        Note: BAIL will only skip a single directory. If you wish to terminate
+        the entire copy procedure, use `stop_event` which will finish copying
+        the current file and then stop.
+
+    callback_pre_file:
+        Will be passed into each individual `copy_file` operation as the
+        `callback_pre_copy` for that file.
 
     destination_new_root:
         Determine the destination path by calling
@@ -213,6 +231,8 @@ def copy_dir(
         total_bytes = 0
 
     callback_directory_progress = callback_directory_progress or do_nothing
+    callback_pre_directory = callback_pre_directory or do_nothing
+    callback_pre_file = callback_pre_file or do_nothing
     bytes_per_second = limiter_or_none(bytes_per_second)
     files_per_second = limiter_or_none(files_per_second)
 
@@ -250,6 +270,8 @@ def copy_dir(
                 destination.absolute_path,
                 1
             ))
+            if callback_pre_directory(directory, destination_dir, dry_run=dry_run) is BAIL:
+                continue
             destination_files = (destination_dir.with_child(file.basename) for file in files)
             for (source_file, destination_file) in zip(files, destination_files):
                 yield (source_file, destination_file)
@@ -275,6 +297,7 @@ def copy_dir(
             bytes_per_second=bytes_per_second,
             callback_progress=callback_file_progress,
             callback_permission_denied=callback_permission_denied,
+            callback_pre_copy=callback_pre_file,
             chunk_size=chunk_size,
             dry_run=dry_run,
             overwrite_old=overwrite_old,
@@ -302,6 +325,7 @@ def copy_file(
         bytes_per_second=None,
         callback_progress=None,
         callback_permission_denied=None,
+        callback_pre_copy=None,
         callback_validate_hash=None,
         chunk_size=CHUNK_SIZE,
         dry_run=False,
@@ -335,6 +359,12 @@ def copy_file(
 
         If not provided, the PermissionError is raised.
 
+    callback_pre_copy:
+        This function will be called just before the destination filepath is
+        created and the handles opened. It will be called with three arguments:
+        source file, destination file, dry_run.
+        This function may return the BAIL sentinel (return spinal.BAIL) and
+        that file will not be copied.
 
     callback_progress:
         If provided, this function will be called after writing
@@ -376,6 +406,7 @@ def copy_file(
     destination = pathclass.Path(destination)
 
     callback_progress = callback_progress or do_nothing
+    callback_pre_copy = callback_pre_copy or do_nothing
 
     if destination.is_dir:
         destination = destination.with_child(source.basename)
@@ -400,7 +431,11 @@ def copy_file(
 
     source_bytes = source.size
 
+    if callback_pre_copy(source, destination, dry_run=dry_run) is BAIL:
+        return [destination, 0]
+
     os.makedirs(destination.parent.absolute_path, exist_ok=True)
+
     def handlehelper(path, mode):
         try:
             handle = open(path.absolute_path, mode)
@@ -474,7 +509,7 @@ def copy_file(
 
     return [destination, written_bytes]
 
-def do_nothing(*args):
+def do_nothing(*args, **kwargs):
     '''
     Used by other functions as the default callback.
     '''
