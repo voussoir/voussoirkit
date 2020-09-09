@@ -6,6 +6,8 @@ import hashlib
 import os
 import sys
 
+from voussoirkit import pathclass
+
 SEEK_END = 2
 CHUNK_SIZE = 2**20
 FORMAT = '{size}_{hashtype}_{chunk_size}_{hash}'
@@ -28,8 +30,8 @@ def equal_handle(handle1, handle2, *args, **kwargs):
     return id1 == id2
 
 def equal_file(filename1, filename2, *args, **kwargs):
-    filename1 = os.path.abspath(filename1)
-    filename2 = os.path.abspath(filename2)
+    filename1 = pathclass.Path(filename1).absolute_path
+    filename2 = pathclass.Path(filename2).absolute_path
     if os.path.getsize(filename1) != os.path.getsize(filename2):
         return False
     with open(filename1, 'rb') as handle1, open(filename2, 'rb') as handle2:
@@ -59,7 +61,7 @@ def quickid_handle(handle, hashtype='md5', chunk_size=None):
     return output
 
 def quickid_file(filename, *args, **kwargs):
-    filename = os.path.abspath(filename)
+    filename = pathclass.Path(filename).absolute_path
     with open(filename, 'rb') as handle:
         return quickid_handle(handle, *args, **kwargs)
 
