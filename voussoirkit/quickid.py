@@ -2,7 +2,6 @@
 This module is designed to provide a GOOD ENOUGH means of identifying duplicate
 files very quickly, so that more in-depth checks can be done on likely matches.
 '''
-
 import hashlib
 import os
 import sys
@@ -11,6 +10,11 @@ SEEK_END = 2
 CHUNK_SIZE = 2**20
 FORMAT = '{size}_{hashtype}_{chunk_size}_{hash}'
 
+HASH_CLASSES = {
+    name: getattr(hashlib, name)
+    for name in hashlib.algorithms_guaranteed
+}
+
 def equal_handle(handle1, handle2, *args, **kwargs):
     size1 = handle1.seek(0, SEEK_END)
     size2 = handle2.seek(0, SEEK_END)
@@ -18,6 +22,7 @@ def equal_handle(handle1, handle2, *args, **kwargs):
     handle2.seek(0)
     if size1 != size2:
         return False
+
     id1 = quickid_handle(handle1, *args, **kwargs)
     id2 = quickid_handle(handle2, *args, **kwargs)
     return id1 == id2
@@ -30,12 +35,11 @@ def equal_file(filename1, filename2, *args, **kwargs):
     with open(filename1, 'rb') as handle1, open(filename2, 'rb') as handle2:
         return equal_handle(handle1, handle2, *args, **kwargs)
 
-def quickid_handle(handle, chunk_size=None):
+def quickid_handle(handle, hashtype='md5', chunk_size=None):
     if chunk_size is None:
         chunk_size = CHUNK_SIZE
 
-    hashtype = 'md5'
-    hasher = hashlib.md5()
+    hasher = HASH_CLASSES[hashtype]()
     size = handle.seek(0, SEEK_END)
     handle.seek(0)
 
