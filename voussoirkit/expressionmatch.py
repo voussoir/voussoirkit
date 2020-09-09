@@ -59,8 +59,10 @@ class ExpressionTree:
         if self.token is None:
             return '""'
 
-        if self.token not in OPERATORS:
-            t = self.token
+        self_token = str(self.token)
+
+        if self_token not in OPERATORS:
+            t = self_token
             t = t.replace('"', '\\"')
             t = t.replace('(', '\\(')
             t = t.replace(')', '\\)')
@@ -72,8 +74,8 @@ class ExpressionTree:
             child = self.children[0]
             childstring = str(child)
             if child.token in OPERATORS:
-                return f'{self.token}({childstring})'
-            return f'{self.token} {childstring}'
+                return f'{self_token}({childstring})'
+            return f'{self_token} {childstring}'
 
         children = []
         for child in self.children:
@@ -83,9 +85,9 @@ class ExpressionTree:
             children.append(childstring)
 
         if len(children) == 1:
-            return f'{self.token} {children[0]}'
+            return f'{self_token} {children[0]}'
 
-        s = f' {self.token} '
+        s = f' {self_token} '
         s = s.join(children)
         return s
 
