@@ -18,6 +18,9 @@ HASH_CLASSES = {
 }
 
 def equal_handle(handle1, handle2, *args, **kwargs):
+    '''
+    Given two handles, return True if they have the same quickid hash.
+    '''
     size1 = handle1.seek(0, SEEK_END)
     size2 = handle2.seek(0, SEEK_END)
     handle1.seek(0)
@@ -30,6 +33,9 @@ def equal_handle(handle1, handle2, *args, **kwargs):
     return id1 == id2
 
 def equal_file(filename1, filename2, *args, **kwargs):
+    '''
+    Given two files, return True if they have the same quickid hash.
+    '''
     filename1 = pathclass.Path(filename1).absolute_path
     filename2 = pathclass.Path(filename2).absolute_path
     if os.path.getsize(filename1) != os.path.getsize(filename2):
@@ -38,6 +44,10 @@ def equal_file(filename1, filename2, *args, **kwargs):
         return equal_handle(handle1, handle2, *args, **kwargs)
 
 def matches_handle(handle, other_id):
+    '''
+    Given a handle and a quickid hash, return True if the handle matches
+    that hash.
+    '''
     (other_size, hashtype, chunk_size, other_hash) = other_id.split('_')
     other_size = int(other_size)
     chunk_size = int(chunk_size)
@@ -51,11 +61,18 @@ def matches_handle(handle, other_id):
     return this_id == other_id
 
 def matches_file(filename, other_id):
+    '''
+    Given a file and a quickid hash, return True if the file matches
+    that hash.
+    '''
     filename = pathclass.Path(filename).absolute_path
     with open(filename, 'rb') as handle:
         return matches_handle(handle, other_id)
 
 def quickid_handle(handle, hashtype='md5', chunk_size=CHUNK_SIZE):
+    '''
+    Return the quickid hash for this handle.
+    '''
     hasher = HASH_CLASSES[hashtype]()
     size = handle.seek(0, SEEK_END)
     handle.seek(0)
@@ -76,6 +93,9 @@ def quickid_handle(handle, hashtype='md5', chunk_size=CHUNK_SIZE):
     return output
 
 def quickid_file(filename, *args, **kwargs):
+    '''
+    Return the quickid hash for this file.
+    '''
     filename = pathclass.Path(filename).absolute_path
     with open(filename, 'rb') as handle:
         return quickid_handle(handle, *args, **kwargs)
