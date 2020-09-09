@@ -55,10 +55,7 @@ def matches_file(filename, other_id):
     with open(filename, 'rb') as handle:
         return matches_handle(handle, other_id)
 
-def quickid_handle(handle, hashtype='md5', chunk_size=None):
-    if chunk_size is None:
-        chunk_size = CHUNK_SIZE
-
+def quickid_handle(handle, hashtype='md5', chunk_size=CHUNK_SIZE):
     hasher = HASH_CLASSES[hashtype]()
     size = handle.seek(0, SEEK_END)
     handle.seek(0)
