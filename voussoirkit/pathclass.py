@@ -316,6 +316,9 @@ def common_path(paths, fallback):
             return fallback
         model = parent
 
+def cwd():
+    return pathclass.Path(os.getcwd())
+
 def get_path_casing(path):
     '''
     Take what is perhaps incorrectly cased input and get the path's actual
