@@ -145,6 +145,7 @@ def literal(item):
         return f'{item:f}'
 
     elif isinstance(item, str):
+        item = item.replace("'", "''")
         return f"'{item}'"
 
     elif isinstance(item, bytes):
