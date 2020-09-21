@@ -36,11 +36,13 @@ def equal_file(filename1, filename2, *args, **kwargs):
     '''
     Given two files, return True if they have the same quickid hash.
     '''
-    filename1 = pathclass.Path(filename1).absolute_path
-    filename2 = pathclass.Path(filename2).absolute_path
-    if os.path.getsize(filename1) != os.path.getsize(filename2):
+    file1 = pathclass.Path(filename1)
+    file2 = pathclass.Path(filename2)
+    file1.assert_is_file()
+    file2.assert_is_file()
+    if file1.size != file2.size:
         return False
-    with open(filename1, 'rb') as handle1, open(filename2, 'rb') as handle2:
+    with file1.open('rb') as handle1, file2.open('rb') as handle2:
         return equal_handle(handle1, handle2, *args, **kwargs)
 
 def matches_handle(handle, other_id):
@@ -65,8 +67,8 @@ def matches_file(filename, other_id):
     Given a file and a quickid hash, return True if the file matches
     that hash.
     '''
-    filename = pathclass.Path(filename).absolute_path
-    with open(filename, 'rb') as handle:
+    file = pathclass.Path(filename)
+    with file.open('rb') as handle:
         return matches_handle(handle, other_id)
 
 def quickid_handle(handle, hashtype='md5', chunk_size=CHUNK_SIZE):
@@ -96,8 +98,9 @@ def quickid_file(filename, *args, **kwargs):
     '''
     Return the quickid hash for this file.
     '''
-    filename = pathclass.Path(filename).absolute_path
-    with open(filename, 'rb') as handle:
+    file = pathclass.Path(filename)
+    file.assert_is_file()
+    with file.open('rb') as handle:
         return quickid_handle(handle, *args, **kwargs)
 
 def main(argv):

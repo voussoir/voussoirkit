@@ -86,7 +86,7 @@ def load_file(filepath, defaults):
     needs_rewrite = False
 
     if user_config_exists:
-        with open(path.absolute_path, 'r', encoding='utf-8') as handle:
+        with path.open('r', encoding='utf-8') as handle:
             user_config = json.load(handle)
         (config, needs_rewrite) = layer_json(config, user_config)
     else:

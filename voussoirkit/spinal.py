@@ -438,7 +438,7 @@ def copy_file(
 
     def handlehelper(path, mode):
         try:
-            handle = open(path.absolute_path, mode)
+            handle = path.open(mode)
             return handle
         except PermissionError as exception:
             if callback_permission_denied is not None:
@@ -548,7 +548,7 @@ def hash_file(
     checked_bytes = 0
     file_size = os.path.getsize(path.absolute_path)
 
-    handle = open(path.absolute_path, 'rb')
+    handle = path.open('rb')
     with handle:
         while True:
             chunk = handle.read(chunk_size)
