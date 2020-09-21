@@ -199,6 +199,9 @@ class Path:
         norm = norm.replace('/', self.sep).replace('\\', self.sep)
         return norm
 
+    def open(self, *args, **kwargs):
+        return open(self.absolute_path, *args, **kwargs)
+
     @property
     def parent(self):
         parent = os.path.dirname(self.absolute_path)
@@ -269,7 +272,7 @@ class Path:
         try:
             os.utime(self.absolute_path)
         except FileNotFoundError:
-            open(self.absolute_path, 'a').close()
+            self.open('a').close()
 
     def walk(self):
         directories = []
