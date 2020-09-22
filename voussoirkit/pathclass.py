@@ -320,7 +320,7 @@ def common_path(paths, fallback):
         model = parent
 
 def cwd():
-    return pathclass.Path(os.getcwd())
+    return Path(os.getcwd())
 
 def get_path_casing(path):
     '''
