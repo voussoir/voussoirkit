@@ -193,6 +193,9 @@ class Path:
         children = [self.with_child(child) for child in children]
         return children
 
+    def makedirs(self, mode=0o777, exist_ok=False):
+        return os.makedirs(self.absolute_path, mode=mode, exist_ok=exist_ok)
+
     @property
     def normcase(self):
         norm = os.path.normcase(self.absolute_path)
