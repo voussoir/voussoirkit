@@ -289,7 +289,7 @@ def copy_dir(
             raise DestinationIsDirectory(destination_file)
 
         if not dry_run:
-            os.makedirs(destination_file.parent.absolute_path, exist_ok=True)
+            destination_file.parent.makedirs(exist_ok=True)
 
         copied = copy_file(
             source_file,
@@ -434,7 +434,7 @@ def copy_file(
     if callback_pre_copy(source, destination, dry_run=dry_run) is BAIL:
         return [destination, 0]
 
-    os.makedirs(destination.parent.absolute_path, exist_ok=True)
+    destination.parent.makedirs(exist_ok=True)
 
     def handlehelper(path, mode):
         try:
