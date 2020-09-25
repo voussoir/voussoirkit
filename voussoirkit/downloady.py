@@ -7,6 +7,7 @@ import warnings
 
 from voussoirkit import bytestring
 from voussoirkit import clipext
+from voussoirkit import dotdict
 from voussoirkit import pathclass
 from voussoirkit import ratelimiter
 from voussoirkit import safeprint
@@ -77,14 +78,15 @@ def download_file(
         timeout=timeout,
         verify_ssl=verify_ssl,
     )
+
     if plan is None:
         return
 
     return download_plan(plan)
 
 def download_plan(plan):
-    temp_localname = plan['download_into']
-    real_localname = plan['real_localname']
+    temp_localname = plan.download_into
+    real_localname = plan.real_localname
     directory = os.path.split(temp_localname)[0]
     if directory != '':
         os.makedirs(directory, exist_ok=True)
@@ -92,38 +94,38 @@ def download_plan(plan):
     if not is_special_file(temp_localname):
         touch(temp_localname)
 
-    if plan['plan_type'] in ['resume', 'partial']:
+    if plan.plan_type in ['resume', 'partial']:
         file_handle = open(temp_localname, 'r+b')
-        file_handle.seek(plan['seek_to'])
-        bytes_downloaded = plan['seek_to']
+        file_handle.seek(plan.seek_to)
+        bytes_downloaded = plan.seek_to
 
-    elif plan['plan_type'] == 'fulldownload':
+    elif plan.plan_type == 'fulldownload':
         file_handle = open(temp_localname, 'wb')
         bytes_downloaded = 0
 
-    if plan['header_range_min'] is not None:
-        plan['headers']['range'] = 'bytes={min}-{max}'.format(
-            min=plan['header_range_min'],
-            max=plan['header_range_max'],
+    if plan.header_range_min is not None:
+        plan.headers['range'] = 'bytes={min}-{max}'.format(
+            min=plan.header_range_min,
+            max=plan.header_range_max,
         )
 
     download_stream = request(
         'get',
-        plan['url'],
+        plan.url,
         stream=True,
-        auth=plan['auth'],
-        headers=plan['headers'],
-        timeout=plan['timeout'],
-        verify_ssl=plan['verify_ssl'],
+        auth=plan.auth,
+        headers=plan.headers,
+        timeout=plan.timeout,
+        verify_ssl=plan.verify_ssl,
     )
 
-    if plan['remote_total_bytes'] is None:
+    if plan.remote_total_bytes is None:
         # Since we didn't do a head, let's fill this in now.
-        plan['remote_total_bytes'] = int(download_stream.headers.get('Content-Length', 0))
+        plan.remote_total_bytes = int(download_stream.headers.get('Content-Length', 0))
 
-    callback_progress = plan['callback_progress']
+    callback_progress = plan.callback_progress
     if callback_progress is not None:
-        callback_progress = callback_progress(plan['remote_total_bytes'])
+        callback_progress = callback_progress(plan.remote_total_bytes)
 
     for chunk in download_stream.iter_content(chunk_size=CHUNKSIZE):
         bytes_downloaded += len(chunk)
@@ -131,18 +133,18 @@ def download_plan(plan):
         if callback_progress is not None:
             callback_progress.step(bytes_downloaded)
 
-        if plan['limiter'] is not None and bytes_downloaded < plan['remote_total_bytes']:
-            plan['limiter'].limit(len(chunk))
+        if plan.limiter is not None and bytes_downloaded < plan.remote_total_bytes:
+            plan.limiter.limit(len(chunk))
 
     file_handle.close()
 
     # Don't try to rename /dev/null or other special names
     if not is_special_file(temp_localname) and not is_special_file(real_localname):
         localsize = os.path.getsize(temp_localname)
-        undersized = plan['plan_type'] != 'partial' and localsize < plan['remote_total_bytes']
-        if plan['raise_for_undersized'] and undersized:
+        undersized = plan.plan_type != 'partial' and localsize < plan.remote_total_bytes
+        if plan.raise_for_undersized and undersized:
             message = 'File does not contain expected number of bytes. Received {size} / {total}'
-            message = message.format(size=localsize, total=plan['remote_total_bytes'])
+            message = message.format(size=localsize, total=plan.remote_total_bytes)
             raise NotEnoughBytes(message)
 
         if temp_localname != real_localname:
@@ -235,7 +237,7 @@ def prepare_plan(
         'timeout': timeout,
         'verify_ssl': verify_ssl,
     }
-    plan_fulldownload = dict(
+    plan_fulldownload = dotdict.DotDict(
         plan_base,
         download_into=temp_localname,
         header_range_min=None,
@@ -243,7 +245,7 @@ def prepare_plan(
         plan_type='fulldownload',
         seek_to=0,
     )
-    plan_resume = dict(
+    plan_resume = dotdict.DotDict(
         plan_base,
         download_into=temp_localname,
         header_range_min=temp_localsize,
@@ -251,7 +253,7 @@ def prepare_plan(
         plan_type='resume',
         seek_to=temp_localsize,
     )
-    plan_partial = dict(
+    plan_partial = dotdict.DotDict(
         plan_base,
         download_into=real_localname,
         header_range_min=user_range_min,
