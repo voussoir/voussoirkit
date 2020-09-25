@@ -83,20 +83,22 @@ def download_file(
     return download_plan(plan)
 
 def download_plan(plan):
-    localname = plan['download_into']
-    directory = os.path.split(localname)[0]
+    temp_localname = plan['download_into']
+    real_localname = plan['real_localname']
+    directory = os.path.split(temp_localname)[0]
     if directory != '':
         os.makedirs(directory, exist_ok=True)
 
-    if not is_special_file(localname):
-        touch(localname)
+    if not is_special_file(temp_localname):
+        touch(temp_localname)
 
     if plan['plan_type'] in ['resume', 'partial']:
-        file_handle = open(localname, 'r+b')
+        file_handle = open(temp_localname, 'r+b')
         file_handle.seek(plan['seek_to'])
         bytes_downloaded = plan['seek_to']
+
     elif plan['plan_type'] == 'fulldownload':
-        file_handle = open(localname, 'wb')
+        file_handle = open(temp_localname, 'wb')
         bytes_downloaded = 0
 
     if plan['header_range_min'] is not None:
@@ -135,18 +137,18 @@ def download_plan(plan):
     file_handle.close()
 
     # Don't try to rename /dev/null or other special names
-    if not is_special_file(localname) and not is_special_file(plan['real_localname']):
-        localsize = os.path.getsize(localname)
+    if not is_special_file(temp_localname) and not is_special_file(real_localname):
+        localsize = os.path.getsize(temp_localname)
         undersized = plan['plan_type'] != 'partial' and localsize < plan['remote_total_bytes']
         if plan['raise_for_undersized'] and undersized:
             message = 'File does not contain expected number of bytes. Received {size} / {total}'
             message = message.format(size=localsize, total=plan['remote_total_bytes'])
             raise NotEnoughBytes(message)
 
-        if localname != plan['real_localname']:
-            os.rename(localname, plan['real_localname'])
+        if temp_localname != real_localname:
+            os.rename(temp_localname, real_localname)
 
-    return plan['real_localname']
+    return real_localname
 
 def prepare_plan(
         url,
