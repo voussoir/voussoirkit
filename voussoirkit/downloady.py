@@ -8,6 +8,7 @@ import warnings
 from voussoirkit import bytestring
 from voussoirkit import ratelimiter
 from voussoirkit import clipext
+from voussoirkit import safeprint
 
 warnings.simplefilter('ignore')
 
@@ -53,8 +54,8 @@ def download_file(
         localname = os.path.abspath(localname)
 
     if verbose:
-        safeprint(' URL:', url)
-        safeprint('File:', localname)
+        safeprint.safeprint(f' URL: {url}')
+        safeprint.safeprint(f'File: {localname}')
 
     plan = prepare_plan(
         url,
@@ -370,10 +371,6 @@ def request(method, url, stream=False, headers=None, timeout=TIMEOUT, verify_ssl
     req = method(url, stream=stream, headers=headers, timeout=timeout, verify=verify_ssl, **kwargs)
     req.raise_for_status()
     return req
-
-def safeprint(*texts, **kwargs):
-    texts = [str(text).encode('ascii', 'replace').decode() for text in texts]
-    print(*texts, **kwargs)
 
 def sanitize_filename(text, exclusions=''):
     to_remove = FILENAME_BADCHARS
