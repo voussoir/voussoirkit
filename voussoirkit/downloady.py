@@ -81,21 +81,19 @@ def download_plan(plan):
     if directory != '':
         os.makedirs(directory, exist_ok=True)
     touch(localname)
-    file_handle = open(localname, 'r+b')
-    file_handle.seek(plan['seek_to'])
+    if plan['plan_type'] in ['resume', 'partial']:
+        file_handle = open(localname, 'r+b')
+        file_handle.seek(plan['seek_to'])
+        bytes_downloaded = plan['seek_to']
+    elif plan['plan_type'] == 'fulldownload':
+        file_handle = open(localname, 'wb')
+        bytes_downloaded = 0
 
     if plan['header_range_min'] is not None:
         plan['headers']['range'] = 'bytes={min}-{max}'.format(
             min=plan['header_range_min'],
             max=plan['header_range_max'],
         )
-
-    if plan['plan_type'] == 'resume':
-        bytes_downloaded = plan['seek_to']
-    elif plan['plan_type'] == 'partial':
-        bytes_downloaded = plan['seek_to']
-    else:
-        bytes_downloaded = 0
 
     download_stream = request(
         'get',
