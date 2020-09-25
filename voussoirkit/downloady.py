@@ -32,7 +32,13 @@ if os.name == 'nt':
     SPECIAL_FILENAMES.append('con')
 SPECIAL_FILENAMES = [os.path.normcase(x) for x in SPECIAL_FILENAMES]
 
-class NotEnoughBytes(Exception):
+class DownloadyException(Exception):
+    pass
+
+class NotEnoughBytes(DownloadyException):
+    pass
+
+class ServerNoRange(DownloadyException):
     pass
 
 def download_file(
@@ -204,6 +210,9 @@ def prepare_plan(
     # Chapter 4: Server range support
     # Always include a range on the first request to figure out whether the
     # server supports it. Use 0- to get correct remote_total_bytes
+    if user_provided_range and not do_head:
+        raise DownloadyException('Cannot determine range support without the head request')
+
     temp_headers = headers
     temp_headers.update({'range': 'bytes=0-'})
 
@@ -219,10 +228,7 @@ def prepare_plan(
         server_respects_range = False
 
     if user_provided_range and not server_respects_range:
-        if not do_head:
-            raise Exception('Cannot determine range support without the head request')
-        else:
-            raise Exception('Server did not respect your range header')
+        raise ServerNoRange('Server did not respect your range header')
 
     # Chapter 5: Plan definitions
     plan_base = {
@@ -289,7 +295,7 @@ def prepare_plan(
 
         return plan_fulldownload
 
-    raise Exception('No plan was chosen?')
+    raise DownloadyException('No plan was chosen?')
 
 
 class Progress1:
