@@ -2,17 +2,22 @@
 This function is slow and ugly, but I need a way to safely print unicode strings
 on systems that don't support it without crippling those who do.
 '''
-def safeprint(text, file_handle=None, end='\n'):
+import sys
+
+def safeprint_handle(text, *, file_handle, end='\n'):
     for character in text:
         try:
-            if file_handle:
-                file_handle.write(character)
-            else:
-                print(character, end='', flush=False)
+            file_handle.write(character)
         except UnicodeError:
-            if file_handle:
-                file_handle.write('?')
-            else:
-                print('?', end='', flush=False)
-    if not file_handle:
-        print(end, end='', flush=True)
+            file_handle.write('?')
+    file_handle.write(end)
+
+def safeprint_stdout(text, *, end='\n'):
+    safeprint_handle(text=text, file_handle=sys.stdout, end=end)
+    sys.stdout.flush()
+
+def safeprint(text, *, file_handle=None, end='\n'):
+    if file_handle is not None:
+        return safeprint_handle(text=text, file_handle=file_handle, end=end)
+    else:
+        return safeprint_stdout(text=text, end=end)
