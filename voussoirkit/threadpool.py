@@ -199,6 +199,17 @@ class Job:
         else:
             return f'<{self.status} Job on {self.function}>'
 
+    def _run(self):
+        try:
+            self.value = self.function(*self.args, **self.kwargs)
+            self.status = FINISHED
+        except Exception as exc:
+            self.exception = exc
+            self.status = RAISED
+        self._thread = None
+        self.pool._job_finished()
+        self._joinme_lock.release()
+
     def join(self):
         '''
         Block until this job runs and completes.
@@ -212,18 +223,7 @@ class Job:
         return value in `value`. If it raises an exception, you'll find it in
         `exception`, although the thread itself will not raise.
         '''
-        def do_it():
-            try:
-                self.value = self.function(*self.args, **self.kwargs)
-                self.status = FINISHED
-            except Exception as exc:
-                self.exception = exc
-                self.status = RAISED
-            self._thread = None
-            self.pool._job_finished()
-            self._joinme_lock.release()
-
         self.status = RUNNING
-        self._thread = threading.Thread(target=do_it)
+        self._thread = threading.Thread(target=self._run)
         self._thread.daemon = True
         self._thread.start()
