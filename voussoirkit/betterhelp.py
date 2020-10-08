@@ -143,11 +143,11 @@ def subparser_betterhelp(parser, main_docstring, sub_docstrings):
             if command not in sub_docstrings:
                 print(main_docstring)
                 if command == '':
-                    because = 'you did not choose a command.'
-                    print(f'You are seeing the default help text because {because}')
+                    because = 'you did not choose a command'
+                    print(f'You are seeing the default help text because {because}.')
                 elif command not in HELPSTRINGS:
                     because = f'"{command}" was not recognized'
-                    print(f'You are seeing the default help text because {because}')
+                    print(f'You are seeing the default help text because {because}.')
                 return 1
 
             argument = listget(argv, 1, '').lower()
