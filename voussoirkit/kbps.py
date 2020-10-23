@@ -20,33 +20,27 @@ def kbps(time=None, size=None, kbps=None):
     if time is None:
         kilobits = size / 128
         time = kilobits / kbps
-        return time
 
     if size is None:
         kibs = kbps / 8
         size = kibs * 1024
         size *= time
-        return size
 
     if kbps is None:
         kibs = size / 1024
         kilobits = kibs * 8
         kbps = kilobits / time
-        return kbps
+
+    return (time, size, kbps)
 
 def kbps_argparse(args):
     time = args.time and hms.hms_to_seconds(args.time)
     size = args.size and bytestring.parsebytes(args.size)
     kibs = args.kbps and int(args.kbps)
 
-    result = kbps(time=time, size=size, kbps=kibs)
+    (time, size, kibs) = kbps(time=time, size=size, kbps=kibs)
 
-    if time is None:
-        print(hms.seconds_to_hms(time))
-    if size is None:
-        print(bytestring.bytestring(size))
-    if kibs is None:
-        print('%d kbps' % round(result))
+    print(f'{hms.seconds_to_hms(time)} @ {kibs} kbps = {bytestring.bytestring(size)}')
 
 def main(argv):
     parser = argparse.ArgumentParser()
