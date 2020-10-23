@@ -689,17 +689,18 @@ def walk_generator(
     path.correct_case()
 
     exclude = (
-        path.basename in exclude_directories or
-        path.absolute_path in exclude_directories
+        normalize(path.basename) in exclude_directories or
+        normalize(path.absolute_path) in exclude_directories
     )
+
     if exclude:
         callback_exclusion(path, 'directory')
         return
 
     def handle_exclusion(blacklist, basename, abspath, kind):
         exclude = (
-            os.path.normcase(basename) in blacklist or
-            os.path.normcase(abspath) in blacklist
+            normalize(basename) in blacklist or
+            normalize(abspath) in blacklist
         )
         if exclude:
             callback_exclusion(abspath, kind)
