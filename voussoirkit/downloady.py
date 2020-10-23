@@ -476,7 +476,7 @@ def main(argv):
     parser.add_argument('-ow', '--overwrite', dest='overwrite', action='store_true')
     parser.add_argument('-r', '--range', dest='range', default=None)
     parser.add_argument('--timeout', dest='timeout', type=int, default=TIMEOUT)
-    parser.add_argument('--retry', dest='retry', const=-1, nargs='?', type=int, default=1)
+    parser.add_argument('--retry', dest='retry', nargs='?', type=int, default=1)
     parser.add_argument('--no-head', dest='no_head', action='store_true')
     parser.add_argument('--no-ssl', dest='no_ssl', action='store_true')
     parser.set_defaults(func=download_argparse)
