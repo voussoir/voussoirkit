@@ -286,7 +286,7 @@ def prepare_plan(
             return plan_partial
 
         if server_respects_range:
-            print('Resume from byte %d' % plan_resume['seek_to'])
+            print('Resume from byte %d' % plan_resume.seek_to)
             return plan_resume
 
     else:
