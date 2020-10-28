@@ -195,7 +195,8 @@ class Path:
 
     def listdir(self):
         children = os.listdir(self.absolute_path)
-        children = [self.with_child(child) for child in children]
+        children = [os.path.join(self.absolute_path, child) for child in children]
+        children = [self.spawn(child, _case_correct=self._case_correct) for child in children]
         return children
 
     def makedirs(self, mode=0o777, exist_ok=False):
@@ -220,8 +221,6 @@ class Path:
         return self.relative_to(os.getcwd())
 
     def relative_to(self, other, simple=False):
-        other = self.spawn(other)
-
         if self == other:
             return '.'
 
@@ -269,8 +268,8 @@ class Path:
         elif self.is_dir:
             return sum(file.size for file in self.walk() if file.is_file)
 
-    def spawn(self, path):
-        return self.__class__(path, force_sep=self.force_sep)
+    def spawn(self, path, **kwargs):
+        return self.__class__(path, force_sep=self.force_sep, **kwargs)
 
     @property
     def stat(self):
