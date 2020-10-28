@@ -65,9 +65,11 @@ class Path:
     '''
     I started to use pathlib.Path, but it was too much of a pain.
     '''
-    def __init__(self, path, force_sep=None):
+    def __init__(self, path, force_sep=None, *, _case_correct=False):
         self.force_sep = force_sep
         self.sep = force_sep or os.sep
+
+        self._case_correct = _case_correct
 
         if isinstance(path, Path):
             self.absolute_path = path.absolute_path
@@ -136,8 +138,11 @@ class Path:
         return os.path.basename(self.absolute_path)
 
     def correct_case(self):
+        if self._case_correct:
+            return self
         self.absolute_path = get_path_casing(self.absolute_path)
         self.absolute_path = self.absolute_path.replace('/', self.sep).replace('\\', self.sep)
+        self._case_correct = True
         return self
 
     @property
