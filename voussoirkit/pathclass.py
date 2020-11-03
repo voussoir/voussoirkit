@@ -221,6 +221,9 @@ class Path:
         return self.relative_to(os.getcwd())
 
     def relative_to(self, other, simple=False):
+        if isinstance(other, str):
+            other = Path(other)
+
         if self == other:
             return '.'
 
