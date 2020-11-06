@@ -7,8 +7,9 @@ CLIPBOARD_STRINGS = ['!c', '!clip', '!clipboard']
 INPUT_STRINGS = ['!i', '!in', '!input', '!stdin']
 EOF = '\x1a'
 
-IN_PIPE = not sys.stdin.isatty()
-OUT_PIPE = not sys.stdout.isatty()
+# In pythonw, stdin and stdout are None.
+IN_PIPE = (sys.stdin is not None) and (not sys.stdin.isatty())
+OUT_PIPE = (sys.stdout is not None) and (not sys.stdout.isatty())
 
 class PipeableException(Exception):
     pass
