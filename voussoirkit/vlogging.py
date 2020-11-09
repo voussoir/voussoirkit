@@ -13,20 +13,27 @@ def add_loud(log):
     addLevelName(LOUD, 'LOUD')
     log.loud = lambda *args, **kwargs: log.log(LOUD, *args, **kwargs)
 
-def set_level_by_argv(log, argv):
-    basicConfig()
+def get_level_by_argv(argv):
     argv = argv[:]
 
     if '--loud' in argv:
-        log.setLevel(LOUD)
+        level = LOUD
         argv.remove('--loud')
     elif '--debug' in argv:
-        log.setLevel(DEBUG)
+        level = DEBUG
         argv.remove('--debug')
     elif '--quiet' in argv:
-        log.setLevel(ERROR)
+        level = ERROR
         argv.remove('--quiet')
     else:
-        log.setLevel(INFO)
+        level = INFO
+
+    return (level, argv)
+
+def set_level_by_argv(log, argv):
+    basicConfig()
+
+    (level, argv) = get_level_by_argv(argv)
+    log.setLevel(level)
 
     return argv
