@@ -25,6 +25,9 @@ def get_level_by_argv(argv):
     elif '--quiet' in argv:
         level = ERROR
         argv.remove('--quiet')
+    elif '--silent' in argv:
+        level = 99999999999
+        argv.remove('--silent')
     else:
         level = INFO
 
