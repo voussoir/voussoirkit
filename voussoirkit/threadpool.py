@@ -255,13 +255,19 @@ class ThreadPool:
                 # the threads can keep waking up and seeing no more jobs.
                 if not self.closed:
                     self._jobs_available.clear()
+                if self._result_queue is not None:
+                    # If the user provided a generator to add_generator that
+                    # actually produces no items, and then immediately starts
+                    # waiting inside result_generator for the results, they
+                    # will hang as _result_queue never gets anything.
+                    # So, here's this.
+                    self._result_queue.put(NO_MORE_JOBS)
                 return NO_MORE_JOBS
-
-            if self._result_queue is not None:
-                # This will block if the queue is full.
-                self._result_queue.put(job)
-
-            return job
+            else:
+                if self._result_queue is not None:
+                    # This will block if the queue is full.
+                    self._result_queue.put(job)
+                return job
 
     def join(self):
         '''
@@ -328,6 +334,9 @@ class ThreadPool:
         # jobs.
         while self._jobs_available.is_set() or not self._result_queue.empty():
             job = self._result_queue.get()
+            if job is NO_MORE_JOBS:
+                self._result_queue.task_done()
+                break
             job.join()
             yield job
             self._result_queue.task_done()
