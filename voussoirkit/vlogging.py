@@ -10,8 +10,12 @@ def getLogger(*args, **kwargs):
     return log
 
 def add_loud(log):
+    def loud(self, message, *args, **kwargs):
+        if self.isEnabledFor(LOUD):
+            self._log(LOUD, message, args, **kwargs)
+
     addLevelName(LOUD, 'LOUD')
-    log.loud = lambda *args, **kwargs: log.log(LOUD, *args, **kwargs)
+    log.loud = loud.__get__(log, log.__class__)
 
 def get_level_by_argv(argv):
     '''
