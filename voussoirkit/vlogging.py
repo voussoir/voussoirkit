@@ -1,3 +1,7 @@
+'''
+This module forwards everything from logging, with the addition of a level
+LOUD=1 and all loggers are given the `loud` method.
+'''
 from logging import *
 
 _getLogger = getLogger
