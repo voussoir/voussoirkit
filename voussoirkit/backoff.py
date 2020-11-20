@@ -24,10 +24,14 @@ class Backoff:
             raise ValueError(f'max must be positive, not {max}.')
         self.max = max
 
-    def next(self):
+    def current(self):
         y = self._calc()
         if self.max is not None:
             y = min(y, self.max)
+        return y
+
+    def next(self):
+        y = self.current()
         self.x += 1
         return y
 
