@@ -1,23 +1,23 @@
 import re
 import unicodedata
 
-def collapse_whitespace(s):
+def collapse_whitespace(text):
     '''
     Replace all whitespace sequences with a single space and strip the ends.
     '''
-    s = re.sub(r'\s+', ' ', s.strip())
-    return s
+    text = re.sub(r'\s+', ' ', text.strip())
+    return text
 
-def comma_space_split(s):
+def comma_space_split(text):
     '''
     Split the string by commas and spaces, discarding all extra
     whitespace and blank parts.
 
     'a b, c,,d' -> ['a', 'b', 'c', 'd']
     '''
-    if s is None:
-        return s
-    return re.split(r'[ ,]+', s.strip())
+    if text is None:
+        return text
+    return re.split(r'[ ,]+', text.strip())
 
 def pascal_to_loudsnakes(text):
     '''
