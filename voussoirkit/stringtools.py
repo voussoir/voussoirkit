@@ -19,6 +19,18 @@ def comma_space_split(text):
         return text
     return re.split(r'[ ,]+', text.strip())
 
+def excise(text, mark_left, mark_right):
+    '''
+    Remove the text between the left and right landmarks, including the
+    landmarks themselves, and return the rest of the text.
+
+    excise('What a wonderful day [soundtrack].mp3', ' [', ']') ->
+    returns 'What a wonderful day.mp3'
+    '''
+    if mark_left in text and mark_right in text:
+        return text.split(mark_left, 1)[0] + text.rsplit(mark_right, 1)[-1]
+    return text
+
 def pascal_to_loudsnakes(text):
     '''
     PascalCase -> PASCAL_CASE
