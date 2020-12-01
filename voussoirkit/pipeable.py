@@ -1,4 +1,5 @@
 # import pyperclip moved to stay lazy.
+import os
 import sys
 
 builtin_input = input
@@ -49,7 +50,14 @@ def multi_line_input(prompt=None):
         if has_eof:
             break
 
-def input(arg=None, *, input_prompt=None, skip_blank=False, strip=False):
+def input(
+        arg=None,
+        *,
+        input_prompt=None,
+        read_files=False,
+        skip_blank=False,
+        strip=False,
+    ):
     if arg is not None:
         arg_lower = arg.lower()
 
@@ -71,6 +79,9 @@ def input(arg=None, *, input_prompt=None, skip_blank=False, strip=False):
     elif arg_lower in CLIPBOARD_STRINGS:
         import pyperclip
         lines = pyperclip.paste().splitlines()
+
+    elif read_files and os.path.isfile(arg):
+        lines = open(arg, 'r', encoding='utf-8')
 
     else:
         lines = arg.splitlines()
