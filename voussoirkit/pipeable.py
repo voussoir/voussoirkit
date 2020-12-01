@@ -18,6 +18,23 @@ class PipeableException(Exception):
 class NoArguments(PipeableException):
     pass
 
+def ctrlc_return1(function):
+    '''
+    Apply this decorator to your argparse gateways, and if the user presses
+    ctrl+c then the gateway will return 1 as its status code without the
+    stacktrace appearing.
+
+    This helps me avoid wrapping the entire function in a try-except block.
+
+    Don't use this if you need to perform some other kind of cleanup on ctrl+c.
+    '''
+    def wrapped(*args, **kwargs):
+        try:
+            function(*args, **kwargs)
+        except KeyboardInterrupt:
+            return 1
+    return wrapped
+
 def multi_line_input(prompt=None):
     '''
     Yield multiple lines of input from the user, until they submit EOF.
