@@ -11,6 +11,9 @@ class PathclassException(Exception):
 class Exists(PathclassException):
     pass
 
+class IsLink(PathclassException):
+    pass
+
 class NotExists(PathclassException):
     pass
 
@@ -18,6 +21,9 @@ class NotDirectory(PathclassException):
     pass
 
 class NotFile(PathclassException):
+    pass
+
+class NotLink(PathclassException):
     pass
 
 
@@ -119,6 +125,10 @@ class Path:
         if self.exists:
             raise Exists(self)
 
+    def assert_not_link(self):
+        if self.is_link:
+            raise IsLink(self)
+
     def assert_is_file(self):
         if not self.is_file:
             raise NotFile(self)
@@ -126,6 +136,10 @@ class Path:
     def assert_is_directory(self):
         if not self.is_dir:
             raise NotDirectory(self)
+
+    def assert_is_link(self):
+        if not self.is_link:
+            raise NotLink(self)
 
     def add_extension(self, extension):
         extension = Extension(extension)
