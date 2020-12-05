@@ -4,6 +4,7 @@ import re
 
 from voussoirkit import winglob
 
+WINDOWS_BADCHARS = {'\\', '/', ':', '*', '?', '<', '>', '|', '"'}
 
 class PathclassException(Exception):
     pass
