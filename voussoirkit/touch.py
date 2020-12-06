@@ -1,23 +1,34 @@
 '''
 Create the file, or update the last modified timestamp.
 '''
+import argparse
 import os
 import sys
 
-from voussoirkit import clipext
+from voussoirkit import pipeable
 from voussoirkit import winglob
 
-def touch(glob_pattern):
-    filenames = winglob.glob(glob_pattern)
-    if len(filenames) == 0:
-        open(glob_pattern, 'a').close()
-        return [glob_pattern]
-    else:
+def touch_argparse(args):
+    patterns = [pattern for arg in args.patterns for pattern in pipeable.input(arg)]
+    for pattern in patterns:
+        filenames = winglob.glob(pattern)
+
+        if len(filenames) == 0 and not winglob.is_glob(pattern):
+            open(pattern, 'a').close()
+            print(pattern)
+
         for filename in filenames:
             os.utime(filename)
-        return filenames
+            print(filename)
+
+def main(argv):
+    parser = argparse.ArgumentParser(description=__doc__)
+
+    parser.add_argument('patterns', nargs='+')
+    parser.set_defaults(func=touch_argparse)
+
+    args = parser.parse_args(argv)
+    return args.func(args)
 
 if __name__ == '__main__':
-    glob_patterns = [clipext.resolve(x).strip() for x in sys.argv[1:]]
-    for glob_pattern in glob_patterns:
-        touch(glob_pattern)
+    raise SystemExit(main(sys.argv[1:]))
