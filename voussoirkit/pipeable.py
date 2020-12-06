@@ -68,23 +68,16 @@ def multi_line_input(prompt=None):
             break
 
 def input(
-        arg=None,
+        arg,
         *,
         input_prompt=None,
         read_files=False,
         skip_blank=False,
         strip=False,
     ):
-    if arg is not None:
-        arg_lower = arg.lower()
+    arg_lower = arg.lower()
 
-    if arg is None:
-        if IN_PIPE:
-            lines = multi_line_input()
-        else:
-            raise ValueError(arg)
-
-    elif arg_lower in INPUT_STRINGS:
+    if arg_lower in INPUT_STRINGS:
         lines = multi_line_input(prompt=input_prompt)
         if not IN_PIPE:
             # Wait until the user finishes all their lines before continuing.
