@@ -35,14 +35,7 @@ def ctrlc_return1(function):
             return 1
     return wrapped
 
-def multi_line_input(prompt=None):
-    '''
-    Yield multiple lines of input from the user, until they submit EOF.
-    EOF is usually Ctrl+D on linux and Ctrl+Z on windows.
-
-    The prompt is only shown for non-pipe situations, so you do not need to
-    adjust your `prompt` argument for pipe/non-pipe usage.
-    '''
+def _multi_line_input(prompt=None):
     if prompt is not None and not IN_PIPE:
         sys.stderr.write(prompt)
         sys.stderr.flush()
@@ -67,6 +60,23 @@ def multi_line_input(prompt=None):
         if has_eof:
             break
 
+def multi_line_input(prompt=None):
+    '''
+    Yield multiple lines of input from the user, until they submit EOF.
+    EOF is usually Ctrl+D on linux and Ctrl+Z on windows.
+
+    The prompt is only shown for non-pipe situations, so you do not need to
+    adjust your `prompt` argument for pipe/non-pipe usage.
+    '''
+    lines = _multi_line_input(prompt=prompt)
+    if not IN_PIPE:
+        # Wait until the user finishes all their lines before continuing.
+        # The caller might be processing + printing these lines in a loop
+        # and it would be weird if they start outputting before the user has
+        # finished inputting.
+        lines = list(lines)
+    return lines
+
 def input(
         arg,
         *,
@@ -79,12 +89,6 @@ def input(
 
     if arg_lower in INPUT_STRINGS:
         lines = multi_line_input(prompt=input_prompt)
-        if not IN_PIPE:
-            # Wait until the user finishes all their lines before continuing.
-            # The caller might be processing + printing these lines in a loop
-            # and it would be weird if they start outputting before the user has
-            # finished inputting.
-            lines = list(lines)
 
     elif arg_lower in CLIPBOARD_STRINGS:
         import pyperclip
