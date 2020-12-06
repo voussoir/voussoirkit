@@ -68,6 +68,8 @@ def to_base(number, base, decimal_places=10, alphabet=None):
     result = ''
     whole_portion = int(number)
     float_portion = number - whole_portion
+    if whole_portion == 0:
+        result = alphabet[0]
     while whole_portion > 0:
         (whole_portion, remainder) = divmod(whole_portion, base)
         result = alphabet[remainder] + result
