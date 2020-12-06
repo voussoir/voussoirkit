@@ -118,6 +118,16 @@ def output(line, end='\n'):
         sys.stdout.flush()
 
 def go(args=None, *input_args, **input_kwargs):
+    '''
+    Automatically resolve all commandline arguments, or read from stdin if
+    there are no arguments.
+
+    This function is only useful if you have *no other arguments* besides your
+    program's main data sink. You will not be able to use argparse in
+    conjunction with this function. If you want to support more arguments,
+    it's better to use a regular argparse argument which is then passed into
+    pipeable.input to resolve it for your data sink.
+    '''
     if args is None:
         args = sys.argv[1:]
 
