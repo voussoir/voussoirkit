@@ -2,8 +2,6 @@
 import os
 import sys
 
-builtin_input = input
-
 CLIPBOARD_STRINGS = ['!c', '!clip', '!clipboard']
 INPUT_STRINGS = ['!i', '!in', '!input', '!stdin']
 EOF = '\x1a'
