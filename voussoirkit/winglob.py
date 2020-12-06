@@ -23,3 +23,11 @@ def fnmatch(name, pat):
 
 def glob(pathname, *, recursive=False):
     return python_glob.glob(fix(pathname), recursive=recursive)
+
+def is_glob(pattern):
+    '''
+    Improvements can be made to consider [] ranges for unix, but properly
+    parsing the range syntax is not something I'm interested in doing right now
+    and it would become the largest function in the whole module.
+    '''
+    return any(c in pattern for c in '*?')
