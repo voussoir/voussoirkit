@@ -83,6 +83,31 @@ def input(
         skip_blank=False,
         strip=False,
     ):
+    '''
+    Given an argument (probably from the command line), resolve it into a
+    generator of lines.
+
+    If the arg is in CLIPBOARD_STRINGS, the contents of the clipboard are taken
+    and split into lines.
+    If the arg is in INPUT_STRINGS, input is read from stdin with an optional
+    input_prompt that is only shown during non-pipe input (actual typing).
+    If read_files is True and the arg is the path to an existing file, the file
+    is read as utf-8 lines.
+    If none of the above, then the argument is taken literally.
+
+    Resolution is not recursive: if the clipboard contains the name of a file,
+    it won't be read, etc.
+
+    In addition to the above resolution techniques, you also have the option to
+    strip lines before yielding them, and skip lines which are emptystring (if
+    strip is False, then all-whitespace lines will still be yielded). If you're
+    modifying input but overall maintaining its original structure, you probably
+    want these both False. If you're just crunching numbers you probably want
+    them both True.
+
+    So, your calling code should not have to make any adjustments -- just call
+    this function however is appropriate for your data sink and enjoy.
+    '''
     arg_lower = arg.lower()
 
     if arg_lower in INPUT_STRINGS:
