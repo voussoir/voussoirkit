@@ -1,6 +1,8 @@
 import argparse
 import functools
 
+from voussoirkit import pipeable
+
 HELPSTRINGS = {'', 'help', '-h', '--help'}
 
 # INTERNALS
@@ -119,7 +121,7 @@ def single_betterhelp(parser, docstring):
             if argument == '' and can_bare:
                 pass
             elif argument in HELPSTRINGS:
-                print(docstring)
+                pipeable.stderr(docstring)
                 return 1
 
             return main(argv)
@@ -141,20 +143,20 @@ def subparser_betterhelp(parser, main_docstring, sub_docstrings):
                 return main(argv)
 
             if command not in sub_docstrings:
-                print(main_docstring)
+                pipeable.stderr(main_docstring)
                 if command == '':
                     because = 'you did not choose a command'
-                    print(f'You are seeing the default help text because {because}.')
+                    pipeable.stderr(f'You are seeing the default help text because {because}.')
                 elif command not in HELPSTRINGS:
                     because = f'"{command}" was not recognized'
-                    print(f'You are seeing the default help text because {because}.')
+                    pipeable.stderr(f'You are seeing the default help text because {because}.')
                 return 1
 
             argument = listget(argv, 1, '').lower()
             if argument == '' and command in can_bares:
                 pass
             elif argument in HELPSTRINGS:
-                print(sub_docstrings[command])
+                pipeable.stderr(sub_docstrings[command])
                 return 1
 
             return main(argv)
