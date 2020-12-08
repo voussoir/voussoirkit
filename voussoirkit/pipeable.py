@@ -119,6 +119,7 @@ def input(
 
     elif read_files and os.path.isfile(arg):
         lines = open(arg, 'r', encoding='utf-8')
+        lines = (line.rstrip('\r\n') for line in lines)
 
     else:
         lines = arg.splitlines()
