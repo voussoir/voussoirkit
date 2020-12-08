@@ -130,12 +130,21 @@ def input(
             continue
         yield line
 
-def output(line, end='\n'):
-    sys.stdout.write(line)
+def _output(stream, line, end):
+    stream.write(line)
     if not line.endswith(end):
-        sys.stdout.write(end)
+        stream.write(end)
     if not OUT_PIPE:
-        sys.stdout.flush()
+        stream.flush()
+
+def stdout(line, end='\n'):
+    _output(sys.stdout, line, end)
+
+def stderr(line, end='\n'):
+    _output(sys.stderr, line, end)
+
+# backwards compat
+output = stdout
 
 def go(args=None, *input_args, **input_kwargs):
     '''
