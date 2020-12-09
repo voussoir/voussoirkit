@@ -132,6 +132,7 @@ def input(
         yield line
 
 def _output(stream, line, end):
+    line = str(line)
     stream.write(line)
     if not line.endswith(end):
         stream.write(end)
