@@ -9,7 +9,8 @@ def quote(arg):
         # separate for external applications.
         # Ampersand, pipe, and caret are process flow and special escape.
         # Quotes inside quotes must be doubled up.
-        if arg == '' or any((c.isspace() or c in arg) for c in [',', ';', '=', '&', '|', '^', '"']):
+        badchars = [',', ';', '=', '&', '|', '^', '"']
+        if arg == '' or any(c.isspace() for c in arg) or any(c in arg for c in badchars):
             arg = arg.replace('"', '""')
             arg = f'"{arg}"'
         return arg
@@ -17,7 +18,8 @@ def quote(arg):
         # Semicolon is command delimiter.
         # Equals assigns shell variables.
         # Quotes inside quotes must be escaped with backslash.
-        if arg == '' or any((c.isspace() or c in arg) for c in [' ', ';', '=', '&', '|']):
+        badchars = [' ', ';', '=', '&', '|']
+        if arg == '' or any(c.isspace() for c in arg) or any(c in arg for c in badchars):
             arg = arg.replace("'", "\\'")
             arg = f"'{arg}'"
         return arg
