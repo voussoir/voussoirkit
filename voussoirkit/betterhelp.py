@@ -165,14 +165,18 @@ def subparser_betterhelp(parser, main_docstring, sub_docstrings):
 
 # EASY MAINS
 ################################################################################
-def single_main(argv, parser, docstring):
+def single_main(argv, parser, docstring, args_postprocessor=None):
     def main(argv):
         args = parser.parse_args(argv)
+        if args_postprocessor is not None:
+            args = args_postprocessor(args)
         return args.func(args)
     return single_betterhelp(parser, docstring)(main)(argv)
 
-def subparser_main(argv, parser, main_docstring, sub_docstrings):
+def subparser_main(argv, parser, main_docstring, sub_docstrings, args_postprocessor=None):
     def main(argv):
         args = parser.parse_args(argv)
+        if args_postprocessor is not None:
+            args = args_postprocessor(args)
         return args.func(args)
     return subparser_betterhelp(parser, main_docstring, sub_docstrings)(main)(argv)
