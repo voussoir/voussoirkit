@@ -12,14 +12,14 @@ def strftime(format, tpl=None):
     now = datetime.datetime.now()
     diff = now - EPOCH
 
-    day = str(diff.days + 1)
+    day_of_month = str(diff.days + 1)
     day_of_year = str(244 + diff.days)
 
     changes = {
         r'%b': 'Sep',
         r'%B': 'September',
-        r'%d': day,
-        r'%-d': day,
+        r'%d': day_of_month,
+        r'%-d': day_of_month,
         r'%j': day_of_year,
         r'%-j': day_of_year,
         r'%m': '09',
