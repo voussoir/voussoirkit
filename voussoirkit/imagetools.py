@@ -23,3 +23,38 @@ def fit_into_bounds(
         return (image_width, image_height)
 
     return (new_width, new_height)
+
+def rotate_by_exif(image):
+    '''
+    Rotate the image according to its exif data, so that it will display
+    correctly even if saved without the exif.
+    '''
+    # Thank you Scabbiaza
+    # https://stackoverflow.com/a/26928142
+    import PIL.ExifTags
+
+    for (ORIENTATION_KEY, val) in PIL.ExifTags.TAGS.items():
+        if val == 'Orientation':
+            break
+
+    try:
+        exif = image._getexif()
+    except AttributeError:
+        return image
+
+    if exif is None:
+        return image
+
+    try:
+        rotation = exif[ORIENTATION_KEY]
+    except KeyError:
+        return image
+
+    if rotation == 3:
+        image = image.rotate(180, expand=True)
+    elif rotation == 6:
+        image = image.rotate(270, expand=True)
+    elif rotation == 8:
+        image = image.rotate(90, expand=True)
+
+    return image
