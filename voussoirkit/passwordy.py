@@ -1,3 +1,6 @@
+'''
+This module provides functions for generating random strings.
+'''
 import math
 import os
 import random
@@ -129,12 +132,17 @@ def make_sentence(length=None, joiner=' '):
     result = joiner.join(words)
     return result
 
-def urandom_hex(length):
+def random_hex(length):
     randbytes = os.urandom(math.ceil(length / 2))
     token = ''.join('{:02x}'.format(x) for x in randbytes)
     token = token[:length]
     return token
 
+def urandom_hex(length):
+    randbytes = os.urandom(math.ceil(length / 2))
+    token = ''.join('{:02x}'.format(x) for x in randbytes)
+    token = token[:length]
+    return token
 
 def main_password(argv):
     length = listget(argv, 0, DEFAULT_LENGTH)
