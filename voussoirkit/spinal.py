@@ -194,6 +194,8 @@ def copy_dir(
     stop_event:
         If provided, a threading.Event object which when set indicates that we
         should finish the current file and then stop the remainder of the copy.
+        For example, you can run this function in a thread and let the main
+        thread catch ctrl+c to set the stop_event, so the copy can stop cleanly.
 
     validate_hash:
         Passed directly into each `copy_file`.
