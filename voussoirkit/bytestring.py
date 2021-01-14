@@ -1,3 +1,7 @@
+'''
+This module provides integer constants for power-of-two byte size units, and
+functions for converting between ints and human-readable strings e.g. "1.2 GiB".
+'''
 import re
 import sys
 

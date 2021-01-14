@@ -11,6 +11,11 @@ HELPSTRINGS = {'', 'help', '-h', '--help'}
 # INTERNALS
 ################################################################################
 def can_use_bare(parser):
+    '''
+    Return true if the given parser has no required arguments, ie can run bare.
+    This is used to decide whether running `> myprogram.py` should show the
+    helptext or just run normally.
+    '''
     def is_required(action):
         # I found that positional arguments marked with nargs=* were still being
         # considered 'required', which is not what I want as far as can_use_bare
@@ -25,6 +30,9 @@ def can_use_bare(parser):
     return has_func and not has_required_args
 
 def can_use_bare_subparsers(subparser_action):
+    '''
+    Return a set of subparser names which can be used bare.
+    '''
     can_bares = set(
         sp_name for (sp_name, sp) in subparser_action.choices.items()
         if can_use_bare(sp)

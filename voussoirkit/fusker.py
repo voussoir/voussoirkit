@@ -1,3 +1,25 @@
+'''
+Fusking is the act of generating many strings by using a template with a range
+of integers or a spinner of alternate strings.
+
+Ranges:
+    x[1-10]y -> x1y, x2y, x3y, x4y, x5y, x6y, x7y, x8y, x9y, x10y
+    x[01-10]y -> x01y, x02y, x03y, x04y, x05y, x06y, x07y, x08y, x09y, x10y
+
+Spinners:
+    x{alpha|beta|charlie}y -> xalphay, xbetay, xcharliey
+
+fusker.fusker('https://subdomain-{a|b|c}.website.com/image[01-99].jpg') ->
+(
+    'https://subdomain-a.website.com/image01.jpg',
+    'https://subdomain-a.website.com/image02.jpg',
+    'https://subdomain-a.website.com/image03.jpg',
+    ...
+    'https://subdomain-a.website.com/image99.jpg',
+    'https://subdomain-b.website.com/image01.jpg',
+    'https://subdomain-b.website.com/image02.jpg',
+)
+'''
 import collections
 import itertools
 import string
