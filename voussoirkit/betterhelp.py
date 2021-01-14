@@ -2,6 +2,9 @@ import argparse
 import functools
 
 from voussoirkit import pipeable
+from voussoirkit import vlogging
+
+log = vlogging.getLogger(__name__)
 
 HELPSTRINGS = {'', 'help', '-h', '--help'}
 
@@ -87,18 +90,29 @@ def set_alias_docstrings(sub_docstrings, subparser_action):
     get that docstring too.
     '''
     sub_docstrings = {name.lower(): docstring for (name, docstring) in sub_docstrings.items()}
+    # aliases is a map of {action object's id(): [list of alias name strings]}.
     aliases = {}
+    # primary_aliases is {action object's id(): 'name string'}
     primary_aliases = {}
+
     for (sp_name, sp) in subparser_action.choices.items():
+        sp_id = id(sp)
         sp_name = sp_name.lower()
-        aliases.setdefault(id(sp), []).append(sp_name)
+        aliases.setdefault(sp_id, []).append(sp_name)
         if sp_name in sub_docstrings:
-            primary_aliases[id(sp)] = sp_name
+            primary_aliases[sp_id] = sp_name
 
     for (sp_id, sp_aliases) in aliases.items():
-        primary_alias = primary_aliases[sp_id]
+        try:
+            primary_alias = primary_aliases[sp_id]
+        except KeyError:
+            log.warning('There is no docstring for any of %s.', sp_aliases)
+            docstring = ''
+        else:
+            docstring = sub_docstrings[primary_alias]
+
         for sp_alias in sp_aliases:
-            sub_docstrings[sp_alias] = sub_docstrings[primary_alias]
+            sub_docstrings[sp_alias] = docstring
 
     return sub_docstrings
 
