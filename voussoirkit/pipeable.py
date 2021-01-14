@@ -131,6 +131,17 @@ def input(
             continue
         yield line
 
+def input_many(args, *input_args, **input_kwargs):
+    '''
+    Given many input arguments, yield the input() results for all of them.
+    This saves you from having to write the double for loop yourself.
+    '''
+    if isinstance(args, str):
+        args = [args]
+
+    for arg in args:
+        yield from input(arg, *input_args, **input_kwargs)
+
 def _output(stream, line, end):
     line = str(line)
     stream.write(line)
