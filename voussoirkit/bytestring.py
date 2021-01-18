@@ -108,7 +108,7 @@ def normalize_unit_string(string):
     '''
     Given a string "k" or "kb" or "kib" in any case, return "KiB", etc.
     '''
-    string = string.lower()
+    string = string.lower().strip()
     for (size, unit_string) in UNIT_STRINGS.items():
         unit_string_l = unit_string.lower()
         if string in (unit_string_l, unit_string_l[0], unit_string_l.replace('i', '')):
@@ -121,7 +121,7 @@ def parsebytes(string):
     Accepts "k", "kb", "kib" in any casing.
     '''
     string = string.lower().strip()
-    string = string.replace(' ', '').replace(',', '')
+    string = string.replace(',', '')
 
     matches = re.findall(r'[\d\.-]+', string)
     if len(matches) == 0:
