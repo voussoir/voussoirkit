@@ -50,7 +50,7 @@ def callback_exclusion_v1(name, path_type):
     '''
     print('Excluding', path_type, name)
 
-def callback_v1(fpobj, written_bytes, total_bytes):
+def callback_progress_v1(fpobj, written_bytes, total_bytes):
     '''
     Example of a copy callback function.
 
