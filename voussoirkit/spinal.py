@@ -121,9 +121,7 @@ def copy_dir(
         destination_new_root.
 
     bytes_per_second:
-        Restrict file copying to this many bytes per second. Can be an integer
-        or an existing Ratelimiter object.
-        The BYTE, KIBIBYTE, etc constants from module 'bytestring' may help.
+        Passed into each `copy_file` as `bytes_per_second`.
 
     callback_directory_progress:
         This function will be called after each file copy with three arguments:
@@ -136,12 +134,10 @@ def copy_dir(
         Passed directly into `walk_generator`.
 
     callback_file_progress:
-        Will be passed into each individual `copy_file` operation as the
-        `callback_progress` for that file.
+        Passed into each `copy_file` as `callback_progress`.
 
     callback_permission_denied:
-        Will be passed into each individual `copy_file` operation as the
-        `callback_permission_denied` for that file.
+        Passed into each `copy_file` as `callback_permission_denied`.
 
     callback_pre_directory:
         This function will be called before each directory and subdirectory
@@ -154,8 +150,7 @@ def copy_dir(
         the current file and then stop.
 
     callback_pre_file:
-        Will be passed into each individual `copy_file` operation as the
-        `callback_pre_copy` for that file.
+        Passed into each `copy_file` as `callback_pre_copy`.
 
     destination_new_root:
         Determine the destination path by calling
@@ -178,8 +173,7 @@ def copy_dir(
         usage low.
 
     overwrite_old:
-        If True, overwrite the destination file if the source file
-        has a more recent "last modified" timestamp.
+        Passed into each `copy_file` as `overwrite_old`.
 
     precalcsize:
         If True, calculate the size of source before beginning the copy.
@@ -352,9 +346,9 @@ def copy_file(
         Thus, this path acts as a root and the rest of the path is matched.
 
     bytes_per_second:
-        Restrict file copying to this many bytes per second. Can be an integer
-        or an existing Ratelimiter object.
-        The provided BYTE, KIBIBYTE, etc constants may help.
+        Restrict file copying to this many bytes per second. Can be an integer,
+        an existing Ratelimiter object, or a string parseable by bytestring.
+        The bytestring BYTE, KIBIBYTE, etc constants may help.
 
     callback_permission_denied:
         If provided, this function will be called when a source file denies
@@ -385,6 +379,7 @@ def copy_file(
     overwrite_old:
         If True, overwrite the destination file if the source file
         has a more recent "last modified" timestamp.
+        If False, existing files will be skipped no matter what.
 
     validate_hash:
         If True, verify the file hash of the resulting file, using the
