@@ -41,6 +41,11 @@ UNIT_STRINGS = {
 REVERSED_UNIT_STRINGS = {value: key for (key, value) in UNIT_STRINGS.items()}
 UNIT_SIZES = sorted(UNIT_STRINGS.keys(), reverse=True)
 
+class BytestringException(Exception):
+    pass
+
+class ParseError(BytestringException, ValueError):
+    pass
 
 def bytestring(size, decimal_places=3, force_unit=None):
     '''
@@ -108,7 +113,7 @@ def normalize_unit_string(string):
         unit_string_l = unit_string.lower()
         if string in (unit_string_l, unit_string_l[0], unit_string_l.replace('i', '')):
             return unit_string
-    raise ValueError(f'Unrecognized unit string "{string}".')
+    raise ParseError(f'Unrecognized unit string "{string}".')
 
 def parsebytes(string):
     '''
@@ -120,20 +125,26 @@ def parsebytes(string):
 
     matches = re.findall(r'[\d\.-]+', string)
     if len(matches) == 0:
-        raise ValueError('No numbers found.')
+        raise ParseError('No numbers found.')
     if len(matches) > 1:
-        raise ValueError('Too many numbers found.')
+        raise ParseError('Too many numbers found.')
     number = matches[0]
 
     if not string.startswith(number):
-        raise ValueError('Number is not at start of string.')
+        raise ParseError('Number is not at start of string.')
 
-    # if the string has no text besides the number, return that int of bytes.
-    unit_string = string.replace(number, '')
+    number_string = number
+
+    try:
+        number = float(number)
+    except ValueError as exc:
+        raise ParseError(number) from exc
+
+    # if the string has no text besides the number, treat it as int of bytes.
+    unit_string = string.replace(number_string, '')
     if unit_string == '':
-        return int(float(number))
+        return int(number)
 
-    number = float(number)
     unit_string = normalize_unit_string(unit_string)
     multiplier = REVERSED_UNIT_STRINGS[unit_string]
 
