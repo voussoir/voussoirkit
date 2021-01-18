@@ -569,14 +569,19 @@ def is_xor(*args):
     return [bool(a) for a in args].count(True) == 1
 
 def limiter_or_none(value):
+    if isinstance(value, ratelimiter.Ratelimiter):
+        return value
+
+    if value is None:
+        return None
+
     if isinstance(value, str):
         value = bytestring.parsebytes(value)
-    if isinstance(value, ratelimiter.Ratelimiter):
-        limiter = value
-    elif value is not None:
-        limiter = ratelimiter.Ratelimiter(allowance=value, period=1)
-    else:
-        limiter = None
+
+    if not isinstance(value, (int, float)):
+        raise TypeError(type(value))
+
+    limiter = ratelimiter.Ratelimiter(allowance=value, period=1)
     return limiter
 
 def new_root(filepath, root):
