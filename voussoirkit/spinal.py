@@ -272,10 +272,12 @@ def copy_dir(
                 destination.absolute_path,
                 1
             ))
+
             if callback_pre_directory(directory, destination_dir, dry_run=dry_run) is BAIL:
                 continue
-            destination_files = (destination_dir.with_child(file.basename) for file in files)
-            for (source_file, destination_file) in zip(files, destination_files):
+
+            for source_file in files:
+                destination_file = destination_dir.with_child(source_file.basename)
                 yield (source_file, destination_file)
 
     walker = denester(walker)
