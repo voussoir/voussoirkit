@@ -1,3 +1,17 @@
+'''
+This module provides functions for making your program easy to pipe to and from
+via the command line.
+
+Pipeable expects a little bit of buy-in with respect to the !i and !c strings.
+In traditional unix tools, reading from stdin is sometimes enabled
+automatically when the program detects its input is a pipe instead of a
+keyboard, sometimes enabled by passing "-" to the argument that would otherwise
+read a file, and sometimes implied by a lack of arguments. Following Python's
+philosophy of explicit is better than implicit, I prefer using a consistent
+argparser and letting !i indicate stdin. This also means you can write programs
+where any of the arguments might be !i, unlike most traditional unix tools where
+only the primary data sink reads stdin.
+'''
 # import pyperclip moved to stay lazy.
 import os
 import sys
