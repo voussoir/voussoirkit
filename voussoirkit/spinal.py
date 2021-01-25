@@ -4,17 +4,16 @@ import os
 import shutil
 import sys
 
-# pip install voussoirkit
 from voussoirkit import bytestring
 from voussoirkit import dotdict
 from voussoirkit import pathclass
 from voussoirkit import ratelimiter
 from voussoirkit import sentinel
+from voussoirkit import vlogging
+
+log = vlogging.getLogger(__name__)
 
 BAIL = sentinel.Sentinel('BAIL')
-
-logging.basicConfig(level=logging.CRITICAL)
-log = logging.getLogger(__name__)
 
 # Number of bytes to read and write at a time
 CHUNK_SIZE = 2 * bytestring.MIBIBYTE
@@ -516,7 +515,7 @@ def copy_file(
     source_handle.close()
     log.debug('Closing dest handle.')
     destination_handle.close()
-    log.debug('Copying metadata')
+    log.debug('Copying metadata.')
     shutil.copystat(source.absolute_path, destination.absolute_path)
 
     if validate_hash:
