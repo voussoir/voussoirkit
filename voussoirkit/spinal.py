@@ -345,7 +345,7 @@ def copy_file(
 
     callback_permission_denied:
         If provided, this function will be called when a source file denies
-        read access, with the file path and the exception object as parameters.
+        read access, with the exception object as the only argument.
         THE OPERATION WILL RETURN NORMALLY.
 
         If not provided, the PermissionError is raised.
@@ -363,8 +363,8 @@ def copy_file(
         the Path object being copied, number of bytes written so far,
         total number of bytes needed.
 
-    callback_validate_hash:
-        Passed directly into `verify_hash`
+    callback_hash_progress:
+        Passed into `hash_file` as callback_progress when validating the hash.
 
     dry_run:
         Do everything except the actual file copying.
@@ -448,7 +448,7 @@ def copy_file(
             return handle
         except PermissionError as exception:
             if callback_permission_denied is not None:
-                callback_permission_denied(path, exception)
+                callback_permission_denied(exception)
                 return None
             else:
                 raise
@@ -476,10 +476,11 @@ def copy_file(
             data_chunk = source_handle.read(chunk_size)
         except PermissionError as exception:
             if callback_permission_denied is not None:
-                callback_permission_denied(source, exception)
+                callback_permission_denied(exception)
                 return results
             else:
                 raise
+
         data_bytes = len(data_chunk)
         if data_bytes == 0:
             break
@@ -510,7 +511,7 @@ def copy_file(
     if validate_hash:
         verify_hash(
             destination,
-            callback_progress=callback_validate_hash,
+            callback_progress=callback_hash_progress,
             hash_class=hash_class,
             known_hash=results.hash.hexdigest(),
             known_size=source_bytes,
@@ -654,6 +655,10 @@ def walk_generator(
     '''
     Yield Path objects for files in the file tree, similar to os.walk.
 
+    callback_permission_denied:
+        Passed directly into os.walk as onerror. If OSErrors (Permission Denied)
+        occur when trying to list a directory, your function will be called with
+        the exception object as the only argument.
     exclude_filenames:
         A set of filenames that will not be copied. Entries can be absolute
         paths to exclude that particular file, or plain names to exclude
@@ -693,9 +698,6 @@ def walk_generator(
         exclude_filenames = set()
 
     callback_permission_denied = callback_permission_denied or do_nothing
-    _callback_permission_denied = callback_permission_denied
-    def callback_permission_denied(error):
-        return _callback_permission_denied(error.filename, error)
 
     exclude_filenames = {normalize(f) for f in exclude_filenames}
     exclude_directories = {normalize(f) for f in exclude_directories}
