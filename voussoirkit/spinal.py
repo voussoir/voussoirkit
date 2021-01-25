@@ -382,8 +382,9 @@ def copy_file(
         Do everything except the actual file copying.
 
     hash_class:
-        If provided, should be a hashlib class. The hash will be computed while
-        the file is being copied, and returned in the dotdict as `hash`.
+        If provided, should be a hashlib class or a callable that returns an
+        instance of one. The hash will be computed while the file is being
+        copied, and returned in the dotdict as `hash`.
         Note that if the function returns early due to dry_run or file not
         needing overwrite, this won't be set, so be prepared to handle None.
         If None, the hash will not be calculated.
@@ -553,7 +554,7 @@ def get_dir_size(path):
 
 def hash_file(
         path,
-        hash_class=HASH_CLASS,
+        hash_class,
         *,
         callback_progress=None,
         chunk_size=CHUNK_SIZE,
@@ -580,7 +581,7 @@ def hash_file(
             checked_bytes += len(chunk)
             callback_progress(path, checked_bytes, file_size)
 
-    return hasher.hexdigest()
+    return hasher
 
 def is_xor(*args):
     '''
@@ -628,6 +629,7 @@ def normalize(text):
 
 def verify_hash(
         path,
+        hash_class,
         known_hash,
         *,
         known_size=None,
@@ -641,7 +643,7 @@ def verify_hash(
         if file_size != known_size:
             raise ValidationError(f'File size {file_size} != known size {known_size}.')
 
-    file_hash = hash_file(path, **hash_kwargs)
+    file_hash = hash_file(path, hash_class=hash_class, **hash_kwargs).hexdigest()
     if file_hash != known_hash:
         raise ValidationError(f'File hash "{file_hash}" != known hash "{known_hash}".')
     log.debug('Hash validation passed.')
