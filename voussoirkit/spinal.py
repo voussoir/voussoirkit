@@ -546,10 +546,14 @@ def hash_file(
         path,
         hash_class,
         *,
+        bytes_per_second=None,
         callback_progress=None,
         chunk_size=CHUNK_SIZE,
     ):
     '''
+    hash_class:
+        Should be a hashlib class or a callable that returns an instance of one.
+
     callback_progress:
         A function that takes three parameters:
         path object, bytes ingested so far, bytes total
@@ -557,10 +561,12 @@ def hash_file(
     path = pathclass.Path(path)
     path.assert_is_file()
     hasher = hash_class()
+
+    bytes_per_second = limiter_or_none(bytes_per_second)
+    callback_progress = callback_progress or do_nothing
+
     checked_bytes = 0
     file_size = path.size
-
-    callback_progress = callback_progress or do_nothing
 
     handle = path.open('rb')
     with handle:
@@ -568,9 +574,15 @@ def hash_file(
             chunk = handle.read(chunk_size)
             if not chunk:
                 break
+
+            this_size = len(chunk)
             hasher.update(chunk)
-            checked_bytes += len(chunk)
+
+            checked_bytes += this_size
             callback_progress(path, checked_bytes, file_size)
+
+            if bytes_per_second is not None:
+                bytes_per_second.limit(this_size)
 
     return hasher
 
