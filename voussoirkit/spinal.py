@@ -44,12 +44,6 @@ class SpinalError(SpinalException):
 class ValidationError(SpinalException):
     pass
 
-def callback_exclusion_v1(name, path_type):
-    '''
-    Example of an exclusion callback function.
-    '''
-    print('Excluding', path_type, name)
-
 def callback_progress_v1(fpobj, written_bytes, total_bytes):
     '''
     Example of a copy callback function.
@@ -92,7 +86,6 @@ def copy_dir(
         *,
         bytes_per_second=None,
         callback_directory_progress=None,
-        callback_exclusion=None,
         callback_file_progress=None,
         callback_permission_denied=None,
         callback_pre_directory=None,
@@ -129,9 +122,6 @@ def copy_dir(
         so far, total bytes needed (based on precalcsize).
         If `precalcsize` is False, this function will receive written bytes
         for both written and total, showing 100% always.
-
-    callback_exclusion:
-        Passed directly into `walk_generator`.
 
     callback_file_progress:
         Passed into each `copy_file` as `callback_progress`.
@@ -235,7 +225,6 @@ def copy_dir(
     # Copy
     walker = walk_generator(
         source,
-        callback_exclusion=callback_exclusion,
         exclude_directories=exclude_directories,
         exclude_filenames=exclude_filenames,
         yield_style='nested',
@@ -654,7 +643,6 @@ def verify_hash(
 def walk_generator(
         path='.',
         *,
-        callback_exclusion=None,
         callback_permission_denied=None,
         exclude_directories=None,
         exclude_filenames=None,
@@ -665,10 +653,6 @@ def walk_generator(
     ):
     '''
     Yield Path objects for files in the file tree, similar to os.walk.
-
-    callback_exclusion:
-        This function will be called when a file or directory is excluded with
-        two parameters: the path, and 'file' or 'directory'.
 
     exclude_filenames:
         A set of filenames that will not be copied. Entries can be absolute
@@ -708,7 +692,6 @@ def walk_generator(
     if exclude_filenames is None:
         exclude_filenames = set()
 
-    callback_exclusion = callback_exclusion or do_nothing
     callback_permission_denied = callback_permission_denied or do_nothing
     _callback_permission_denied = callback_permission_denied
     def callback_permission_denied(error):
@@ -726,7 +709,6 @@ def walk_generator(
     )
 
     if exclude:
-        callback_exclusion(path, 'directory')
         return
 
     def handle_exclusion(blacklist, basename, abspath, kind):
@@ -735,7 +717,6 @@ def walk_generator(
             normalize(abspath) in blacklist
         )
         if exclude:
-            callback_exclusion(abspath, kind)
             return 1
 
     # In the following loops, I found joining the os.sep with fstrings to be
