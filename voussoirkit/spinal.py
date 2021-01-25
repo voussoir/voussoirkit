@@ -501,10 +501,10 @@ def copy_file(
         destination_handle.write(data_chunk)
         results.written_bytes += data_bytes
 
+        callback_progress(destination, results.written_bytes, source_bytes)
+
         if bytes_per_second is not None:
             bytes_per_second.limit(data_bytes)
-
-        callback_progress(destination, results.written_bytes, source_bytes)
 
     if results.written_bytes == 0:
         # For zero-length files, we want to get at least one call in there.
