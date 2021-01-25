@@ -9,6 +9,7 @@ from voussoirkit import dotdict
 from voussoirkit import pathclass
 from voussoirkit import ratelimiter
 from voussoirkit import sentinel
+from voussoirkit import winglob
 from voussoirkit import vlogging
 
 log = vlogging.getLogger(__name__)
@@ -153,10 +154,10 @@ def copy_dir(
         Do everything except the actual file copying.
 
     exclude_filenames:
-        Passed directly into `walk_generator`.
+        Passed directly into `walk`.
 
     exclude_directories:
-        Passed directly into `walk_generator`.
+        Passed directly into `walk`.
 
     files_per_second:
         Maximum number of files to be processed per second. Helps to keep CPU
@@ -223,7 +224,7 @@ def copy_dir(
     files_per_second = limiter_or_none(files_per_second)
 
     # Copy
-    walker = walk_generator(
+    walker = walk(
         source,
         exclude_directories=exclude_directories,
         exclude_filenames=exclude_filenames,
@@ -536,7 +537,7 @@ def get_dir_size(path):
         raise SourceNotDirectory(path)
 
     total_bytes = 0
-    for filepath in walk_generator(path):
+    for filepath in walk(path):
         total_bytes += filepath.size
 
     return total_bytes
@@ -641,49 +642,60 @@ def verify_hash(
 
     log.debug('Hash validation passed.')
 
-def walk_generator(
+def walk(
         path='.',
         *,
         callback_permission_denied=None,
         exclude_directories=None,
         exclude_filenames=None,
+        glob_directories=None,
+        glob_filenames=None,
         recurse=True,
         yield_directories=False,
         yield_files=True,
         yield_style='flat',
     ):
     '''
-    Yield Path objects for files in the file tree, similar to os.walk.
+    Yield pathclass.Path objects for files in the tree, similar to os.walk.
 
     callback_permission_denied:
         Passed directly into os.walk as onerror. If OSErrors (Permission Denied)
         occur when trying to list a directory, your function will be called with
         the exception object as the only argument.
-    exclude_filenames:
-        A set of filenames that will not be copied. Entries can be absolute
-        paths to exclude that particular file, or plain names to exclude
-        all matches. For example:
-        {'C:\\folder\\file.txt', 'desktop.ini'}
 
     exclude_directories:
-        A set of directories that will not be copied. Entries can be
-        absolute paths to exclude that particular directory, or plain names
-        to exclude all matches. For example:
-        {'C:\\folder', 'thumbnails'}
+        A set of directories that will not be yielded. Members can be absolute
+        paths, glob patterns, or just plain names.
+        For example: {'C:\\folder', '*_small', 'thumbnails'}
+
+    exclude_filenames:
+        A set of filenames that will not be yielded. Members can be absolute
+        paths, glob patterns, or just plain names.
+        For example: {'C:\\folder\\file.txt', '*.temp', 'desktop.ini'}
+
+    glob_directories:
+        A set of glob patterns. Directories will only be yielded if they match
+        at least one of these patterns.
+
+    glob_filenames:
+        A set of glob patterns. Filenames will only be yielded if they match
+        at least one of these patterns.
 
     recurse:
         Yield from subdirectories. If False, only immediate files are returned.
 
     yield_directories:
-        Should the generator produce directories? Has no effect in nested yield style.
+        Should the generator produce directories? True or False.
+        Has no effect in nested yield style.
 
     yield_files:
-        Should the generator produce files? Has no effect in nested yield style.
+        Should the generator produce files? True or False.
+        Has no effect in nested yield style.
 
     yield_style:
-        If 'flat', yield individual files one by one in a constant stream.
+        If 'flat', yield individual files and directories one by one.
         If 'nested', yield tuple(root, directories, files) like os.walk does,
-            except I use Path objects with absolute paths for everything.
+            except using pathclass.Path objects for everything.
     '''
     if not yield_directories and not yield_files:
         raise ValueError('yield_directories and yield_files cannot both be False.')
@@ -691,35 +703,46 @@ def walk_generator(
     if yield_style not in ['flat', 'nested']:
         raise ValueError(f'yield_style should be "flat" or "nested", not {yield_style}.')
 
-    if exclude_directories is None:
-        exclude_directories = set()
-
-    if exclude_filenames is None:
-        exclude_filenames = set()
-
     callback_permission_denied = callback_permission_denied or do_nothing
 
-    exclude_filenames = {normalize(f) for f in exclude_filenames}
-    exclude_directories = {normalize(f) for f in exclude_directories}
+    if exclude_filenames is not None:
+        exclude_filenames = {normalize(f) for f in exclude_filenames}
+
+    if exclude_directories is not None:
+        exclude_directories = {normalize(f) for f in exclude_directories}
+
+    if glob_filenames is not None:
+        glob_filenames = set(glob_filenames)
+
+    if glob_directories is not None:
+        glob_directories = set(glob_directories)
 
     path = pathclass.Path(path)
     path.correct_case()
 
-    exclude = (
-        normalize(path.basename) in exclude_directories or
-        normalize(path.absolute_path) in exclude_directories
-    )
+    def handle_exclusion(whitelist, blacklist, basename, abspath):
+        exclude = False
 
-    if exclude:
+        if whitelist is not None and not exclude:
+            exclude = not any(winglob.fnmatch(basename, whitelisted) for whitelisted in whitelist)
+
+        if blacklist is not None and not exclude:
+            n_basename = normalize(basename)
+            n_abspath = normalize(abspath)
+
+            exclude = any(
+                n_basename == blacklisted or
+                n_abspath == blacklisted or
+                winglob.fnmatch(n_basename, blacklisted)
+                for blacklisted in blacklist
+            )
+
+        return exclude
+
+    # If for some reason the given starting directory is excluded by the
+    # exclude parameters.
+    if handle_exclusion(glob_directories, exclude_directories, path.basename, path.absolute_path):
         return
-
-    def handle_exclusion(blacklist, basename, abspath, kind):
-        exclude = (
-            normalize(basename) in blacklist or
-            normalize(abspath) in blacklist
-        )
-        if exclude:
-            return 1
 
     # In the following loops, I found joining the os.sep with fstrings to be
     # 10x faster than `os.path.join`, reducing a 6.75 second walk to 5.7.
@@ -731,7 +754,7 @@ def walk_generator(
         new_child_dirs = []
         for child_dir in child_dirs:
             child_dir_abspath = f'{current_location}{os.sep}{child_dir}'
-            if handle_exclusion(exclude_directories, child_dir, child_dir_abspath, 'directory'):
+            if handle_exclusion(glob_directories, exclude_directories, child_dir, child_dir_abspath):
                 continue
 
             new_child_dirs.append(child_dir)
@@ -743,7 +766,7 @@ def walk_generator(
         files = []
         for child_file in child_files:
             child_file_abspath = f'{current_location}{os.sep}{child_file}'
-            if handle_exclusion(exclude_filenames, child_file, child_file_abspath, 'file'):
+            if handle_exclusion(glob_filenames, exclude_filenames, child_file, child_file_abspath):
                 continue
 
             files.append(pathclass.Path(child_file_abspath))
@@ -755,7 +778,7 @@ def walk_generator(
         new_child_dirs = []
         for child_dir in child_dirs:
             child_dir_abspath = f'{current_location}{os.sep}{child_dir}'
-            if handle_exclusion(exclude_directories, child_dir, child_dir_abspath, 'directory'):
+            if handle_exclusion(glob_directories, exclude_directories, child_dir, child_dir_abspath):
                 continue
 
             new_child_dirs.append(child_dir)
@@ -768,20 +791,21 @@ def walk_generator(
         if yield_files:
             for child_file in child_files:
                 child_file_abspath = f'{current_location}{os.sep}{child_file}'
-                if handle_exclusion(exclude_filenames, child_file, child_file_abspath, 'file'):
+                if handle_exclusion(glob_filenames, exclude_filenames, child_file, child_file_abspath):
                     continue
 
                 yield pathclass.Path(child_file_abspath)
 
     walker = os.walk(path.absolute_path, onerror=callback_permission_denied, followlinks=True)
     if yield_style == 'flat':
-        for step in walker:
-            yield from walkstep_flat(*step)
-            if not recurse:
-                break
-
+        my_stepper = walkstep_flat
     if yield_style == 'nested':
-        for step in walker:
-            yield from walkstep_nested(*step)
-            if not recurse:
-                break
+        my_stepper = walkstep_nested
+
+    for step in walker:
+        yield from my_stepper(*step)
+        if not recurse:
+            break
+
+# Backwards compatibility
+walk_generator = walk
