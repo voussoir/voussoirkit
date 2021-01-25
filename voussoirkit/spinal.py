@@ -564,9 +564,10 @@ def hash_file(
         path object, bytes ingested so far, bytes total
     '''
     path = pathclass.Path(path)
+    path.assert_is_file()
     hasher = hash_class()
     checked_bytes = 0
-    file_size = os.path.getsize(path.absolute_path)
+    file_size = path.size
 
     callback_progress = callback_progress or do_nothing
 
@@ -635,16 +636,19 @@ def verify_hash(
         **hash_kwargs,
     ):
     path = pathclass.Path(path)
+    path.assert_is_file()
+
     log.debug('Validating hash for "%s" against %s.', path.absolute_path, known_hash)
 
     if known_size is not None:
-        file_size = os.path.getsize(path.absolute_path)
+        file_size = path.size
         if file_size != known_size:
             raise ValidationError(f'File size {file_size} != known size {known_size}.')
 
     file_hash = hash_file(path, hash_class=hash_class, **hash_kwargs).hexdigest()
     if file_hash != known_hash:
         raise ValidationError(f'File hash "{file_hash}" != known hash "{known_hash}".')
+
     log.debug('Hash validation passed.')
 
 def walk_generator(
