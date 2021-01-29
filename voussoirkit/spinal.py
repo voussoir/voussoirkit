@@ -10,8 +10,8 @@ from voussoirkit import pathclass
 from voussoirkit import ratelimiter
 from voussoirkit import safeprint
 from voussoirkit import sentinel
-from voussoirkit import winglob
 from voussoirkit import vlogging
+from voussoirkit import winglob
 
 log = vlogging.getLogger(__name__)
 
