@@ -8,8 +8,15 @@ _getLogger = getLogger
 
 LOUD = 1
 
-def getLogger(*args, **kwargs):
-    log = _getLogger(*args, **kwargs)
+def getLogger(name=None, main_fallback=None):
+    # Normally it is best practice to use getLogger(__name__), but when running
+    # a script directly you'll see "__main__" in the output, which I think is
+    # ugly and unexpected for anyone who doesn't know what's going on behind
+    # the scenes. But hardcoding your logger name is not good either.
+    # So, main_fallback is used to present your preferred name in case of main.
+    if name == '__main__' and main_fallback is not None:
+        name = main_fallback
+    log = _getLogger(name)
     add_loud(log)
     return log
 
