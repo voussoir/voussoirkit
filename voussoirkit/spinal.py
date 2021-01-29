@@ -8,6 +8,7 @@ from voussoirkit import bytestring
 from voussoirkit import dotdict
 from voussoirkit import pathclass
 from voussoirkit import ratelimiter
+from voussoirkit import safeprint
 from voussoirkit import sentinel
 from voussoirkit import winglob
 from voussoirkit import vlogging
@@ -51,7 +52,6 @@ def callback_progress_v1(fpobj, written_bytes, total_bytes):
 
     Prints "filename written/total (percent%)"
     '''
-    filename = fpobj.absolute_path.encode('ascii', 'replace').decode()
     if written_bytes >= total_bytes:
         ends = '\r\n'
     else:
@@ -61,9 +61,8 @@ def callback_progress_v1(fpobj, written_bytes, total_bytes):
     written = '{:,}'.format(written_bytes)
     total = '{:,}'.format(total_bytes)
     written = written.rjust(len(total), ' ')
-    status = '{filename} {written}/{total} ({percent}%)\r'
-    status = status.format(filename=filename, written=written, total=total, percent=percent)
-    print(status, end=ends)
+    status = f'{fpobj.absolute_path} {written}/{total} ({percent}%)\r'
+    safeprint.safeprint(status, end=ends)
     sys.stdout.flush()
 
 def copy(source, file_args=None, file_kwargs=None, dir_args=None, dir_kwargs=None):
