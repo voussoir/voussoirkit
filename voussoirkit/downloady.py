@@ -11,6 +11,9 @@ from voussoirkit import dotdict
 from voussoirkit import pathclass
 from voussoirkit import ratelimiter
 from voussoirkit import safeprint
+from voussoirkit import vlogging
+
+log = vlogging.getLogger(__name__, 'downloady')
 
 warnings.simplefilter('ignore')
 
@@ -60,16 +63,19 @@ def download_file(
     url = sanitize_url(url)
     if localname in [None, '']:
         localname = basename_from_url(url)
-    if os.path.isdir(localname):
-        localname = os.path.join(localname, basename_from_url(url))
+
+    localname = pathclass.Path(localname)
+    if localname.is_dir:
+        localname = localname.with_child(basename_from_url(url))
+
+    localname = localname.absolute_path
     localname = sanitize_filename(localname)
 
     if not is_special_file(localname):
         localname = os.path.abspath(localname)
 
-    if verbose:
-        safeprint.safeprint(f' URL: {url}')
-        safeprint.safeprint(f'File: {localname}')
+    log.debug('URL: %s', url)
+    log.debug('File: %s', localname)
 
     plan = prepare_plan(
         url,
@@ -182,7 +188,7 @@ def prepare_plan(
     real_exists = os.path.exists(real_localname)
 
     if real_exists and overwrite is False and not user_provided_range:
-        print('File exists and overwrite is off. Nothing to do.')
+        log.debug('File exists and overwrite is off. Nothing to do.')
         return None
 
     temp_exists = os.path.exists(temp_localname)
@@ -286,7 +292,7 @@ def prepare_plan(
             return plan_partial
 
         if server_respects_range:
-            print('Resume from byte %d' % plan_resume.seek_to)
+            log.info('Resume from byte %d' % plan_resume.seek_to)
             return plan_resume
 
     else:
@@ -467,6 +473,7 @@ def download_argparse(args):
 
 
 def main(argv):
+    argv = vlogging.set_level_by_argv(log, argv)
     parser = argparse.ArgumentParser()
 
     parser.add_argument('url')
