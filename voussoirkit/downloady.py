@@ -64,15 +64,13 @@ def download_file(
     if localname in [None, '']:
         localname = basename_from_url(url)
 
-    localname = pathclass.Path(localname)
-    if localname.is_dir:
-        localname = localname.with_child(basename_from_url(url))
-
-    localname = localname.absolute_path
-    localname = sanitize_filename(localname)
-
     if not is_special_file(localname):
-        localname = os.path.abspath(localname)
+        localname = pathclass.Path(localname)
+        if localname.is_dir:
+            localname = localname.with_child(basename_from_url(url))
+
+        localname = localname.absolute_path
+        localname = sanitize_filename(localname)
 
     log.debug('URL: %s', url)
     log.debug('File: %s', localname)
@@ -100,7 +98,8 @@ def download_plan(plan):
     temp_localname = plan.download_into
     real_localname = plan.real_localname
     directory = os.path.split(temp_localname)[0]
-    if directory != '':
+
+    if directory != '' and not is_special_file(temp_localname):
         os.makedirs(directory, exist_ok=True)
 
     if not is_special_file(temp_localname):
