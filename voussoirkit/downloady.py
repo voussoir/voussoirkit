@@ -378,8 +378,9 @@ def get_permission(prompt='y/n\n>', affirmative=['y', 'yes']):
     permission = input(prompt)
     return permission.lower() in affirmative
 
-def is_special_file(filename):
-    return os.path.normcase(filename) in SPECIAL_FILENAMES
+def is_special_file(file):
+    file = pathclass.Path(file)
+    return os.path.normcase(file.basename) in SPECIAL_FILENAMES
 
 def request(method, url, stream=False, headers=None, timeout=TIMEOUT, verify_ssl=True, **kwargs):
     if headers is None:
