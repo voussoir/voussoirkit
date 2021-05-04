@@ -1,5 +1,7 @@
+import argparse
 import datetime
 import re
+import sys
 import time
 
 EPOCH = datetime.datetime(
@@ -28,6 +30,7 @@ def strftime(format, tpl=None):
         r'%y': '93',
     }
     for (key, value) in changes.items():
+        # This regex prevents us from ruining %%a which should be literal %a.
         key = r'(?<!%)' + key
         format = re.sub(key, value, format)
 
@@ -36,5 +39,17 @@ def strftime(format, tpl=None):
     else:
         return time.strftime(format)
 
+def eternalseptember_argparse(args):
+    print(strftime(args.format))
+
+def main(argv):
+    parser = argparse.ArgumentParser(description=__doc__)
+
+    parser.add_argument('--format', default='%Y-%m-%d %H:%M:%S')
+    parser.set_defaults(func=eternalseptember_argparse)
+
+    args = parser.parse_args(argv)
+    return args.func(args)
+
 if __name__ == '__main__':
-    print(strftime('%Y-%m-%d %H:%M:%S'))
+    raise SystemExit(main(sys.argv[1:]))
