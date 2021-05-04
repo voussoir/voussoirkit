@@ -1,10 +1,29 @@
 '''
+bytestring
+==========
+
 This module provides integer constants for power-of-two byte size units, and
-functions for converting between ints and human-readable strings e.g. "1.2 GiB".
+functions for converting between ints and human-readable strings. E.g.:
+bytestring.bytestring(5000000) -> '4.768 MiB'
+bytestring.parsebytes('8.5gb') -> 9126805504
+
+Commandline usage:
+
+> bytestring number1 [number2 number3...]
+
+number:
+    An integer. Uses pipeable to support !c clipboard, !i stdin, which should
+    be one number per line.
+
+Examples:
+> bytestring 12345 89989
+> some_process | bytestring !i
 '''
+import argparse
 import re
 import sys
 
+from voussoirkit import betterhelp
 from voussoirkit import pipeable
 
 BYTE = 1
@@ -150,10 +169,23 @@ def parsebytes(string):
 
     return int(number * multiplier)
 
+def bytestring_argparse(args):
+    numbers = pipeable.input_many(args.numbers)
+    for number in numbers:
+        try:
+            number = int(number)
+        except ValueError:
+            pipeable.stderr(f'bytestring: Each number should be an integer, not {number}.')
+            return 1
+        pipeable.stdout(bytestring(number))
+
 def main(argv):
-    for line in pipeable.go(argv, strip=True, skip_blank=True):
-        n = int(line)
-        pipeable.output(bytestring(n))
+    parser = argparse.ArgumentParser(description=__doc__)
+
+    parser.add_argument('numbers', nargs='+')
+    parser.set_defaults(func=bytestring_argparse)
+
+    return betterhelp.single_main(argv, parser, __doc__)
 
 if __name__ == '__main__':
     raise SystemExit(main(sys.argv[1:]))
