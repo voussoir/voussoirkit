@@ -18,6 +18,7 @@ calling end. For example, `bo.next() + (random.random() - 0.5)`.
 '''
 class Backoff:
     def __init__(self, max):
+        self.x = 0
         if max is None:
             pass
         elif max <= 0:
@@ -49,7 +50,6 @@ class Exponential(Backoff):
     '''
     def __init__(self, a, b, *, max):
         super().__init__(max)
-        self.x = 0
         self.a = a
         self.b = b
         self.max = max
@@ -63,7 +63,6 @@ class Linear(Backoff):
     '''
     def __init__(self, m, b, *, max):
         super().__init__(max)
-        self.x = 0
         self.m = m
         self.b = b
         self.max = max
@@ -77,7 +76,6 @@ class Quadratic(Backoff):
     '''
     def __init__(self, a, b, c, *, max):
         super().__init__(max)
-        self.x = 0
         self.a = a
         self.b = b
         self.c = c
