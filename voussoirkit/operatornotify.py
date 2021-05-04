@@ -1,4 +1,4 @@
-DOCSTRING = '''
+'''
 operatornotify
 ==============
 
@@ -74,7 +74,7 @@ def main(argv):
     parser.add_argument('--body', default='')
     parser.set_defaults(func=operatornotify_argparse)
 
-    return betterhelp.single_main(argv, parser, DOCSTRING)
+    return betterhelp.single_main(argv, parser, __doc__)
 
 if __name__ == '__main__':
     raise SystemExit(main(sys.argv[1:]))
