@@ -26,21 +26,34 @@ class Backoff:
         self.max = max
 
     def current(self):
+        '''
+        Return the current backoff value without advancing.
+        '''
         y = self._calc()
         if self.max is not None:
             y = min(y, self.max)
         return y
 
     def next(self):
+        '''
+        Return the current backoff value, then advance x.
+        '''
         y = self.current()
         self.x += 1
         return y
 
-    def rewind(self, steps):
-        self.x = max(0, self.x - steps)
-
     def reset(self):
+        '''
+        Reset x to 0.
+        '''
         self.x = 0
+
+    def rewind(self, steps):
+        '''
+        Subtract this many steps from x, to ease up the backoff without
+        entirely resetting.
+        '''
+        self.x = max(0, self.x - steps)
 
 ####################################################################################################
 
