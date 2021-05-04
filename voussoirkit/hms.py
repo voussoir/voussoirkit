@@ -46,7 +46,7 @@ def main(args):
             if line > 60:
                 line = seconds_to_hms(line)
 
-        pipeable.output(f'{line}')
+        pipeable.stdout(f'{line}')
 
 if __name__ == '__main__':
     raise SystemExit(main(sys.argv[1:]))
