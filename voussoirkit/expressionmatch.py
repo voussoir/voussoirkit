@@ -1,17 +1,39 @@
-ESCAPE_SEQUENCES = {
-    '\\': '\\',
-    '"': '"',
-}
+'''
+This module provides the ExpressionTree class, which parses a query expression
+like "a AND (b OR c)" and then evaluates whether an input satisfies the query.
+
+Basic usage:
+tree = expressionmatch.ExpressionTree.parse('a AND (b OR c)')
+tree.evaluate('a b')
+tree.evaluate('a c')
+tree.evaluate('b c')
+
+The available operators are:
+a AND b
+a OR b
+a XOR b
+NOT a
+
+where a and b can be single tokens or a parenthesized group of tokens.
+
+The operators must be capitalized as seen and can be enclosed in quotes if you
+need to literally match the word "AND", etc.
+
+If the tokens contain spaces, they must be enclosed in quotation marks:
+tree = expressionmatch.ExpressionTree.parse('"mark hamill" OR "harrison ford"')
+'''
+from voussoirkit import sentinel
 
 BINARY_OPERATORS = {'AND', 'OR', 'XOR'}
 UNARY_OPERATORS = {'NOT'}
 PRECEDENCE = ['NOT', 'AND', 'XOR', 'OR']
 OPERATORS = BINARY_OPERATORS | UNARY_OPERATORS
 
-# Sentinel values used for breaking up the tokens, so we dont' have to use
-# strings '(' and ')' which can get confused with user input.
-PAREN_OPEN = object()
-PAREN_CLOSE = object()
+# These sentinels help the parser distinguish between parens used for token
+# grouping and parens that have been escaped by the user and should remain
+# as strings.
+PAREN_OPEN = sentinel.Sentinel('PAREN_OPEN')
+PAREN_CLOSE = sentinel.Sentinel('PAREN_CLOSE')
 
 DEFAULT_MATCH_FUNCTION = str.__contains__
 
@@ -51,6 +73,11 @@ class NoTokens(Exception):
 
 class ExpressionTree:
     def __init__(self, token, parent=None):
+        '''
+        This constructor is for each individual node of the tree.
+        End-users should probably call ExpressionTree.parse instead of this
+        constructor.
+        '''
         self.children = []
         self.parent = parent
         self.token = token
@@ -92,7 +119,10 @@ class ExpressionTree:
         return s
 
     @classmethod
-    def parse(cls, tokens, spaces=0):
+    def parse(cls, tokens):
+        '''
+        Create an ExpressionTree from the given query string or list of tokens.
+        '''
         if isinstance(tokens, str):
             tokens = tokenize(tokens)
 
@@ -100,13 +130,13 @@ class ExpressionTree:
             raise NoTokens()
 
         if isinstance(tokens[0], list):
-            current = cls.parse(tokens[0], spaces=spaces+1)
+            current = cls.parse(tokens[0])
         else:
             current = cls(token=tokens[0])
 
         for token in tokens[1:]:
             if isinstance(token, list):
-                new = cls.parse(token, spaces=spaces+1)
+                new = cls.parse(token)
             else:
                 new = cls(token=token)
 
@@ -223,6 +253,10 @@ class ExpressionTree:
     def is_leaf(self):
         return self.token not in OPERATORS
 
+    @property
+    def is_root(self):
+        return self.parent is None
+
     def map(self, function):
         '''
         Apply this function to all of the operands.
@@ -260,11 +294,15 @@ class ExpressionTree:
             if node.is_leaf:
                 yield node
 
-
 def implied_tokens(tokens):
     '''
-    1. If two operands are directly next to each other, or an operand is followed
-        by a unary operator, it is implied that there is an AND between them.
+    This function returns a new list of tokens which has all of the implied
+    tokens added explicitly and meaningless tokens removed, by the
+    following rules:
+
+    1. If two operands are directly next to each other, or an operand is
+        followed by a unary operator, it is implied that there is an AND
+        between them.
         '1 2' -> '1 AND 2'
         '1 NOT 2' -> '1 AND NOT 2'
 
@@ -433,10 +471,11 @@ def sublist_tokens(tokens, _from_index=0, depth=0):
 
 def tokenize(expression):
     '''
-    Break the string into a list of  tokens. Spaces are the delimiter unless
+    Break the string into a list of tokens. Spaces are the delimiter unless
     they are inside quotation marks.
 
-    Quotation marks and parentheses can be escaped by preceeding with a backslash '\\'
+    Quotation marks and parentheses can be escaped by preceeding with a
+    backslash '\\'.
 
     Opening and closing parentheses are put into their own token unless
     escaped / quoted.
@@ -498,7 +537,7 @@ if __name__ == '__main__':
         '[sci-fi] OR [pg-13]',
         '([sci-fi] OR [war]) AND [r]',
         '[r] XOR [sci-fi]',
-        '"mark hamill" "harrison ford"',
+        '"[mark hamill]" "[harrison ford]"',
     ]
     teststrings = {
         'Star Wars': '[harrison ford] [george lucas] [sci-fi] [pg] [carrie fisher] [mark hamill] [space]',
@@ -506,12 +545,13 @@ if __name__ == '__main__':
         'Indiana Jones': '[harrison ford] [steven spielberg] [adventure] [pg-13]',
         'Apocalypse Now': '[harrison ford] [francis coppola] [r] [war] [drama]'
     }
-    for token in tests:
-        print('start:', token)
-        token = tokenize(token)
-        print('implied:', token)
-        e = ExpressionTree.parse(token)
-        print('tree:', e)
+    for test in tests:
+        print('start:', test)
+        tokens = tokenize(test)
+        print('implied:', tokens)
+        etree = ExpressionTree.parse(tokens)
+        print('tree:', etree)
+        print(etree.diagram())
         for (name, teststring) in teststrings.items():
-            print('Matches', name, ':', e.evaluate(teststring))
+            print('Matches', name, ':', etree.evaluate(teststring))
         print()
