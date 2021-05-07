@@ -9,11 +9,13 @@ _getLogger = getLogger
 LOUD = 1
 
 def getLogger(name=None, main_fallback=None):
-    # Normally it is best practice to use getLogger(__name__), but when running
-    # a script directly you'll see "__main__" in the output, which I think is
-    # ugly and unexpected for anyone who doesn't know what's going on behind
-    # the scenes. But hardcoding your logger name is not good either.
-    # So, main_fallback is used to present your preferred name in case of main.
+    '''
+    Normally it is best practice to use getLogger(__name__), but when running
+    a script directly you'll see "__main__" in the output, which I think is
+    ugly and unexpected for anyone who doesn't know what's going on behind
+    the scenes. But hardcoding your logger name is not good either.
+    So, main_fallback is used to present your preferred name in case of main.
+    '''
     if name == '__main__' and main_fallback is not None:
         name = main_fallback
     log = _getLogger(name)
@@ -61,6 +63,46 @@ def get_level_by_argv(argv):
         level = INFO
 
     return (level, argv)
+
+def get_level_by_name(name):
+    '''
+    The logging module maintains a private variable _nameToLevel but does not
+    have an official public function for querying it. There is getLevelName,
+    but that function never fails an input, it just returns it back to you as
+    "Level X" for any number X, or indeed any hashable type! The return value
+    of getLevelName isn't accepted by setLevel since setLevel does not parse
+    "Level X" strings, though it does accept exact matches by registered
+    level names.
+
+    Consider this function your alternative, for querying levels by name and
+    getting an integer you can give to setLevel.
+    '''
+    if isinstance(name, int):
+        return name
+
+    if not isinstance(name, str):
+        raise TypeError(f'name should be str, not {type(name)}.')
+
+    name = name.upper()
+
+    levels = {
+        'CRITICAL': CRITICAL,
+        'FATAL': FATAL,
+        'ERROR': ERROR,
+        'WARN': WARNING,
+        'WARNING': WARNING,
+        'INFO': INFO,
+        'DEBUG': DEBUG,
+        'LOUD': LOUD,
+        'NOTSET': NOTSET,
+    }
+
+    value = levels.get(name)
+
+    if value is None:
+        raise ValueError(f'{name} is not a known level.')
+
+    return value
 
 def set_level_by_argv(log, argv):
     '''
