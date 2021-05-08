@@ -90,6 +90,7 @@ def copy_dir(
         callback_permission_denied=None,
         callback_pre_directory=None,
         callback_pre_file=None,
+        callback_post_file=None,
         chunk_size=CHUNK_SIZE,
         destination_new_root=None,
         dry_run=False,
@@ -141,6 +142,12 @@ def copy_dir(
 
     callback_pre_file:
         Passed into each `copy_file` as `callback_pre_copy`.
+
+    callback_post_file:
+        This function will be called after the file finishes copying with one
+        argument: the dotdict returned by copy_file.
+        If you think copy_dir should be rewritten as a generator instead,
+        I agree!
 
     destination_new_root:
         Determine the destination path by calling
@@ -219,6 +226,7 @@ def copy_dir(
     callback_directory_progress = callback_directory_progress or do_nothing
     callback_pre_directory = callback_pre_directory or do_nothing
     callback_pre_file = callback_pre_file or do_nothing
+    callback_post_file = callback_post_file or do_nothing
     bytes_per_second = limiter_or_none(bytes_per_second)
     files_per_second = limiter_or_none(files_per_second)
 
@@ -297,6 +305,8 @@ def copy_dir(
             callback_directory_progress(copied.destination, written_bytes, written_bytes)
         else:
             callback_directory_progress(copied.destination, written_bytes, total_bytes)
+
+        callback_post_file(copied)
 
         if files_per_second is not None:
             files_per_second.limit(1)
