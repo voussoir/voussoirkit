@@ -28,4 +28,4 @@ class DotDict:
     def __repr__(self):
         display = self.__dict__.copy()
         display.pop('_DotDict__default')
-        return f'DotDict {display}'
+        return f'DotDict({display})'
