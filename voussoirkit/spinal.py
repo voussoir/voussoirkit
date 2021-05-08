@@ -184,8 +184,8 @@ def copy_dir(
     validate_hash:
         Passed directly into each `copy_file`.
 
-    Returns a dotdict containing at least `destination` and `written_bytes`.
-    (Written bytes is 0 if all files already existed.)
+    Returns a dotdict containing at least `source`, `destination`,
+    and `written_bytes`. (Written bytes is 0 if all files already existed.)
     '''
     # Prepare parameters
     if not is_xor(destination, destination_new_root):
@@ -302,6 +302,7 @@ def copy_dir(
             files_per_second.limit(1)
 
     results = dotdict.DotDict({
+        'source': source,
         'destination': destination,
         'written_bytes': written_bytes,
     })
@@ -372,7 +373,7 @@ def copy_file(
     hash_class:
         If provided, should be a hashlib class or a callable that returns an
         instance of one. The hash will be computed while the file is being
-        copied, and returned in the dotdict as `hash`.
+        copied. The instance will be returned in the dotdict as `hash`.
         Note that if the function returns early due to dry_run or file not
         needing overwrite, this won't be set, so be prepared to handle None.
         If None, the hash will not be calculated.
@@ -387,8 +388,8 @@ def copy_file(
         and its hash will be compared against the hash of the source file.
         If hash_class is None, then the global HASH_CLASS is used.
 
-    Returns a dotdict containing at least `destination` and `written_bytes`.
-    (Written bytes is 0 if the file already existed.)
+    Returns a dotdict containing at least `source`, `destination`,
+    and `written_bytes`. (Written bytes is 0 if the file already existed.)
     '''
     # Prepare parameters
     if not is_xor(destination, destination_new_root):
@@ -415,6 +416,7 @@ def copy_file(
     bytes_per_second = limiter_or_none(bytes_per_second)
 
     results = dotdict.DotDict({
+        'source': source,
         'destination': destination,
         'written_bytes': 0,
     }, default=None)
