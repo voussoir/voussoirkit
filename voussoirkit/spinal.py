@@ -389,8 +389,9 @@ def copy_file(
         and its hash will be compared against the hash of the source file.
         If hash_class is None, then the global HASH_CLASS is used.
 
-    Returns a dotdict containing at least `source`, `destination`,
-    and `written_bytes`. (Written bytes is 0 if the file already existed.)
+    Returns a dotdict containing at least `source`, `destination` (Pathclass),
+    `written` (False if file was skipped, True if written), and
+    `written_bytes` (integer).
     '''
     # Prepare parameters
     if not is_xor(destination, destination_new_root):
@@ -419,6 +420,7 @@ def copy_file(
     results = dotdict.DotDict(
         source=source,
         destination=destination,
+        written=False,
         written_bytes=0,
         default=None,
     )
@@ -511,6 +513,7 @@ def copy_file(
     destination_handle.close()
     log.debug('Copying metadata.')
     shutil.copystat(source.absolute_path, destination.absolute_path)
+    results.written = True
 
     if validate_hash:
         verify_hash(
