@@ -301,11 +301,12 @@ def copy_dir(
         if files_per_second is not None:
             files_per_second.limit(1)
 
-    results = dotdict.DotDict({
-        'source': source,
-        'destination': destination,
-        'written_bytes': written_bytes,
-    })
+    results = dotdict.DotDict(
+        source=source,
+        destination=destination,
+        written_bytes=written_bytes,
+        default=None,
+    )
     return results
 
 def copy_file(
@@ -415,11 +416,12 @@ def copy_file(
 
     bytes_per_second = limiter_or_none(bytes_per_second)
 
-    results = dotdict.DotDict({
-        'source': source,
-        'destination': destination,
-        'written_bytes': 0,
-    }, default=None)
+    results = dotdict.DotDict(
+        source=source,
+        destination=destination,
+        written_bytes=0,
+        default=None,
+    )
 
     # Determine overwrite
     if destination.exists:
