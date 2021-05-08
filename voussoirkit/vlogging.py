@@ -7,6 +7,7 @@ from logging import *
 _getLogger = getLogger
 
 LOUD = 1
+SILENT = 99999999999
 
 def getLogger(name=None, main_fallback=None):
     '''
@@ -42,7 +43,7 @@ def get_level_by_argv(argv):
     --loud: LOUD
     --debug: DEBUG
     --quiet: ERROR
-    --silent: 99999999999
+    --silent: SILENT
     none of the above: INFO
     '''
     argv = argv[:]
@@ -57,7 +58,7 @@ def get_level_by_argv(argv):
         level = ERROR
         argv.remove('--quiet')
     elif '--silent' in argv:
-        level = 99999999999
+        level = SILENT
         argv.remove('--silent')
     else:
         level = INFO
