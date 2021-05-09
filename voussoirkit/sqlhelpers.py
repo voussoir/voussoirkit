@@ -114,6 +114,18 @@ def update_filler(pairs, where_key):
     qmarks = qmarks.format(setters=setters, where_key=where_key)
     return (qmarks, bindings)
 
+def executescript(conn, script):
+    '''
+    The problem with Python's default executescript is that it executes a
+    commit before running your script. If I wanted a commit I'd write one!
+    '''
+    lines = re.split(r';(:?\n|$)', script)
+    lines = (line.strip() for line in lines)
+    lines = (line for line in lines if line)
+    cur = conn.cursor()
+    for line in lines:
+        cur.execute(line)
+
 def hex_byte(byte):
     '''
     Return the hex string for this byte. 00-ff.
