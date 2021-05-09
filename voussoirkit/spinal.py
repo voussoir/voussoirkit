@@ -97,6 +97,7 @@ def copy_dir(
         exclude_directories=None,
         exclude_filenames=None,
         files_per_second=None,
+        hash_class=None,
         overwrite_old=True,
         precalcsize=False,
         skip_symlinks=True,
@@ -168,6 +169,9 @@ def copy_dir(
     files_per_second:
         Maximum number of files to be processed per second. Helps to keep CPU
         usage low.
+
+    hash_class:
+        Passed into each `copy_file` as `hash_class`.
 
     overwrite_old:
         Passed into each `copy_file` as `overwrite_old`.
@@ -295,6 +299,7 @@ def copy_dir(
             callback_pre_copy=callback_pre_file,
             chunk_size=chunk_size,
             dry_run=dry_run,
+            hash_class=hash_class,
             overwrite_old=overwrite_old,
             validate_hash=validate_hash,
         )
