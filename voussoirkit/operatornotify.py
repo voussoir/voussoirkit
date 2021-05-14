@@ -178,6 +178,9 @@ def main_log_context(argv, subject, *args, **kwargs):
         that kills your main function.
     7. Results are sent at the end of runtime.
 
+    Additional *args, **kwargs go to LogHandler init, so you can
+    pass notify_every_line, etc.
+
     Returns (context, argv) where argv can go into your argparse and context
     can wrap your main call.
     '''
