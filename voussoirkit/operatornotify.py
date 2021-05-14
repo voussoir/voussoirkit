@@ -115,8 +115,12 @@ class LogHandler(vlogging.StreamHandler):
         Send all of the logged contents to notify, then reset the buffer.
         '''
         if self.log_buffer.getvalue():
-            notify(subject=self.subject, body=self.log_buffer.getvalue())
-            self.reset_buffer()
+            try:
+                notify(subject=self.subject, body=self.log_buffer.getvalue())
+            except Exception as exc:
+                traceback.print_exc()
+            else:
+                self.reset_buffer()
 
     def reset_buffer(self):
         self.log_buffer = io.StringIO()
