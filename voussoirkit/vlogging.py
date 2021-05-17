@@ -105,15 +105,24 @@ def get_level_by_name(name):
 
     return value
 
-def set_level_by_argv(log, argv):
+def main_level_by_argv(argv):
     '''
-    This function is helpful for single-file scripts where you instantiate the
-    logger in the global scope, and use this function to set its level
-    according to the "--debug" flags in argv, then pass the rest of argv to
-    your argparser.
+    This function calls basicConfig to initialize the root logger, sets the
+    root log's level by the flags in argv, then returns the rest of argv which
+    you can pass to your argparser.
     '''
     basicConfig()
 
+    (level, argv) = get_level_by_argv(argv)
+    getLogger().setLevel(level)
+
+    return argv
+
+def set_level_by_argv(log, argv):
+    '''
+    This function sets the log's level by the flags in argv, then returns the
+    rest of argv which you can pass to your argparser.
+    '''
     (level, argv) = get_level_by_argv(argv)
     log.setLevel(level)
 
