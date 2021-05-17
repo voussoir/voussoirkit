@@ -19,7 +19,7 @@ def hms_to_seconds(hms):
         seconds += float(parts[0])
     return seconds
 
-def seconds_to_hms(seconds):
+def seconds_to_hms(seconds, force_minutes=False, force_hours=False):
     '''
     Convert integer number of seconds to an hh:mm:ss string.
     Only the necessary fields are used.
@@ -28,9 +28,9 @@ def seconds_to_hms(seconds):
     (minutes, seconds) = divmod(seconds, 60)
     (hours, minutes) = divmod(minutes, 60)
     parts = []
-    if hours:
+    if hours or force_hours:
         parts.append(hours)
-    if hours or minutes:
+    if hours or minutes or force_hours or force_minutes:
         parts.append(minutes)
     parts.append(seconds)
     hms = ':'.join(f'{part:02d}' for part in parts)
