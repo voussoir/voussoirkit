@@ -189,22 +189,22 @@ def main_log_context(argv, subject, *args, **kwargs):
     # Do not modiy this code without considering both effects.
     argv = ['--operatornotify-level' if arg == '--operatornotify_level' else arg for arg in argv]
 
-    if '--operatornotify' in argv:
-        argv.remove('--operatornotify')
-    else:
-        return (contextlib.nullcontext(), argv)
-
+    level = None
     if '--operatornotify-level' in argv:
         level = argv.pop(argv.index('--operatornotify-level') + 1)
         try:
             level = int(level)
         except ValueError:
-            pass
+            level = vlogging.get_level_by_name(level)
         argv.remove('--operatornotify-level')
-    else:
-        level = vlogging.WARNING
 
-    level = vlogging.get_level_by_name(level)
+    if '--operatornotify' in argv:
+        if level is None:
+            level = vlogging.WARNING
+        argv.remove('--operatornotify')
+
+    if level is None:
+        return (contextlib.nullcontext(), argv)
 
     log = vlogging.getLogger()
     handler = LogHandler(subject, *args, **kwargs)
