@@ -205,7 +205,7 @@ def copy_dir(
         thread catch ctrl+c to set the stop_event, so the copy can stop cleanly.
 
     validate_hash:
-        Passed directly into each `copy_file`.
+        Passed into each `copy_file` as `validate_hash`.
 
     Returns a dotdict containing at least `source`, `destination`,
     and `written_bytes`. (Written bytes is 0 if all files already existed.)
@@ -570,7 +570,7 @@ def copy_file(
 
 def do_nothing(*args, **kwargs):
     '''
-    Used by other functions as the default callback.
+    Used by other functions as the default callback. It does nothing!
     '''
     return
 
@@ -620,6 +620,11 @@ def hash_file(
     '''
     hash_class:
         Should be a hashlib class or a callable that returns an instance of one.
+
+    bytes_per_second:
+        Restrict file hashing to this many bytes per second. Can be an integer,
+        an existing Ratelimiter object, or a string parseable by bytestring.
+        The bytestring BYTE, KIBIBYTE, etc constants may help.
 
     callback_progress:
         A function that takes three parameters:
@@ -676,6 +681,10 @@ def is_xor(*args):
     return [bool(a) for a in args].count(True) == 1
 
 def limiter_or_none(value):
+    '''
+    Returns a Ratelimiter object if the argument can be normalized to one,
+    or None if the argument is None. Saves the caller from having to if.
+    '''
     if isinstance(value, ratelimiter.Ratelimiter):
         return value
 
@@ -694,8 +703,8 @@ def limiter_or_none(value):
 def new_root(filepath, root):
     '''
     Prepend `root` to `filepath`, drive letter included. For example:
-    "C:\\folder\\subfolder\\file.txt" and "C:\\backups" becomes
-    "C:\\backups\\C\\folder\\subfolder\\file.txt"
+    "C:\\folder\\subfolder\\file.txt" and "D:\\backups" becomes
+    "D:\\backups\\C\\folder\\subfolder\\file.txt"
 
     I use this so that my G: drive can have backups from my C: and D: drives
     while preserving directory structure in G:\\D and G:\\C.
@@ -721,6 +730,20 @@ def verify_hash(
         known_size=None,
         **hash_kwargs,
     ):
+    '''
+    Calculate the file's hash and compare it against a previous known hash.
+    Raises ValidationError if they differ, returns None if they match.
+
+    hash_class:
+        Should be a hashlib class or a callable that returns an instance of one.
+
+    known_hash:
+        Should be the hexdigest string from the previously calculated hash.
+
+    known_size:
+        Optional, should be the previously known integer number of bytes.
+        This makes failing the file much easier if the sizes differ.
+    '''
     path = pathclass.Path(path)
     path.assert_is_file()
 
@@ -790,7 +813,7 @@ def walk(
     yield_style:
         If 'flat', yield individual files and directories one by one.
         If 'nested', yield tuple(root, directories, files) like os.walk does,
-            except using pathclass.Path objects for everything.
+        except using pathclass.Path objects for everything.
     '''
     if not yield_directories and not yield_files:
         raise ValueError('yield_directories and yield_files cannot both be False.')
