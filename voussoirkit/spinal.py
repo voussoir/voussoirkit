@@ -1,8 +1,13 @@
+'''
+This module provides functions related to walking the filesystem and
+copying files and folders.
+'''
 import hashlib
 import logging
 import os
 import shutil
 import sys
+import time
 
 from voussoirkit import bytestring
 from voussoirkit import dotdict
@@ -19,6 +24,10 @@ BAIL = sentinel.Sentinel('BAIL')
 
 # Number of bytes to read and write at a time
 CHUNK_SIZE = 2 * bytestring.MIBIBYTE
+
+# When using dynamic chunk sizing, this is the ideal time to process a
+# single chunk, in seconds.
+IDEAL_CHUNK_TIME = 0.2
 
 HASH_CLASS = hashlib.md5
 
@@ -91,7 +100,7 @@ def copy_dir(
         callback_pre_directory=None,
         callback_pre_file=None,
         callback_post_file=None,
-        chunk_size=CHUNK_SIZE,
+        chunk_size='dynamic',
         destination_new_root=None,
         dry_run=False,
         exclude_directories=None,
@@ -149,6 +158,9 @@ def copy_dir(
         argument: the dotdict returned by copy_file.
         If you think copy_dir should be rewritten as a generator instead,
         I agree!
+
+    chunk_size:
+        Passed into each `copy_file` as `chunk_size`.
 
     destination_new_root:
         Determine the destination path by calling
@@ -334,7 +346,7 @@ def copy_file(
         callback_permission_denied=None,
         callback_pre_copy=None,
         callback_validate_hash=None,
-        chunk_size=CHUNK_SIZE,
+        chunk_size='dynamic',
         dry_run=False,
         hash_class=None,
         overwrite_old=True,
@@ -382,6 +394,11 @@ def copy_file(
 
     callback_hash_progress:
         Passed into `hash_file` as callback_progress when validating the hash.
+
+    chunk_size:
+        An integer number of bytes to read and write at a time.
+        Or, the string 'dynamic' to enable dynamic chunk sizing that aims to
+        keep a consistent pace of progress bar updates.
 
     dry_run:
         Do everything except the actual file copying.
@@ -492,7 +509,13 @@ def copy_file(
         hash_class = HASH_CLASS
         results.hash = HASH_CLASS()
 
+    dynamic_chunk_size = chunk_size == 'dynamic'
+    if dynamic_chunk_size:
+        chunk_size = bytestring.MIBIBYTE
+
     while True:
+        chunk_start = time.perf_counter()
+
         try:
             data_chunk = source_handle.read(chunk_size)
         except PermissionError as exception:
@@ -516,6 +539,10 @@ def copy_file(
 
         if bytes_per_second is not None:
             bytes_per_second.limit(data_bytes)
+
+        if dynamic_chunk_size:
+            chunk_time = time.perf_counter() - chunk_start
+            chunk_size = dynamic_chunk_sizer(chunk_size, chunk_time, IDEAL_CHUNK_TIME)
 
     if results.written_bytes == 0:
         # For zero-length files, we want to get at least one call in there.
@@ -547,6 +574,25 @@ def do_nothing(*args, **kwargs):
     '''
     return
 
+def dynamic_chunk_sizer(chunk_size, chunk_time, ideal_chunk_time):
+    '''
+    Calculates a new chunk size based on the time it took to do the previous
+    chunk versus the ideal chunk time.
+    '''
+    # If chunk_time = scale * ideal_chunk_time,
+    # Then ideal_chunk_size = chunk_size / scale
+    scale = chunk_time / ideal_chunk_time
+    scale = min(scale, 2)
+    scale = max(scale, 0.5)
+    suggestion = chunk_size / scale
+    # Give the current size double weight so small fluctuations don't send
+    # the needle bouncing all over.
+    new_size = int((chunk_size + chunk_size + suggestion) / 3)
+    # I doubt any real-world scenario will dynamically suggest a chunk_size of
+    # zero, but let's enforce a one-byte minimum anyway.
+    new_size = max(new_size, 1)
+    return new_size
+
 def get_dir_size(path):
     '''
     Calculate the total number of bytes across all files in this directory
@@ -569,7 +615,7 @@ def hash_file(
         *,
         bytes_per_second=None,
         callback_progress=None,
-        chunk_size=CHUNK_SIZE,
+        chunk_size='dynamic',
     ):
     '''
     hash_class:
@@ -578,6 +624,11 @@ def hash_file(
     callback_progress:
         A function that takes three parameters:
         path object, bytes ingested so far, bytes total
+
+    chunk_size:
+        An integer number of bytes to read at a time.
+        Or, the string 'dynamic' to enable dynamic chunk sizing that aims to
+        keep a consistent pace of progress bar updates.
     '''
     path = pathclass.Path(path)
     path.assert_is_file()
@@ -590,8 +641,15 @@ def hash_file(
     file_size = path.size
 
     handle = path.open('rb')
+
+    dynamic_chunk_size = chunk_size == 'dynamic'
+    if dynamic_chunk_size:
+        chunk_size = bytestring.MIBIBYTE
+
     with handle:
         while True:
+            chunk_start = time.perf_counter()
+
             chunk = handle.read(chunk_size)
             if not chunk:
                 break
@@ -604,6 +662,10 @@ def hash_file(
 
             if bytes_per_second is not None:
                 bytes_per_second.limit(this_size)
+
+            if dynamic_chunk_size:
+                chunk_time = time.perf_counter() - chunk_start
+                chunk_size = dynamic_chunk_sizer(chunk_size, chunk_time, IDEAL_CHUNK_TIME)
 
     return hasher
 
