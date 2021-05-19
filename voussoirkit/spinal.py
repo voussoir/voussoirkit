@@ -46,7 +46,7 @@ class SpinalError(SpinalException):
 class ValidationError(SpinalException):
     pass
 
-def callback_progress_v1(fpobj, written_bytes, total_bytes):
+def callback_progress_v1(path, written_bytes, total_bytes):
     '''
     Example of a copy callback function.
 
@@ -61,7 +61,7 @@ def callback_progress_v1(fpobj, written_bytes, total_bytes):
     written = '{:,}'.format(written_bytes)
     total = '{:,}'.format(total_bytes)
     written = written.rjust(len(total), ' ')
-    status = f'{fpobj.absolute_path} {written}/{total} ({percent}%)\r'
+    status = f'{path.absolute_path} {written}/{total} ({percent}%)\r'
     safeprint.safeprint(status, end=ends)
     sys.stdout.flush()
 
