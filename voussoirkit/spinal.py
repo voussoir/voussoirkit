@@ -685,11 +685,11 @@ def limiter_or_none(value):
     Returns a Ratelimiter object if the argument can be normalized to one,
     or None if the argument is None. Saves the caller from having to if.
     '''
-    if isinstance(value, ratelimiter.Ratelimiter):
-        return value
-
     if value is None:
         return None
+
+    if isinstance(value, ratelimiter.Ratelimiter):
+        return value
 
     if isinstance(value, str):
         value = bytestring.parsebytes(value)
