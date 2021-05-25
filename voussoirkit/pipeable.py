@@ -151,7 +151,8 @@ def input_many(args, *input_args, **input_kwargs):
     This saves you from having to write the double for loop yourself.
     '''
     if isinstance(args, str):
-        args = [args]
+        yield from input(args, *input_args, **input_kwargs)
+        return
 
     for arg in args:
         yield from input(arg, *input_args, **input_kwargs)
