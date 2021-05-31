@@ -31,6 +31,22 @@ def excise(text, mark_left, mark_right):
         return text.split(mark_left, 1)[0] + text.rsplit(mark_right, 1)[-1]
     return text
 
+def natural_sorter(s):
+    '''
+    This function is used as the `key` argument in
+    list.sort(key=stringtools.natural_sorter).
+
+    Used for sorting strings in 'natural' order instead of lexicographic order,
+    so that you get 1 2 3 4 5 6 7 8 9 10 11 12 13 ...
+    instead of 1 10 11 12 13 2 3 4 5 ...
+
+    Thank you Mark Byers
+    http://stackoverflow.com/a/11150413
+    '''
+    convert = lambda text: int(text) if text.isdigit() else text.lower()
+    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+    return alphanum_key(s)
+
 def pascal_to_loudsnakes(text):
     '''
     PascalCase -> PASCAL_CASE
