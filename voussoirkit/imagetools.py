@@ -1,3 +1,10 @@
+import PIL.ExifTags
+
+ORIENTATION_KEY = None
+for (ORIENTATION_KEY, val) in PIL.ExifTags.TAGS.items():
+    if val == 'Orientation':
+        break
+
 def fit_into_bounds(
         image_width,
         image_height,
@@ -31,11 +38,6 @@ def rotate_by_exif(image):
     '''
     # Thank you Scabbiaza
     # https://stackoverflow.com/a/26928142
-    import PIL.ExifTags
-
-    for (ORIENTATION_KEY, val) in PIL.ExifTags.TAGS.items():
-        if val == 'Orientation':
-            break
 
     try:
         exif = image._getexif()
