@@ -40,7 +40,7 @@ def rotate_by_exif(image):
     # https://stackoverflow.com/a/26928142
 
     try:
-        exif = image._getexif()
+        exif = image.getexif()
     except AttributeError:
         return image
 
