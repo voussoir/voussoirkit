@@ -859,7 +859,7 @@ def walk(
 
     # If for some reason the given starting directory is excluded by the
     # exclude parameters.
-    if handle_exclusion(glob_directories, exclude_directories, path.basename, path.absolute_path):
+    if handle_exclusion(None, exclude_directories, path.basename, path.absolute_path):
         return
 
     # In the following loops, I found joining the os.sep with fstrings to be
