@@ -876,7 +876,7 @@ def walk(
                 continue
 
             new_child_dirs.append(child_dir)
-            directories.append(pathclass.Path(child_dir_abspath))
+            directories.append(pathclass.Path(child_dir_abspath, _case_correct=True))
 
         # This will actually affect the results of the os.walk going forward!
         child_dirs[:] = new_child_dirs
@@ -887,9 +887,9 @@ def walk(
             if handle_exclusion(glob_filenames, exclude_filenames, child_file, child_file_abspath):
                 continue
 
-            files.append(pathclass.Path(child_file_abspath))
+            files.append(pathclass.Path(child_file_abspath, _case_correct=True))
 
-        current_location = pathclass.Path(current_location)
+        current_location = pathclass.Path(current_location, _case_correct=True)
         yield (current_location, directories, files)
 
     def walkstep_flat(current_location, child_dirs, child_files):
@@ -901,7 +901,7 @@ def walk(
 
             new_child_dirs.append(child_dir)
             if yield_directories:
-                yield pathclass.Path(child_dir_abspath)
+                yield pathclass.Path(child_dir_abspath, _case_correct=True)
 
         # This will actually affect the results of the os.walk going forward!
         child_dirs[:] = new_child_dirs
@@ -912,7 +912,7 @@ def walk(
                 if handle_exclusion(glob_filenames, exclude_filenames, child_file, child_file_abspath):
                     continue
 
-                yield pathclass.Path(child_file_abspath)
+                yield pathclass.Path(child_file_abspath, _case_correct=True)
 
     walker = os.walk(path.absolute_path, onerror=callback_permission_denied, followlinks=True)
     if yield_style == 'flat':
