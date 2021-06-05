@@ -1,11 +1,16 @@
+import flask
 import gzip
 import io
+import werkzeug.wrappers
 
 from voussoirkit import bytestring
 
 GZIP_MINIMUM_SIZE = 500 * bytestring.BYTE
 GZIP_MAXIMUM_SIZE = 5 * bytestring.MIBIBYTE
 GZIP_LEVEL = 3
+
+REQUEST_TYPES = (flask.Request, werkzeug.wrappers.Request, werkzeug.local.LocalProxy)
+RESPONSE_TYPES = (flask.Response, werkzeug.wrappers.Response)
 
 def gzip_response(request, response):
     if response.direct_passthrough:
