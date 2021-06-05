@@ -2,6 +2,7 @@ import flask
 import functools
 import gzip
 import io
+import json
 import werkzeug.wrappers
 
 from voussoirkit import bytestring
@@ -58,4 +59,10 @@ def gzip_response(request, response):
     response.headers['Content-Encoding'] = 'gzip'
     response.headers['Content-Length'] = len(response.get_data())
 
+    return response
+
+def make_json_response(j, *args, **kwargs):
+    dumped = json.dumps(j)
+    response = flask.Response(dumped, *args, **kwargs)
+    response.headers['Content-Type'] = 'application/json;charset=utf-8'
     return response
