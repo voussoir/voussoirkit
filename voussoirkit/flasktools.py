@@ -1,4 +1,5 @@
 import flask
+import functools
 import gzip
 import io
 import werkzeug.wrappers
@@ -11,6 +12,15 @@ GZIP_LEVEL = 3
 
 REQUEST_TYPES = (flask.Request, werkzeug.wrappers.Request, werkzeug.local.LocalProxy)
 RESPONSE_TYPES = (flask.Response, werkzeug.wrappers.Response)
+
+def ensure_response_type(function):
+    @functools.wraps(function)
+    def wrapped(*args, **kwargs):
+        response = function(*args, **kwargs)
+        if not isinstance(response, RESPONSE_TYPES):
+            response = flask.Response(response)
+        return response
+    return wrapped
 
 def gzip_response(request, response):
     if response.direct_passthrough:
