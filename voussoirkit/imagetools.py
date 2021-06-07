@@ -1,3 +1,4 @@
+import copy
 import PIL.ExifTags
 
 ORIENTATION_KEY = None
@@ -35,6 +36,9 @@ def rotate_by_exif(image):
     '''
     Rotate the image according to its exif data, so that it will display
     correctly even if saved without the exif.
+
+    Returns (image, exif) where exif has the orientation key set to 1,
+    the upright position, if the rotation was successful.
     '''
     # Thank you Scabbiaza
     # https://stackoverflow.com/a/26928142
@@ -42,21 +46,38 @@ def rotate_by_exif(image):
     try:
         exif = image.getexif()
     except AttributeError:
-        return image
+        return (image, exif)
 
     if exif is None:
-        return image
+        return (image, exif)
 
     try:
         rotation = exif[ORIENTATION_KEY]
     except KeyError:
-        return image
+        return (image, exif)
 
-    if rotation == 3:
-        image = image.rotate(180, expand=True)
+    exif = copy.deepcopy(exif)
+
+    if rotation == 1:
+        pass
+    elif rotation == 2:
+        image = image.transpose(PIL.Image.FLIP_LEFT_RIGHT)
+    elif rotation == 3:
+        image = image.transpose(PIL.Image.ROTATE_180)
+    elif rotation == 4:
+        image = image.transpose(PIL.Image.FLIP_LEFT_RIGHT)
+        image = image.transpose(PIL.Image.ROTATE_180)
+    elif rotation == 5:
+        image = image.transpose(PIL.Image.FLIP_LEFT_RIGHT)
+        image = image.transpose(PIL.Image.ROTATE_90)
     elif rotation == 6:
-        image = image.rotate(270, expand=True)
+        image = image.transpose(PIL.Image.ROTATE_270)
+    elif rotation == 7:
+        image = image.transpose(PIL.Image.FLIP_LEFT_RIGHT)
+        image = image.transpose(PIL.Image.ROTATE_270)
     elif rotation == 8:
-        image = image.rotate(90, expand=True)
+        image = image.transpose(PIL.Image.ROTATE_90)
 
-    return image
+    exif[ORIENTATION_KEY] = 1
+
+    return (image, exif)
