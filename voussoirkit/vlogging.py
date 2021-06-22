@@ -107,14 +107,24 @@ def get_level_by_name(name):
 
 def main_level_by_argv(argv):
     '''
-    This function calls basicConfig to initialize the root logger, sets the
-    root log's level by the flags in argv, then returns the rest of argv which
-    you can pass to your argparser.
+    This function puts a handler on the root logger with a level set by the
+    flags in argv, then returns the rest of argv which you can pass to
+    your argparser.
     '''
-    basicConfig()
-
     (level, argv) = get_level_by_argv(argv)
-    getLogger().setLevel(level)
+
+    # Previously I was using basicConfig to prepare the handlers and then
+    # setting root.setLevel, but the problem is that prevents any other
+    # handlers on the root from receiving messages at a lower level.
+    # It works best if the logger itself doesn't have a level and the handlers
+    # can choose what they want.
+    root = getLogger()
+    root.setLevel(NOTSET)
+
+    handler = StreamHandler()
+    handler.setFormatter(Formatter('{levelname}:{name}:{message}', style='{'))
+    handler.setLevel(level)
+    root.addHandler(handler)
 
     return argv
 
