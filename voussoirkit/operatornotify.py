@@ -163,6 +163,19 @@ class LogHandlerContext:
         self.handler.notify()
         self.log.removeHandler(self.handler)
 
+def main_decorator(subject, *args, **kwargs):
+    '''
+    Add this decorator to your application's main function to automatically
+    wrap it in a main_log_context.
+    '''
+    def wrapper(main):
+        def wrapped(argv):
+            (context, argv) = main_log_context(argv, subject, *args, **kwargs)
+            with context:
+                return main(argv)
+        return wrapped
+    return wrapper
+
 def main_log_context(argv, subject, *args, **kwargs):
     '''
     This function is for accelerating the common use case of adding
