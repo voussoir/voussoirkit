@@ -105,6 +105,12 @@ def get_level_by_name(name):
 
     return value
 
+def main_decorator(main):
+    def wrapped(argv):
+        argv = main_level_by_argv(argv)
+        return main(argv)
+    return wrapped
+
 def main_level_by_argv(argv):
     '''
     This function puts a handler on the root logger with a level set by the
