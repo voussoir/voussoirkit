@@ -379,8 +379,12 @@ def get_permission(prompt='y/n\n>', affirmative=['y', 'yes']):
     return permission.lower() in affirmative
 
 def is_special_file(file):
-    file = pathclass.Path(file)
-    return os.path.normcase(file.basename) in SPECIAL_FILENAMES
+    if isinstance(file, pathclass.Path):
+        return False
+    file = pathclass.normalize_sep(file)
+    file = file.rsplit(os.sep)[-1]
+    file = os.path.normcase(file)
+    return file in SPECIAL_FILENAMES
 
 def request(method, url, stream=False, headers=None, timeout=TIMEOUT, verify_ssl=True, **kwargs):
     if headers is None:
