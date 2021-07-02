@@ -232,9 +232,8 @@ def operatornotify_argparse(args):
         body='\n'.join(pipeable.input(args.body)),
     )
 
+@vlogging.main_decorator
 def main(argv):
-    argv = vlogging.main_level_by_argv(argv)
-
     parser = argparse.ArgumentParser(description=__doc__)
 
     parser.add_argument('--subject', required=True)

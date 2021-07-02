@@ -475,10 +475,9 @@ def download_argparse(args):
         else:
             break
 
-
+@vlogging.main_decorator
 def main(argv):
-    argv = vlogging.main_level_by_argv(argv)
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__)
 
     parser.add_argument('url')
     parser.add_argument('localname', nargs='?', default=None)
