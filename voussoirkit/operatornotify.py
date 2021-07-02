@@ -5,7 +5,7 @@ operatornotify
 This module is designed to notify the program operator of important events.
 By default, it just logs at the WARNING level, but if you create your own
 file my_operatornotify.py somewhere on your PYTHONPATH with a function
-notify(subject, body=''), all calls to this module will go there.
+notify(subject, body=''), all calls to operatornotify.notify will go there.
 For example, you might define your own file that sends emails, texts, or MQTT.
 This allows the same calling code to behave differently on your dev / prod
 environments, or other use cases you can imagine.
@@ -26,9 +26,10 @@ This module should ONLY be called by application code, not library code.
 Ideally, the application should provide a flag --operatornotify for the user
 to opt-in to the use of operatornotify so that it does not surprise them.
 
-If your application already uses the logging module, consider adding an
-instance of operatornotify.LogHandler to your logger, or wrapping your whole
-main call in a LogHandlerContext.
+If your application already uses the logging module, consider these options:
+- add an instance of operatornotify.LogHandler to your logger,
+- wrap your whole main call in a LogHandlerContext, or
+- add @operatornotify.main_decorator to your main function.
 
 Commandline usage:
 
