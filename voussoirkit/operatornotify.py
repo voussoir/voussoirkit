@@ -134,32 +134,30 @@ class LogHandlerContext:
     of this to notify. This saves you from having to call handler.notify
     yourself, because it will occur when the context ends.
     '''
-    def __init__(self, log, handler, log_exception=True):
+    def __init__(self, log, handler):
         '''
         log:
             Your logger from logging.getLogger
 
         handler:
             Your operatornotify.LogHandler
-
-        log_exception:
-            If the context is killed by an exception, include the traceback at
-            the bottom of the notification.
         '''
         self.log = log
         self.handler = handler
-        self.log_exception = log_exception
 
     def __enter__(self):
         self.log.addHandler(self.handler)
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        if self.log_exception and exc_type not in (None, KeyboardInterrupt):
+        if exc_type not in (None, KeyboardInterrupt):
             exc_text = traceback.format_exception(exc_type, exc_value, exc_traceback)
             exc_text = ''.join(exc_text)
-            exc_text = f'\n\n{exc_text}\n'
-            self.handler.log_buffer.write(exc_text)
+            exc_text = f'\n{exc_text}\n'
+            # Intentionally using module's log, not self.log because I think
+            # it should be clear who emitted the message, and the caller can
+            # mute this module if they want to.
+            log.error(exc_text)
 
         self.handler.notify()
         self.log.removeHandler(self.handler)
@@ -224,7 +222,7 @@ def main_log_context(argv, subject, *args, **kwargs):
     handler = LogHandler(subject, *args, **kwargs)
     handler.setLevel(level)
     handler.setFormatter(vlogging.Formatter('{levelname}:{name}:{message}', style='{'))
-    context = LogHandlerContext(log, handler, log_exception=True)
+    context = LogHandlerContext(log, handler)
     return (context, argv)
 
 def operatornotify_argparse(args):
