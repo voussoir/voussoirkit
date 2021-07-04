@@ -165,13 +165,15 @@ class LogHandlerContext:
 def main_decorator(subject, *args, **kwargs):
     '''
     Add this decorator to your application's main function to automatically
-    wrap it in a main_log_context.
+    wrap it in a main_log_context and log the final return value.
     '''
     def wrapper(main):
         def wrapped(argv):
             (context, argv) = main_log_context(argv, subject, *args, **kwargs)
             with context:
-                return main(argv)
+                status = main(argv)
+                log.info('Program finished, returned %s.', status)
+                return status
         return wrapped
     return wrapper
 
