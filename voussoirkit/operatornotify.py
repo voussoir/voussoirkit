@@ -95,6 +95,11 @@ class LogHandler(vlogging.StreamHandler):
         notify_every_line:
             If True, each log call will send a notification immediately.
             Otherwise, they are buffered until handler.notify is called.
+
+            If you are writing a long-running process / daemon where infrequent
+            errors are being notified, you might want this True. If you're
+            writing a command line application where all the results are sent
+            at the end, you might want this False.
         '''
         self.subject = subject
         self.log_buffer = io.StringIO()
@@ -136,6 +141,10 @@ class LogHandlerContext:
     '''
     def __init__(self, log, handler):
         '''
+        The handler will be added to the logger at the beginning of the context
+        and removed at the end. All of the log lines captured during the context
+        will be sent to notify.
+
         log:
             Your logger from logging.getLogger
 
@@ -184,7 +193,8 @@ def main_log_context(argv, subject, *args, **kwargs):
     The goals are:
 
     1. Opt into operatornotify by --operatornotify, or return a nullcontext.
-    2. Set handler's level by --operatornotify-level X.
+    2. Set handler's level by --operatornotify-level X where X is DEBUG, INFO,
+        ERROR, or any other level in vlogging.
     3. Remove those args from argv so your argparse doesn't know the difference.
     4. Add handler to the root logger.
     5. Provide a context manager with which you'll wrap your main function.
