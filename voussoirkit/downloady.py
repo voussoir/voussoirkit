@@ -27,9 +27,10 @@ CHUNKSIZE = 4 * bytestring.KIBIBYTE
 TIMEOUT = 60
 TEMP_EXTENSION = '.downloadytemp'
 
-SPECIAL_FILENAMES = [os.devnull]
 if os.name == 'nt':
-    SPECIAL_FILENAMES.append('con')
+    SPECIAL_FILENAMES = pathclass.WINDOWS_RESERVED_NAMES
+else:
+    SPECIAL_FILENAMES = [os.devnull]
 SPECIAL_FILENAMES = [os.path.normcase(x) for x in SPECIAL_FILENAMES]
 
 class DownloadyException(Exception):
