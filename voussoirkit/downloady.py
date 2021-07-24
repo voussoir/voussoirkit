@@ -23,12 +23,9 @@ HEADERS = {
 
 FILENAME_BADCHARS = '*?"<>|\r\n'
 
-last_request = 0
 CHUNKSIZE = 4 * bytestring.KIBIBYTE
 TIMEOUT = 60
 TEMP_EXTENSION = '.downloadytemp'
-
-PRINT_LIMITER = ratelimiter.Ratelimiter(allowance=5, mode='reject')
 
 SPECIAL_FILENAMES = [os.devnull]
 if os.name == 'nt':
@@ -429,7 +426,6 @@ def touch(filename):
     f = open(filename, 'ab')
     f.close()
     return
-
 
 def download_argparse(args):
     url = args.url
