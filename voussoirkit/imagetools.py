@@ -32,6 +32,21 @@ def fit_into_bounds(
 
     return (new_width, new_height)
 
+def pad_to_square(image, background_color=None):
+    '''
+    If the given image is not already square, return a new, square image with
+    additional padding on top and bottom or left and right.
+    '''
+    if image.size[0] == image.size[1]:
+        return image
+
+    dimension = max(image.size)
+    diff_w = int((dimension - image.size[0]) / 2)
+    diff_h = int((dimension - image.size[1]) / 2)
+    new_image = PIL.Image.new(image.mode, (dimension, dimension), background_color)
+    new_image.paste(image, (diff_w, diff_h))
+    return new_image
+
 def rotate_by_exif(image):
     '''
     Rotate the image according to its exif data, so that it will display
