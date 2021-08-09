@@ -82,10 +82,25 @@ class Extension:
         return '.' + self.ext
 
 class Path:
-    '''
-    I started to use pathlib.Path, but it was too much of a pain.
-    '''
-    def __init__(self, path, force_sep=None, *, _case_correct=False):
+    def __init__(
+            self,
+            path,
+            force_sep=None,
+            *,
+            _case_correct=False,
+        ):
+        '''
+        force_sep:
+            Normally, the pathclass will use the default separator for your
+            operating system: / on unix and \ on windows. You can use this
+            argument to force a particular separator.
+
+        _case_correct:
+            True or False. If True, this indicates that the path casing is
+            known in advance to be correct, which means calls to correct_case
+            can be skipped. This is helpful because correct_case can be a
+            source of slowdown.
+        '''
         self.force_sep = force_sep
         self.sep = force_sep or os.sep
 
