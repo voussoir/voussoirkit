@@ -116,7 +116,7 @@ def make_password(length=None, passtype='standard'):
             random.shuffle(alphabet)
             password += alphabet.pop(0)
     else:
-        password = ''.join([random.choice(alphabet) for x in range(length)])
+        password = ''.join(random.choices(alphabet, k=length))
     return password
 
 def make_sentence(length=None, joiner=' '):
@@ -127,7 +127,7 @@ def make_sentence(length=None, joiner=' '):
     import dictionary.common as common
     if length is None:
         length = DEFAULT_LENGTH
-    words = [random.choice(common.words) for x in range(length)]
+    words = random.choices(common.words, k=length)
     words = [w.replace(' ', joiner) for w in words]
     result = joiner.join(words)
     return result
