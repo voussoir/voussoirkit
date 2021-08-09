@@ -28,11 +28,10 @@ to opt-in to the use of operatornotify so that it does not surprise them.
 
 If your application already uses the logging module, consider these options:
 - add an instance of operatornotify.LogHandler to your logger,
-- wrap your whole main call in a LogHandlerContext, or
+- wrap your function call in a operatornotify.LogHandlerContext, or
 - add @operatornotify.main_decorator to your main function.
 
 Commandline usage:
-
 > operatornotify --subject XXX [--body XXX]
 
 --subject:
