@@ -42,7 +42,6 @@ class NotFile(PathclassException):
 class NotLink(PathclassException):
     pass
 
-
 class Extension:
     def __init__(self, ext):
         if isinstance(ext, Extension):
@@ -81,7 +80,6 @@ class Extension:
         if self.ext == '':
             return ''
         return '.' + self.ext
-
 
 class Path:
     '''
@@ -208,8 +206,8 @@ class Path:
             # If the user wants to glob names in a different path, they should
             # create a Pathclass for that directory first and do it normally.
             raise TypeError('glob pattern should not have path separators')
-        pattern = self.with_child(pattern)
-        children = winglob.glob(pattern.absolute_path)
+        pattern = os.path.join(self.absolute_path, pattern)
+        children = winglob.glob(pattern)
         children = [self.with_child(child) for child in children]
         return children
 
@@ -336,7 +334,6 @@ class Path:
 
     def with_child(self, basename):
         return self.join(os.path.basename(basename))
-
 
 def common_path(paths, fallback):
     '''
