@@ -148,13 +148,3 @@ def main_level_by_argv(argv):
     root.addHandler(handler)
 
     return argv
-
-def set_level_by_argv(log, argv):
-    '''
-    This function sets the log's level by the flags in argv, then returns the
-    rest of argv which you can pass to your argparser.
-    '''
-    (level, argv) = get_level_by_argv(argv)
-    log.setLevel(level)
-
-    return argv
