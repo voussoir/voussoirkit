@@ -1,6 +1,12 @@
 '''
-This module forwards everything from logging, with the addition of a level
-LOUD=1 and all loggers are given the `loud` method.
+vlogging
+========
+
+Hey, what's up guys, it's voussoirkit back with another awesome module for you.
+This module forwards everything from logging, with the addition of levels LOUD
+and SILENT, and all loggers from getLogger are given the `loud` method.
+
+Don't forget to like, comment, and subscribe.
 '''
 from logging import *
 
@@ -24,6 +30,9 @@ def getLogger(name=None, main_fallback=None):
     return log
 
 def add_loud(log):
+    '''
+    Add the `loud` method to the given logger.
+    '''
     def loud(self, message, *args, **kwargs):
         if self.isEnabledFor(LOUD):
             self._log(LOUD, message, args, **kwargs)
@@ -106,6 +115,12 @@ def get_level_by_name(name):
     return value
 
 def main_decorator(main):
+    '''
+    Add this decorator to your application's main function to automatically
+    set the main log handler level by the arguments in argv. This allows you
+    to use --debug, --quiet, etc. on the command line without making any
+    changes to your argparser.
+    '''
     def wrapped(argv):
         argv = main_level_by_argv(argv)
         return main(argv)
