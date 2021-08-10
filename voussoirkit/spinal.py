@@ -3,7 +3,6 @@ This module provides functions related to walking the filesystem and
 copying files and folders.
 '''
 import hashlib
-import logging
 import os
 import shutil
 import sys
@@ -342,6 +341,7 @@ def copy_file(
         *,
         destination_new_root=None,
         bytes_per_second=None,
+        callback_hash_progress=None,
         callback_progress=None,
         callback_permission_denied=None,
         callback_pre_copy=None,

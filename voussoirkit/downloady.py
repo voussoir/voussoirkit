@@ -10,7 +10,6 @@ from voussoirkit import clipext
 from voussoirkit import dotdict
 from voussoirkit import pathclass
 from voussoirkit import ratelimiter
-from voussoirkit import safeprint
 from voussoirkit import vlogging
 
 log = vlogging.getLogger(__name__, 'downloady')

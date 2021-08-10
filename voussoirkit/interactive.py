@@ -12,7 +12,8 @@ def _abc_make_option_letters(options):
     option_letters = {}
     letter_length = math.ceil(len(options) / 26)
     for (index, option) in enumerate(options):
-        letter = basenumber.to_base(index, 26, alphabet=string.ascii_lowercase).rjust(letter_length, 'a')
+        letter = basenumber.to_base(index, 26, alphabet=string.ascii_lowercase)
+        letter = letter.rjust(letter_length, 'a')
         option_letters[letter] = option
 
     return option_letters

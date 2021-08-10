@@ -3,7 +3,6 @@ This module is designed to provide a GOOD ENOUGH means of identifying duplicate
 files very quickly, so that more in-depth checks can be done on likely matches.
 '''
 import hashlib
-import os
 import sys
 
 from voussoirkit import pathclass

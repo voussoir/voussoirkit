@@ -29,7 +29,6 @@ of threadpool in use:
 >>> pool.add_many(kwargss)
 >>> pool.join()
 '''
-import collections
 import logging
 import queue
 import threading
