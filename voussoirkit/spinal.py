@@ -793,7 +793,8 @@ def walk(
 
     glob_directories:
         A set of glob patterns. Directories will only be yielded if they match
-        at least one of these patterns.
+        at least one of these patterns. Directories which do not match these
+        patterns will still be used for traversal, though.
 
     glob_filenames:
         A set of glob patterns. Filenames will only be yielded if they match
@@ -829,10 +830,18 @@ def walk(
     if exclude_directories is not None:
         exclude_directories = {normalize(f) for f in exclude_directories}
 
-    if glob_filenames is not None:
+    if glob_filenames is None:
+        pass
+    elif isinstance(glob_filenames, str):
+        glob_filenames = {glob_filenames}
+    else:
         glob_filenames = set(glob_filenames)
 
-    if glob_directories is not None:
+    if glob_directories is None:
+        pass
+    elif isinstance(glob_directories, str):
+        glob_directories = {glob_directories}
+    else:
         glob_directories = set(glob_directories)
 
     path = pathclass.Path(path)
