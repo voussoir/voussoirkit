@@ -147,8 +147,10 @@ def input(
 
 def input_many(args, *input_args, **input_kwargs):
     '''
-    Given many input arguments, yield the input() results for all of them.
+    Given a list of input arguments, yield the input() results for all of them.
     This saves you from having to write the double for loop yourself.
+    This is useful when writing an argparser with nargs='+' where each arg
+    might be a string or !i or !c.
     '''
     if isinstance(args, str):
         yield from input(args, *input_args, **input_kwargs)
