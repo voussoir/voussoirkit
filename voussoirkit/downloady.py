@@ -16,8 +16,13 @@ log = vlogging.getLogger(__name__, 'downloady')
 
 warnings.simplefilter('ignore')
 
+USERAGENT = '''
+'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko)
+Chrome/42.0.2311.152 Safari/537.36'
+'''.strip().replace('\n', ' ')
+
 HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.152 Safari/537.36'
+    'User-Agent': USERAGENT,
 }
 
 FILENAME_BADCHARS = '*?"<>|\r\n'
