@@ -42,7 +42,7 @@ def ctrlc_return1(function):
     '''
     def wrapped(*args, **kwargs):
         try:
-            function(*args, **kwargs)
+            return function(*args, **kwargs)
         except KeyboardInterrupt:
             return 1
     return wrapped
