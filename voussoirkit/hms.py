@@ -1,6 +1,8 @@
 import math
 import sys
 
+from voussoirkit import pipeable
+
 def hms_to_seconds(hms):
     '''
     Convert hh:mm:ss string to an integer seconds.
@@ -37,8 +39,8 @@ def seconds_to_hms(seconds, force_minutes=False, force_hours=False):
     return hms
 
 def main(args):
-    from voussoirkit import pipeable
-    for line in pipeable.go(args, strip=True, skip_blank=True):
+    lines = pipeable.input_many(args, strip=True, skip_blank=True)
+    for line in lines:
         if ':' in line:
             line = hms_to_seconds(line)
         else:
@@ -46,7 +48,7 @@ def main(args):
             if line > 60:
                 line = seconds_to_hms(line)
 
-        pipeable.stdout(f'{line}')
+        pipeable.stdout(line)
 
 if __name__ == '__main__':
     raise SystemExit(main(sys.argv[1:]))
