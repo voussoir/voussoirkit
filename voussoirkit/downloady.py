@@ -6,9 +6,9 @@ import urllib
 import warnings
 
 from voussoirkit import bytestring
-from voussoirkit import clipext
 from voussoirkit import dotdict
 from voussoirkit import pathclass
+from voussoirkit import pipeable
 from voussoirkit import ratelimiter
 from voussoirkit import vlogging
 
@@ -435,7 +435,7 @@ def touch(filename):
 def download_argparse(args):
     url = args.url
 
-    url = clipext.resolve(url)
+    url = pipeable.input(url, split_lines=False)
     callback = {
         None: Progress1,
         '1': Progress1,
