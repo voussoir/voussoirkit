@@ -95,19 +95,19 @@ def input(
         input_prompt=None,
         read_files=False,
         skip_blank=False,
+        split_lines=True,
         strip=False,
     ):
     '''
-    Given an argument (probably from the command line), resolve it into a
-    generator of lines.
+    Given an argument (probably from the command line), resolve it into an
+    iterable of lines if split_lines is True, or return the whole text.
 
-    If the arg is in CLIPBOARD_STRINGS, the contents of the clipboard are taken
-    and split into lines.
+    If the arg is in CLIPBOARD_STRINGS, the contents of the clipboard are taken.
     If the arg is in INPUT_STRINGS, input is read from stdin with an optional
-    input_prompt that is only shown during non-pipe input (actual typing).
+    input_prompt. The prompt is only shown during non-pipe input (typing).
     If read_files is True and the arg is the path to an existing file, the file
-    is read as utf-8 lines.
-    If none of the above, then the argument is taken literally.
+    is read as utf-8 text.
+    If none of the above, then the argument string is taken literally.
 
     Resolution is not recursive: if the clipboard contains the name of a file,
     it won't be read, etc.
@@ -117,7 +117,7 @@ def input(
     strip is False, then all-whitespace lines will still be yielded). If you're
     modifying input but overall maintaining its original structure, you probably
     want these both False. If you're just crunching numbers you probably want
-    them both True.
+    them both True. If split_lines is False then these are not relevant.
 
     So, your calling code should not have to make any adjustments -- just call
     this function however is appropriate for your data sink and enjoy.
@@ -129,24 +129,35 @@ def input(
 
     if arg_lower in INPUT_STRINGS:
         lines = multi_line_input(prompt=input_prompt)
+        if not split_lines:
+            text = '\n'.join(lines)
 
     elif arg_lower in CLIPBOARD_STRINGS:
         import pyperclip
-        lines = pyperclip.paste().splitlines()
+        text = pyperclip.paste()
+        if split_lines:
+            lines = text.splitlines()
 
     elif read_files and os.path.isfile(arg):
-        lines = open(arg, 'r', encoding='utf-8')
-        lines = (line.rstrip('\r\n') for line in lines)
+        with open(arg, 'r', encoding='utf-8') as handle:
+            text = handle.read()
+        if split_lines:
+            lines = text.splitlines()
 
     else:
-        lines = arg.splitlines()
+        text = arg
+        if split_lines:
+            lines = text.splitlines()
 
-    for line in lines:
-        if strip:
-            line = line.strip()
-        if skip_blank and not line:
-            continue
-        yield line
+    if not split_lines:
+        return text
+
+    if strip:
+        lines = (line.strip() for line in lines)
+    if skip_blank:
+        lines = (line for line in lines if line)
+
+    return lines
 
 def input_many(args, *input_args, **input_kwargs):
     '''
