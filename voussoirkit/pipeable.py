@@ -122,6 +122,9 @@ def input(
     So, your calling code should not have to make any adjustments -- just call
     this function however is appropriate for your data sink and enjoy.
     '''
+    if not isinstance(arg, str):
+        raise TypeError(f'arg should be {str}, not {type(arg)}.')
+
     arg_lower = arg.lower()
 
     if arg_lower in INPUT_STRINGS:
