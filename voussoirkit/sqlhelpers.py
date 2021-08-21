@@ -1,3 +1,11 @@
+'''
+sqlhelpers
+==========
+
+This module provides functions for SQL string manipulation that I need often.
+Most importantly, creating the right number of ? for binding insert / update
+statements.
+'''
 import re
 import types
 
@@ -7,10 +15,9 @@ def delete_filler(pairs):
     Given a dictionary of {column: value}, return the "WHERE ..." portion of
     the query and the bindings in the correct order.
 
-    Example:
-    pairs={'test': 'toast', 'ping': 'pong'}
-    ->
-    returns ('WHERE test = ? AND ping = ?', ['toast', 'pong'])
+    >>> pairs={'test': 'toast', 'ping': 'pong'}
+    >>> delete_filler(pairs)
+    ('WHERE test = ? AND ping = ?', ['toast', 'pong'])
 
     In context:
     (qmarks, bindings) = delete_filler(pairs)
@@ -37,11 +44,10 @@ def insert_filler(column_names, values, require_all=True):
         an exception?
         Otherwise, that column will simply receive None.
 
-    Example:
-    column_names=['id', 'name', 'score'],
-    values={'score': 20, 'id': '1111', 'name': 'James'}
-    ->
-    returns ('?, ?, ?', ['1111', 'James', 20])
+    >>> column_names=['id', 'name', 'score'],
+    >>> values={'score': 20, 'id': '1111', 'name': 'James'}
+    >>> insert_filler(column_names, scores)
+    ('?, ?, ?', ['1111', 'James', 20])
 
     In context:
     (qmarks, bindings) = insert_filler(COLUMN_NAMES, data)
@@ -75,17 +81,16 @@ def update_filler(pairs, where_key):
     where [0] is the current value used for WHERE, and [1] is the new value
     used for SET.
 
-    Example:
-    pairs={'id': '1111', 'name': 'James', 'score': 20},
-    where_key='id'
-    ->
-    returns ('SET name = ?, score = ? WHERE id == ?', ['James', 20, '1111'])
+    >>> pairs={'id': '1111', 'name': 'James', 'score': 20},
+    >>> where_key='id'
+    >>> update_filler(pairs, where_key)
+    ('SET name = ?, score = ? WHERE id == ?', ['James', 20, '1111'])
 
     Example:
-    pairs={'filepath': ('/oldplace', '/newplace')},
-    where_key='filepath'
-    ->
-    returns ('SET filepath = ? WHERE filepath == ?', ['/newplace', '/oldplace'])
+    >>> pairs={'filepath': ('/oldplace', '/newplace')},
+    >>> where_key='filepath'
+    >>> update_filler(pairs, where_key)
+    ('SET filepath = ? WHERE filepath == ?', ['/newplace', '/oldplace'])
 
     In context:
     (qmarks, bindings) = update_filler(data, where_key)
@@ -138,11 +143,17 @@ def literal(item):
     '''
     Return a string depicting the SQL literal for this item.
 
-    Example:
-    0 -> "0"
-    'hello' -> "'hello'"
-    b'hello' -> "X'68656c6c6f'"
-    [3, 'hi'] -> "(3, 'hi')"
+    >>> literal(0)
+    "0"
+
+    >>> literal('hello')
+    "'hello'"
+
+    >>> literal(b'hello')
+    "X'68656c6c6f'"
+
+    >>> literal([3, 'hi'])
+    "(3, 'hi')"
     '''
     if item is None:
         return 'NULL'
@@ -240,9 +251,10 @@ def reverse_table_column_map(table_column_map):
     }
     If you have a row of data and you want to access one of the columns, you can
     use this map to figure out which tuple index corresponds to the column name.
+
     For example:
-        row = ('abcd', 'John', 23)
-        index = INDEX['people']['name']
-        print(row[index])
+    row = ('abcd', 'John', 23)
+    index = INDEX['people']['name']
+    print(row[index])
     '''
     return {table: _reverse_index(columns) for (table, columns) in table_column_map.items()}

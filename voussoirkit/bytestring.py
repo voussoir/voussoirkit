@@ -109,10 +109,13 @@ def bytestring(size, decimal_places=3, force_unit=None):
 def get_appropriate_divisor(size):
     '''
     Return the divisor that would be appropriate for displaying this byte size.
-    For example:
-        1000 => 1 to display 1,000 b
-        1024 => 1024 to display 1 KiB
-        123456789 => 1048576 to display 117.738 MiB
+
+    >>> get_appropriate_divisor(1000)
+    1
+    >>> get_appropriate_divisor(1024)
+    1024
+    >>> get_appropriate_divisor(123456789)
+    1048576
     '''
     size = abs(size)
     for unit in UNIT_SIZES:

@@ -1,3 +1,10 @@
+'''
+networktools
+============
+
+This module provides functions for learning the current network status and
+internal / external IP addresses.
+'''
 import requests
 import socket
 

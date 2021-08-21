@@ -1,6 +1,10 @@
 '''
-The documentation for the classes and methods are below. Here are some examples
-of threadpool in use:
+threadpool
+==========
+
+This module provides the ThreadPool class, which manages a pool of threads to
+complete many jobs. The documentation for the classes and methods are below.
+Here are some examples of threadpool in use:
 
 1. Powering a single api scraping generator with many threads:
 
