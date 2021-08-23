@@ -5,7 +5,7 @@ from voussoirkit import pipeable
 
 def hms_to_seconds(hms):
     '''
-    Convert hh:mm:ss string to an integer seconds.
+    Convert hh:mm:ss string to an integer or float of seconds.
     '''
     parts = hms.split(':')
     seconds = 0

@@ -54,6 +54,11 @@ def rotate_by_exif(image):
 
     Returns (image, exif) where exif has the orientation key set to 1,
     the upright position, if the rotation was successful.
+
+    You should be able to call image.save('filename.jpg', exif=exif) with
+    these returned values.
+    (To my knowledge, I can not put the exif back into the Image object itself.
+    There is getexif but no setexif or putexif, etc.)
     '''
     # Thank you Scabbiaza
     # https://stackoverflow.com/a/26928142

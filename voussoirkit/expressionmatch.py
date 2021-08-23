@@ -3,10 +3,14 @@ This module provides the ExpressionTree class, which parses a query expression
 like "a AND (b OR c)" and then evaluates whether an input satisfies the query.
 
 Basic usage:
-tree = expressionmatch.ExpressionTree.parse('a AND (b OR c)')
-tree.evaluate('a b')
-tree.evaluate('a c')
-tree.evaluate('b c')
+>>> tree = ExpressionTree.parse('a AND (b OR c)')
+>>> tree.evaluate('a b')
+True
+>>> tree.evaluate('a c')
+True
+>>> tree.evaluate('b c')
+False
+>>>
 
 The available operators are:
 a AND b

@@ -13,7 +13,8 @@ def comma_space_split(text):
     Split the string by commas and spaces, discarding all extra
     whitespace and blank parts.
 
-    'a b, c,,d' -> ['a', 'b', 'c', 'd']
+    >>> comma_space_split('a b, c,,d')
+    ['a', 'b', 'c', 'd']
     '''
     if text is None:
         return text
@@ -49,8 +50,10 @@ def natural_sorter(s):
 
 def pascal_to_loudsnakes(text):
     '''
-    PascalCase -> PASCAL_CASE
-    HTMLDocument -> HTML_DOCUMENT
+    >>> pascal_to_loudsnakes('PascalCase')
+    'PASCAL_CASE'
+    >>> pascal_to_loudsnakes('HTMLDocument')
+    'HTML_DOCUMENT'
     '''
     text = re.sub(r'([a-z])([A-Z])', r'\1_\2', text)
     text = re.sub(r'([A-Z]+)([A-Z][a-z])', r'\1_\2', text)

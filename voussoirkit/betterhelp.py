@@ -42,18 +42,20 @@ def can_use_bare_subparsers(subparser_action):
 def docstring_preview(text):
     '''
     This function assumes that your docstring is formatted with a single blank
-    line separating the command's primary summary and the rest of the text.
-    For example:
+    line separating the command's primary summary and the rest of the text,
+    and will return the summary above the blank.
 
-        cookbacon = """
-        cookbacon: Cooks all nearby bacon to a specified temperature.
-
-        Usage:
-            > cookbacon 350F
-            > cookbacon 175C
-        """
-
-    and will return the first portion.
+    >>> cookbacon = """
+    ... cookbacon: Cooks all nearby bacon to a specified temperature.
+    ...
+    ... Usage:
+    ...     > cookbacon 350F
+    ...     > cookbacon 175C
+    ... """
+    >>>
+    >>>
+    >>> docstring_preview(cookbacon)
+    'cookbacon: Cooks all nearby bacon to a specified temperature.'
     '''
     text = text.split('\n\n')[0].strip()
     return text

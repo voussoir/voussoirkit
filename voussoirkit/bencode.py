@@ -1,3 +1,12 @@
+'''
+bencode
+=======
+
+This module provides the functions bencode and bdecode for working with
+Bencode data.
+
+https://en.wikipedia.org/wiki/Bencode
+'''
 def bencode(data):
     '''
     Encode python types to bencode.
