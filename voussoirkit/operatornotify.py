@@ -178,6 +178,10 @@ def main_decorator(subject, *args, **kwargs):
     def wrapper(main):
         def wrapped(argv):
             (context, argv) = main_log_context(argv, subject, *args, **kwargs)
+
+            if isinstance(context, contextlib.nullcontext):
+                return main(argv)
+
             with context:
                 status = main(argv)
                 log.info('Program finished, returned %s.', status)
