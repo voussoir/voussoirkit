@@ -3,7 +3,7 @@ import sys
 
 from voussoirkit import pipeable
 
-def hms_to_seconds(hms):
+def hms_to_seconds(hms) -> float:
     '''
     Convert hh:mm:ss string to an integer or float of seconds.
     '''
@@ -21,7 +21,7 @@ def hms_to_seconds(hms):
         seconds += float(parts[0])
     return seconds
 
-def seconds_to_hms(seconds, force_minutes=False, force_hours=False):
+def seconds_to_hms(seconds, force_minutes=False, force_hours=False) -> str:
     '''
     Convert integer number of seconds to an hh:mm:ss string.
     Only the necessary fields are used.

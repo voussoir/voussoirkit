@@ -1,14 +1,14 @@
 import re
 import unicodedata
 
-def collapse_whitespace(text):
+def collapse_whitespace(text) -> str:
     '''
     Replace all whitespace sequences with a single space and strip the ends.
     '''
     text = re.sub(r'\s+', ' ', text.strip())
     return text
 
-def comma_space_split(text):
+def comma_space_split(text) -> list:
     '''
     Split the string by commas and spaces, discarding all extra
     whitespace and blank parts.
@@ -20,7 +20,7 @@ def comma_space_split(text):
         return text
     return re.split(r'[ ,]+', text.strip())
 
-def excise(text, mark_left, mark_right):
+def excise(text, mark_left, mark_right) -> str:
     '''
     Remove the text between the left and right landmarks, including the
     landmarks themselves, and return the rest of the text.
@@ -48,7 +48,7 @@ def natural_sorter(s):
     alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
     return alphanum_key(s)
 
-def pascal_to_loudsnakes(text):
+def pascal_to_loudsnakes(text) -> str:
     '''
     >>> pascal_to_loudsnakes('PascalCase')
     'PASCAL_CASE'
@@ -60,12 +60,12 @@ def pascal_to_loudsnakes(text):
     text = text.upper()
     return text
 
-def remove_characters(text, characters):
+def remove_characters(text, characters) -> str:
     translator = {ord(c): None for c in characters}
     text = text.translate(translator)
     return text
 
-def remove_control_characters(text):
+def remove_control_characters(text) -> str:
     '''
     Thanks Alex Quinn
     https://stackoverflow.com/a/19016117
@@ -75,7 +75,7 @@ def remove_control_characters(text):
     '''
     return ''.join(c for c in text if unicodedata.category(c)[0] != 'C')
 
-def title_capitalize(text):
+def title_capitalize(text) -> str:
     text = text.strip().title()
     articles = [
         'a',

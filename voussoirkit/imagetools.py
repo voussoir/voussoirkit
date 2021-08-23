@@ -12,7 +12,7 @@ def fit_into_bounds(
         frame_width,
         frame_height,
         only_shrink=False,
-    ):
+    ) -> tuple:
     '''
     Given the w+h of the image and the w+h of the frame,
     return new w+h that fits the image into the frame
@@ -32,7 +32,7 @@ def fit_into_bounds(
 
     return (new_width, new_height)
 
-def pad_to_square(image, background_color=None):
+def pad_to_square(image, background_color=None) -> PIL.Image:
     '''
     If the given image is not already square, return a new, square image with
     additional padding on top and bottom or left and right.

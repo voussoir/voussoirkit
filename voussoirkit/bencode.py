@@ -7,7 +7,7 @@ Bencode data.
 
 https://en.wikipedia.org/wiki/Bencode
 '''
-def bencode(data):
+def bencode(data) -> bytes:
     '''
     Encode python types to bencode.
     '''

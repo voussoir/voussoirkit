@@ -1,6 +1,6 @@
 import os
 
-def quote(arg):
+def quote(arg) -> str:
     if os.name == 'nt':
         # If the command contains comma, semicolon, or equals, only the left
         # half is considered the command and the rest is considered the first
@@ -24,7 +24,7 @@ def quote(arg):
             arg = f"'{arg}'"
         return arg
 
-def format_command(command):
+def format_command(command) -> str:
     cmd = [quote(x) for x in command]
     cmd = ' '.join(cmd)
     cmd = cmd.strip()

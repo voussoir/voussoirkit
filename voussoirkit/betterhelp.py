@@ -10,7 +10,7 @@ HELPSTRINGS = {'', 'help', '-h', '--help'}
 
 # INTERNALS
 ################################################################################
-def can_use_bare(parser):
+def can_use_bare(parser) -> bool:
     '''
     Return true if the given parser has no required arguments, ie can run bare.
     This is used to decide whether running `> myprogram.py` should show the
@@ -29,7 +29,7 @@ def can_use_bare(parser):
     has_required_args = any(is_required(action) for action in parser._actions)
     return has_func and not has_required_args
 
-def can_use_bare_subparsers(subparser_action):
+def can_use_bare_subparsers(subparser_action) -> set:
     '''
     Return a set of subparser names which can be used bare.
     '''
@@ -39,7 +39,7 @@ def can_use_bare_subparsers(subparser_action):
     )
     return can_bares
 
-def docstring_preview(text):
+def docstring_preview(text) -> str:
     '''
     This function assumes that your docstring is formatted with a single blank
     line separating the command's primary summary and the rest of the text,
@@ -66,7 +66,7 @@ def listget(li, index, fallback=None):
     except IndexError:
         return fallback
 
-def add_previews(docstring, sub_docstrings):
+def add_previews(docstring, sub_docstrings) -> str:
     '''
     Given a primary docstring which contains {command_name} formatting elements,
     and a dict of sub_docstrings of {command_name: docstring}, insert previews
@@ -85,7 +85,7 @@ def get_subparser_action(parser):
             return action
     raise TypeError('Couldn\'t locate the SubParsersAction.')
 
-def set_alias_docstrings(sub_docstrings, subparser_action):
+def set_alias_docstrings(sub_docstrings, subparser_action) -> dict:
     '''
     When using subparser aliases:
 

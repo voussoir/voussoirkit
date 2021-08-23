@@ -25,7 +25,7 @@ class Backoff:
             raise ValueError(f'max must be positive, not {max}.')
         self.max = max
 
-    def current(self):
+    def current(self) -> float:
         '''
         Return the current backoff value without advancing.
         '''
@@ -34,7 +34,7 @@ class Backoff:
             y = min(y, self.max)
         return y
 
-    def next(self):
+    def next(self) -> float:
         '''
         Return the current backoff value, then advance x.
         '''
@@ -42,13 +42,13 @@ class Backoff:
         self.x += 1
         return y
 
-    def reset(self):
+    def reset(self) -> None:
         '''
         Reset x to 0.
         '''
         self.x = 0
 
-    def rewind(self, steps):
+    def rewind(self, steps) -> None:
         '''
         Subtract this many steps from x, to ease up the backoff without
         entirely resetting.
