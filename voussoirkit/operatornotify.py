@@ -25,6 +25,7 @@ Authoring your my_operatornotify.notify function:
 This module should ONLY be called by application code, not library code.
 Ideally, the application should provide a flag --operatornotify for the user
 to opt-in to the use of operatornotify so that it does not surprise them.
+The get_level_by_argv function should handle this opt-in for you.
 
 If your application already uses the logging module, consider these options:
 - add an instance of operatornotify.LogHandler to your logger,
@@ -170,6 +171,38 @@ class LogHandlerContext:
         self.handler.notify()
         self.log.removeHandler(self.handler)
 
+def get_level_by_argv(argv):
+    '''
+    The user can provide --operatornotify to opt-in to receive notifications at
+    the default level (warning), or --operatornotify-level X where X is e.g.
+    "debug", "info", "warning", "error".
+
+    Returns (argv, level) where argv has the --operatornotify arguments removed,
+    and level is either an integer log level, or None if the user did not
+    opt in. Even if you are not attaching operatornotify to your logger, you
+    can still use this value to make decisions about when/what to notify.
+    '''
+    # This serves the purpose of normalizing the argument, but also creating a
+    # duplicate list so we are not altering sys.argv.
+    # Do not modiy this code without considering both effects.
+    argv = ['--operatornotify-level' if arg == '--operatornotify_level' else arg for arg in argv]
+
+    level = None
+    if '--operatornotify-level' in argv:
+        level = argv.pop(argv.index('--operatornotify-level') + 1)
+        try:
+            level = int(level)
+        except ValueError:
+            level = vlogging.get_level_by_name(level)
+        argv.remove('--operatornotify-level')
+
+    if '--operatornotify' in argv:
+        if level is None:
+            level = vlogging.WARNING
+        argv.remove('--operatornotify')
+
+    return (argv, level)
+
 def main_decorator(subject, *args, **kwargs):
     '''
     Add this decorator to your application's main function to automatically
@@ -193,17 +226,18 @@ def main_log_context(argv, subject, *args, **kwargs):
     '''
     This function is for accelerating the common use case of adding
     operatornotify to a commandline application's existing logger.
-    The goals are:
 
-    1. Opt into operatornotify by --operatornotify, or return a nullcontext.
-    2. Set handler's level by --operatornotify-level X where X is DEBUG, INFO,
-        ERROR, or any other level in vlogging.
-    3. Remove those args from argv so your argparse doesn't know the difference.
-    4. Add handler to the root logger.
-    5. Provide a context manager with which you'll wrap your main function.
-    6. Operatornotify captures all log messages and any fatal exception
+    The goals are:
+    1. Opt into operatornotify by --operatornotify or --operatornotify-level.
+    2. Remove those args from argv so your argparse doesn't know the difference.
+    3. Provide a context manager with which you'll wrap your main function.
+        Will be nullcontext if the user did not opt in.
+
+    That context will:
+    1. Add handler to the root logger.
+    2. Operatornotify captures all log messages and any fatal exception
         that kills your main function.
-    7. Results are sent at the end of runtime.
+    3. Results are sent at the end of runtime, when your main returns.
 
     Additional *args, **kwargs go to LogHandler init, so you can
     pass notify_every_line, etc.
@@ -211,24 +245,8 @@ def main_log_context(argv, subject, *args, **kwargs):
     Returns (context, argv) where argv can go into your argparse and context
     can wrap your main call.
     '''
-    # This serves the purpose of normalizing the argument, but also creating a
-    # duplicate list so we are not altering sys.argv.
-    # Do not modiy this code without considering both effects.
-    argv = ['--operatornotify-level' if arg == '--operatornotify_level' else arg for arg in argv]
 
-    level = None
-    if '--operatornotify-level' in argv:
-        level = argv.pop(argv.index('--operatornotify-level') + 1)
-        try:
-            level = int(level)
-        except ValueError:
-            level = vlogging.get_level_by_name(level)
-        argv.remove('--operatornotify-level')
-
-    if '--operatornotify' in argv:
-        if level is None:
-            level = vlogging.WARNING
-        argv.remove('--operatornotify')
+    (argv, level) = get_level_by_argv(argv)
 
     if level is None:
         return (contextlib.nullcontext(), argv)
