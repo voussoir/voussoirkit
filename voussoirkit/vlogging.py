@@ -96,6 +96,7 @@ def get_level_by_name(name):
     name = name.upper()
 
     levels = {
+        'SILENT': SILENT,
         'CRITICAL': CRITICAL,
         'FATAL': FATAL,
         'ERROR': ERROR,
