@@ -5,7 +5,12 @@ on Windows.
 import ctypes
 import re
 import string
-kernel32 = ctypes.windll.kernel32
+import ctypes.wintypes
+kernel32 = ctypes.WinDLL('kernel32')
+
+from voussoirkit import vlogging
+
+log = vlogging.getLogger(__name__, 'windrives')
 
 def get_all_volumes():
     '''
@@ -17,15 +22,33 @@ def get_all_volumes():
 
     Thank you Duncan.
     https://stackoverflow.com/a/3075879
+
+    Thank you Mark Tolonen.
+    https://stackoverflow.com/a/66976493
     '''
+    type_unicode = ctypes.wintypes.LPCWSTR
+    type_dword = ctypes.wintypes.DWORD
+    type_handle = ctypes.wintypes.HANDLE
+
+    kernel32.FindFirstVolumeW.argtypes = (type_unicode, type_dword)
+    kernel32.FindFirstVolumeW.restype = type_handle
+
+    kernel32.FindNextVolumeW.argtypes = (type_handle, type_unicode, type_dword)
+    kernel32.FindNextVolumeW.restype = type_handle
+
+    kernel32.FindVolumeClose.argtypes = (type_handle,)
+    kernel32.FindVolumeClose.restype = type_handle
+
+    buffer = ctypes.create_unicode_buffer(1024)
+    buffer_size = ctypes.sizeof(buffer)
+
+    handle = kernel32.FindFirstVolumeW(buffer, buffer_size)
+
     volumes = []
-    buf = ctypes.create_unicode_buffer(1024)
-    length = ctypes.c_int32()
-    handle = kernel32.FindFirstVolumeW(buf, ctypes.sizeof(buf))
     if handle:
-        volumes.append(buf.value)
-        while kernel32.FindNextVolumeW(handle, buf, ctypes.sizeof(buf)):
-            volumes.append(buf.value)
+        volumes.append(buffer.value)
+        while kernel32.FindNextVolumeW(handle, buffer, buffer_size):
+            volumes.append(buffer.value)
         kernel32.FindVolumeClose(handle)
     return volumes
 
@@ -149,12 +172,12 @@ def get_volume_mount(volume):
     If it has two mount paths, only the first one is returned.
     So, I'll just use a single return value until further notice.
     '''
-    buf = ctypes.create_unicode_buffer(1024)
+    buffer = ctypes.create_unicode_buffer(1024)
     length = ctypes.c_int32()
     kernel32.GetVolumePathNamesForVolumeNameW(
         ctypes.c_wchar_p(volume),
-        buf,
-        ctypes.sizeof(buf),
+        buffer,
+        ctypes.sizeof(buffer),
         ctypes.pointer(length),
     )
-    return buf.value
+    return buffer.value
