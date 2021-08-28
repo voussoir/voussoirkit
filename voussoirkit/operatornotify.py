@@ -162,7 +162,10 @@ class LogHandlerContext:
         if exc_type not in (None, KeyboardInterrupt):
             exc_text = traceback.format_exception(exc_type, exc_value, exc_traceback)
             exc_text = ''.join(exc_text)
-            exc_text = f'\n{exc_text}\n'
+            exc_text = '\n'.join([
+                'The context was killed by the following exception:',
+                f'{exc_text}'
+            ])
             # Intentionally using module's log, not self.log because I think
             # it should be clear who emitted the message, and the caller can
             # mute this module if they want to.
