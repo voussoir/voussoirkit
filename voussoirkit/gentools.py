@@ -13,3 +13,11 @@ def chunk_generator(sequence, chunk_length):
         if not chunk:
             break
         yield chunk
+
+def run(g) -> None:
+    '''
+    Iterate the generator and discard the results. Used when the generator has
+    side effects that are more important than the yielded values.
+    '''
+    for x in g:
+        pass
