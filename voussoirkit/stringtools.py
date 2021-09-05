@@ -1,5 +1,13 @@
 import re
+import typing
 import unicodedata
+
+from voussoirkit import sentinel
+
+TRUTHYSTRING_TRUE = {s.lower() for s in ('1', 'true', 't', 'yes', 'y', 'on')}
+TRUTHYSTRING_FALSE = {s.lower() for s in ('0', 'false', 'f', 'no', 'n', 'off')}
+TRUTHYSTRING_NONE = {s.lower() for s in ('null', 'none')}
+TRUTHYSTRING_NO_FALLBACK = sentinel.Sentinel('no fallback')
 
 def collapse_whitespace(text) -> str:
     '''
@@ -100,3 +108,48 @@ def title_capitalize(text) -> str:
     # the future.
     text = re.sub(r'(\b[ivx]+\b)', lambda m: m.group(1).upper(), text, flags=re.IGNORECASE)
     return text
+
+def truthystring(
+        s,
+        fallback=TRUTHYSTRING_NO_FALLBACK,
+        strict_int=True,
+        true_set=TRUTHYSTRING_TRUE,
+        false_set=TRUTHYSTRING_FALSE,
+        none_set=TRUTHYSTRING_NONE,
+    ) -> typing.Union[bool, None]:
+    '''
+    If s is already a boolean, int, or None, return a boolean or None.
+    If strict_int is True, only integers 0 and 1 will be coerced to boolean,
+    and other integers will return the fallback or raise ValueError.
+
+    If s is a string, return True, False, or None based on the options presented
+    in true_set, false_set, none_set where s is treated case-insensitively.
+
+    If s is not in any of those sets and a fallback is provided,
+    return the fallback.
+
+    If there is no fallback, raise ValueError.
+    '''
+    if s is None:
+        return None
+
+    if isinstance(s, bool):
+        return s
+
+    if isinstance(s, int):
+        if (strict_int is False) or (s in {0, 1}):
+            return bool(s)
+
+    if isinstance(s, str):
+        s_lower = s.lower()
+        if s_lower in true_set:
+            return True
+        if s_lower in false_set:
+            return False
+        if s_lower in none_set:
+            return None
+
+    if fallback is TRUTHYSTRING_NO_FALLBACK:
+        raise ValueError(s)
+
+    return fallback
