@@ -1,10 +1,35 @@
 import copy
 import PIL.ExifTags
+import PIL.Image
 
 ORIENTATION_KEY = None
 for (ORIENTATION_KEY, val) in PIL.ExifTags.TAGS.items():
     if val == 'Orientation':
         break
+
+def checkerboard_image(color_1, color_2, image_size, checker_size) -> PIL.Image:
+    '''
+    Generate a PIL Image with a checkerboard pattern.
+
+    color_1:
+        The color starting in the top left. Either RGB tuple or a string
+        that PIL understands.
+    color_2:
+        The alternate color
+    image_size:
+        Tuple of two integers, the image size in pixels.
+    checker_size:
+        Tuple of two integers, the size of each checker in pixels.
+    '''
+    image = PIL.Image.new('RGB', image_size, color_1)
+    checker = PIL.Image.new('RGB', (checker_size, checker_size), color_2)
+    offset = True
+    for y in range(0, image_size[1], checker_size):
+        for x in range(0, image_size[0], checker_size * 2):
+            x += offset * checker_size
+            image.paste(checker, (x, y))
+        offset = not offset
+    return image
 
 def fit_into_bounds(
         image_width,
