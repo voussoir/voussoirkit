@@ -7,10 +7,17 @@ internal / external IP addresses.
 '''
 import requests
 import socket
+import time
 
 from voussoirkit import vlogging
 
 log = vlogging.getLogger(__name__, 'networktools')
+
+class NetworkToolsException(Exception):
+    pass
+
+class NoInternet(NetworkToolsException):
+    pass
 
 def get_external_ip():
     url = 'https://voussoir.net/whatsmyip'
@@ -44,3 +51,11 @@ def has_internet(timeout=2):
         return True
     except socket.error as exc:
         return False
+
+def wait_for_internet(timeout):
+    started = time.time()
+    while True:
+        if time.time() - started >= timeout:
+            raise NoInternet()
+        if has_internet(timeout=1):
+            return
