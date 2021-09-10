@@ -107,7 +107,7 @@ class Path:
         self._case_correct = _case_correct
 
         if isinstance(path, Path):
-            self.absolute_path = path.absolute_path
+            absolute_path = path.absolute_path
         else:
             path = path.strip()
             if re.search('^[A-Za-z]:$', path):
@@ -115,10 +115,9 @@ class Path:
                 path += self.sep
             path = normalize_sep(path)
             path = os.path.normpath(path)
-            path = os.path.abspath(path)
-            self.absolute_path = path
+            absolute_path = os.path.abspath(path)
 
-        self.absolute_path = normalize_sep(self.absolute_path, self.sep)
+        self._absolute_path = normalize_sep(absolute_path, self.sep)
 
     def __contains__(self, other):
         other = self.spawn(other)
@@ -145,6 +144,10 @@ class Path:
 
     def __repr__(self):
         return '{c}({path})'.format(c=self.__class__.__name__, path=repr(self.absolute_path))
+
+    @property
+    def absolute_path(self):
+        return self._absolute_path
 
     def assert_exists(self):
         if not self.exists:
@@ -191,8 +194,8 @@ class Path:
     def correct_case(self):
         if self._case_correct:
             return self
-        self.absolute_path = get_path_casing(self.absolute_path)
-        self.absolute_path = self.absolute_path.replace('/', self.sep).replace('\\', self.sep)
+        absolute_path = get_path_casing(self._absolute_path)
+        self._absolute_path = normalize_sep(absolute_path, self.sep)
         self._case_correct = True
         return self
 
