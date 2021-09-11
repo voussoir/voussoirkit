@@ -181,10 +181,10 @@ def _output(stream, line, end):
     if not OUT_PIPE:
         stream.flush()
 
-def stdout(line, end='\n'):
+def stdout(line='', end='\n'):
     _output(sys.stdout, line, end)
 
-def stderr(line, end='\n'):
+def stderr(line='', end='\n'):
     _output(sys.stderr, line, end)
 
 # backwards compat
