@@ -1,6 +1,8 @@
 '''
 This module provides functions for interactive command line UIs.
 '''
+from voussoirkit import pipeable
+
 ####################################################################################################
 ## ABC_CHOOSER #####################################################################################
 ####################################################################################################
@@ -30,18 +32,18 @@ def abc_chooser(options, prompt='', must_pick=False):
         message = []
         for (letter, option) in option_letters.items():
             message.append(f'{letter}. {option}')
-        print('\n'.join(message))
+        pipeable.stderr('\n'.join(message))
         choice = input(prompt).strip().lower()
 
         if not choice:
             if must_pick:
-                print()
+                pipeable.stderr()
                 continue
             else:
                 return
 
         if choice not in option_letters:
-            print()
+            pipeable.stderr()
             continue
 
         return option_letters[choice]
@@ -62,7 +64,7 @@ def abc_chooser_many(options, prompt='', label='X'):
             this_label = label if letter in selected else ''
             this_label = this_label.center(len(label))
             message.append(f'{letter}. [{this_label}] {option}')
-        print('\n'.join(message))
+        pipeable.stderr('\n'.join(message))
 
         choice = input(prompt).strip().lower()
 
@@ -70,14 +72,14 @@ def abc_chooser_many(options, prompt='', label='X'):
             break
 
         if choice not in option_letters:
-            print()
+            pipeable.stderr()
             continue
 
         if choice in selected:
             selected.remove(choice)
         else:
             selected.add(choice)
-        print()
+        pipeable.stderr()
 
     choices = [option_letters[letter] for letter in option_letters if letter in selected]
     return choices
@@ -109,7 +111,7 @@ def getpermission(
     `if getpermission():` will always only accept in case of explicit yes.
     '''
     if prompt is not None:
-        print(prompt)
+        pipeable.stderr(prompt)
     while True:
         answer = input(f'{yes_strings[0]}/{no_strings[0]}> ').strip()
         yes = answer.lower() in (option.lower() for option in yes_strings)
