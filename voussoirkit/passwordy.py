@@ -1,135 +1,98 @@
 '''
+passwordy
+=========
+
 This module provides functions for generating random strings.
+
+Command line usage:
+
+> passwordy <length> [flags]
+
+length:
+    Integer number of characters, or words when using sentence mode.
+
+# Sentence mode:
+--sentence:
+    If this argument is passed, `length` random words are chosen.
+    Only --separator, --upper, and --lower can be used in sentence mode.
+
+--separator <string>:
+    When using sentence mode, the words will be joined with this string.
+
+# urandom mode:
+--urandom:
+    If this argument is passed, os.urandom is called for cryptographically
+    strong randomness and the password is shown as hex.
+    Only --upper and --lower can be used in urandom mode (though the hex is
+    lowercase by default).
+
+# Normal mode:
+--letters:
+    Include ASCII letters in the password.
+    If none of the other following options are chosen, letters is the default.
+
+--digits:
+    Include digits 0-9 in the password.
+
+--hex
+    Include 0-9, a-f in the password.
+
+--binary
+    Include 0, 1 in the password.
+
+--punctuation
+    Include punctuation symbols in the password.
+
+--upper
+    Convert the entire password to uppercase.
+
+--lower
+    Convert the entire password to lowercase.
 '''
+import argparse
 import math
 import os
 import random
 import string
 import sys
 
-DEFAULT_LENGTH = 32
-DEFAULT_SENTENCE = 5
-HELP_MESSAGE = '''
-===============================================================================
-Generates a randomized password.
+from voussoirkit import betterhelp
+from voussoirkit import pipeable
 
-> passwordy [length] [options]
+def make_password(
+        length,
+        letters=False,
+        digits=False,
+        hex=False,
+        binary=False,
+        punctuation=False,
+    ):
+    alphabet = set()
+    if letters:
+        alphabet.update(string.ascii_letters)
+    if digits:
+        alphabet.update(string.digits)
+    if hex:
+        alphabet.update('0123456789abcdef')
+    if binary:
+        alphabet.update('01')
+    if punctuation:
+        alphabet.update(string.punctuation)
 
-    length: How many characters. Default %03d.
-    options:
-        h  : consist entirely of hexadecimal characters.
-        b  : consist entirely of binary characters.
-        dd : consist entirely of decimal characters.
-        default : consist entirely of upper+lower letters.
+    if not alphabet:
+        raise ValueError('No alphabet options chosen.')
 
-        p  : allow punctuation in conjunction with above.
-        d  : allow digits in conjunction with above.
+    return ''.join(random.choices(tuple(alphabet), k=length))
 
-        l  : convert to lowercase.
-        u  : convert to uppercase.
-        nd : no duplicates. Each character can only appear once.
-
-Examples:
-> passwordy 32 h l
-98f17b6016cf08cc00f2aeecc8d8afeb
-
-> passwordy 32 h u
-2AA706866BF7A5C18328BF866136A261
-
-> passwordy 32 u
-JHEPTKCEFZRFXILMASHNPSTFFNWQHTTN
-
-> passwordy 32 p
-Q+:iSKX!Nt)ewUvlE*!+^D}hp+|<wpJ}
-
-> passwordy 32 l p
-m*'otz/"!qo?-^wwdu@fasf:|ldkosi`
-
-===============================================================================
-
-Generates a randomized sentence of words.
-
-> passwordy sent [length] [join]
-
-    length : How many words. Default %03d.
-    join   : The character that will join words together.
-             Default space.
-
-Examples:
-> passwordy sent
-arrowroot sheared rustproof undo propionic acid
-
-> passwordy sent 8
-cipher competition solid angle rigmarole lachrymal social class critter consequently
-
-> passwordy sent 8 _
-Kahn_secondary_emission_unskilled_superior_court_straight_ticket_voltameter_hopper_crass
-
-===============================================================================
- '''.strip() % (DEFAULT_LENGTH, DEFAULT_SENTENCE)
-
-
-def listget(li, index, fallback=None):
-    try:
-        return li[index]
-    except IndexError:
-        return fallback
-
-def make_password(length=None, passtype='standard'):
-    '''
-    Returns a string of length `length` consisting of a random selection
-    of uppercase and lowercase letters, as well as punctuation and digits
-    if parameters permit
-    '''
-    if length is None:
-        length = DEFAULT_LENGTH
-
-    alphabet = ''
-
-    if 'standard' in passtype:
-        alphabet = string.ascii_letters
-    elif 'digit_only' in passtype:
-        alphabet = string.digits
-    elif 'hex' in passtype:
-        alphabet = '0123456789abcdef'
-    elif 'binary' in passtype:
-        alphabet = '01'
-
-    if '+digits' in passtype:
-        alphabet += string.digits
-    if '+punctuation' in passtype:
-        alphabet += string.punctuation
-    if '+lowercase' in passtype:
-        alphabet = alphabet.lower()
-    elif '+uppercase' in passtype:
-        alphabet = alphabet.upper()
-
-    alphabet = list(set(alphabet))
-
-    if '+noduplicates' in passtype:
-        if len(alphabet) < length:
-            message = 'Alphabet "%s" is not long enough to support no-dupe password of length %d'
-            message = message % (alphabet, length)
-            raise Exception(message)
-        password = ''
-        for x in range(length):
-            random.shuffle(alphabet)
-            password += alphabet.pop(0)
-    else:
-        password = ''.join(random.choices(alphabet, k=length))
-    return password
-
-def make_sentence(length=None, joiner=' '):
+def make_sentence(length, separator=' '):
     '''
     Returns a string containing `length` words, which come from
     dictionary.common.
     '''
     import dictionary.common as common
-    if length is None:
-        length = DEFAULT_LENGTH
     words = random.choices(common.words, k=length)
-    words = [w.replace(' ', joiner) for w in words]
-    result = joiner.join(words)
+    words = [w.replace(' ', separator) for w in words]
+    result = separator.join(words)
     return result
 
 def random_hex(length):
@@ -144,72 +107,48 @@ def urandom_hex(length):
     token = token[:length]
     return token
 
-def main_password(argv):
-    length = listget(argv, 0, DEFAULT_LENGTH)
-    options = [a.lower() for a in argv[1:]]
-
-    if '-' in length:
-        length = length.replace(' ', '')
-        length = [int(x) for x in length.split('-', 1)]
-        length = random.randint(*length)
-
-    elif not length.isdigit() and options == []:
-        options = [length]
-        length = DEFAULT_LENGTH
-
-    length = int(length)
-
-    passtype = 'standard'
-    if 'dd' in options:
-        passtype = 'digit_only'
-    if 'b' in options:
-        passtype = 'binary'
-    if 'h' in options:
-        passtype = 'hex'
-
-    if 'l' in options:
-        passtype += '+lowercase'
-    elif 'u' in options:
-        passtype += '+uppercase'
-    if 'p' in options:
-        passtype += '+punctuation'
-    if 'd' in options:
-        passtype += '+digits'
-    if 'nd' in options:
-        passtype += '+noduplicates'
-
-    return make_password(length, passtype=passtype)
-
-def main_sentence(argv):
-    length = listget(argv, 1, DEFAULT_SENTENCE)
-    joiner = listget(argv, 2, ' ')
-
-    try:
-        length = int(length)
-    except ValueError:
-        joiner = length
-        length = DEFAULT_SENTENCE
-
-    return make_sentence(length, joiner)
-
-def main_urandom(argv):
-    length = listget(argv, 1, DEFAULT_LENGTH)
-    length = int(length)
-    return urandom_hex(length)
+def passwordy_argparse(args):
+    if args.sentence:
+        password = make_sentence(args.length, args.separator)
+    elif args.urandom:
+        password = urandom_hex(args.length)
+    else:
+        if not any([args.letters, args.digits, args.hex, args.binary, args.punctuation]):
+            letters = True
+        else:
+            letters = args.letters
+        password = make_password(
+            length=args.length,
+            letters=letters,
+            digits=args.digits,
+            hex=args.hex,
+            binary=args.binary,
+            punctuation=args.punctuation,
+        )
+    if args.lower:
+        password = password.lower()
+    elif args.upper:
+        password = password.upper()
+    pipeable.stdout(password)
+    return 0
 
 def main(argv):
-    mode = listget(argv, 0, 'password')
-    if 'help' in mode:
-        print(HELP_MESSAGE)
-        quit()
+    parser = argparse.ArgumentParser(description=__doc__)
 
-    if 'sent' in mode:
-        print(main_sentence(argv))
-    elif 'urandom' in mode:
-        print(main_urandom(argv))
-    else:
-        print(main_password(argv))
+    parser.add_argument('length', type=int)
+    parser.add_argument('--urandom', action='store_true')
+    parser.add_argument('--sentence', action='store_true')
+    parser.add_argument('--separator', nargs='?', default=' ')
+    parser.add_argument('--letters', action='store_true')
+    parser.add_argument('--digits', action='store_true')
+    parser.add_argument('--hex', action='store_true')
+    parser.add_argument('--binary', action='store_true')
+    parser.add_argument('--punctuation', action='store_true')
+    parser.add_argument('--lower', action='store_true')
+    parser.add_argument('--upper', action='store_true')
+    parser.set_defaults(func=passwordy_argparse)
 
+    return betterhelp.single_main(argv, parser, __doc__)
 
 if __name__ == '__main__':
     raise SystemExit(main(sys.argv[1:]))
