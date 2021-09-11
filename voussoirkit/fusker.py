@@ -20,12 +20,14 @@ fusker.fusker('https://subdomain-{a|b|c}.website.com/image[01-99].jpg') ->
     'https://subdomain-b.website.com/image02.jpg',
 )
 '''
+import argparse
 import collections
 import itertools
 import string
 import sys
 
 from voussoirkit import basenumber
+from voussoirkit import pipeable
 
 class Landmark:
     def __init__(self, opener, closer, parser):
@@ -122,7 +124,6 @@ def parse_range(characters):
     frange = fusk_range(lo, hi, padto=padto, base=base, lower=lower)
     return frange
 
-
 landmarks = {
     '{': Landmark('{', '}', parse_spinner),
     '[': Landmark('[', ']', parse_range),
@@ -155,8 +156,19 @@ def fusker(fstring, landmark=None, depth=0):
     return buff
     return result
 
+def fusker_argparse(args):
+    for result in fusker(args.pattern):
+        pipeable.stdout(result)
+    return 0
+
+def main(argv):
+    parser = argparse.ArgumentParser(description=__doc__)
+
+    parser.add_argument('pattern')
+    parser.set_defaults(func=fusker_argparse)
+
+    args = parser.parse_args(argv)
+    return args.func(args)
+
 if __name__ == '__main__':
-    pattern = sys.argv[1]
-    fusk = fusker(pattern)
-    for result in fusk:
-        print(result)
+    raise SystemExit(main(sys.argv[1:]))
