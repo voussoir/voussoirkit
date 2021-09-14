@@ -92,7 +92,7 @@ class Path:
         '''
         force_sep:
             Normally, the pathclass will use the default separator for your
-            operating system: / on unix and \ on windows. You can use this
+            operating system: / on unix and \\ on windows. You can use this
             argument to force a particular separator.
 
         _case_correct:
