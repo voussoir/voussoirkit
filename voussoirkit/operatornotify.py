@@ -263,9 +263,10 @@ def main_log_context(argv, subject, *args, **kwargs):
 
 def operatornotify_argparse(args):
     notify(
-        subject=pipeable.input(args.subject, split_lines=False),
+        subject=pipeable.input(args.subject, split_lines=False).strip(),
         body=pipeable.input(args.body, split_lines=False),
     )
+    return 0
 
 @vlogging.main_decorator
 def main(argv):
