@@ -120,13 +120,19 @@ class LogHandler(vlogging.StreamHandler):
         '''
         Send all of the logged contents to notify, then reset the buffer.
         '''
-        if self.log_buffer.getvalue():
-            try:
-                notify(subject=self.subject, body=self.log_buffer.getvalue())
-            except Exception as exc:
-                traceback.print_exc()
-            else:
-                self.reset_buffer()
+        text = self.log_buffer.getvalue()
+
+        if not text:
+            return
+
+        try:
+            notify(subject=self.subject, body=text)
+        except Exception as exc:
+            # Normally I'd put this into log.warning or log.error, but then we
+            # might get stuck in an infinite loop! Not sure what's best.
+            traceback.print_exc()
+        else:
+            self.reset_buffer()
 
     def reset_buffer(self):
         self.log_buffer = io.StringIO()
