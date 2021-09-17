@@ -112,6 +112,7 @@ class LogHandler(vlogging.StreamHandler):
         self.notify()
 
     def emit(self, record):
+        # The StreamHandler emit will write the line into the stringio buffer.
         super().emit(record)
         if self.notify_every_line:
             self.notify()
@@ -227,10 +228,15 @@ def main_decorator(subject, *args, **kwargs):
     '''
     Add this decorator to your application's main function to automatically
     wrap it in a main_log_context and log the final return value.
+
+    1. Opt into operatornotify by --operatornotify or --operatornotify-level X.
+    2. Remove those args from argv so your argparse doesn't know the difference.
+    3. Wrap main call with main_log_context.
     '''
     def wrapper(main):
         def wrapped(argv):
-            (context, argv) = main_log_context(argv, subject, *args, **kwargs)
+            (argv, level) = get_level_by_argv(argv)
+            context = main_log_context(subject, level, *args, **kwargs)
 
             if isinstance(context, contextlib.nullcontext):
                 return main(argv)
@@ -242,41 +248,29 @@ def main_decorator(subject, *args, **kwargs):
         return wrapped
     return wrapper
 
-def main_log_context(argv, subject, *args, **kwargs):
+def main_log_context(subject, level, *args, **kwargs):
     '''
-    This function is for accelerating the common use case of adding
-    operatornotify to a commandline application's existing logger.
+    Returns a context manager with which you'll wrap your function.
+    Will be nullcontext if the level is None (user did not opt in).
 
-    The goals are:
-    1. Opt into operatornotify by --operatornotify or --operatornotify-level.
-    2. Remove those args from argv so your argparse doesn't know the difference.
-    3. Provide a context manager with which you'll wrap your main function.
-        Will be nullcontext if the user did not opt in.
-
-    That context will:
-    1. Add handler to the root logger.
+    With that context:
+    1. A handler is added to the root logger.
     2. Operatornotify captures all log messages and any fatal exception
-        that kills your main function.
-    3. Results are sent at the end of runtime, when your main returns.
+       that kills your function.
+    3. Results are sent at the end of the context, when your function returns.
 
     Additional *args, **kwargs go to LogHandler init, so you can
     pass notify_every_line, etc.
-
-    Returns (context, argv) where argv can go into your argparse and context
-    can wrap your main call.
     '''
-
-    (argv, level) = get_level_by_argv(argv)
-
     if level is None:
-        return (contextlib.nullcontext(), argv)
+        return contextlib.nullcontext()
 
     log = vlogging.getLogger()
     handler = LogHandler(subject, *args, **kwargs)
     handler.setLevel(level)
     handler.setFormatter(vlogging.Formatter('{levelname}:{name}:{message}', style='{'))
     context = LogHandlerContext(log, handler)
-    return (context, argv)
+    return context
 
 def operatornotify_argparse(args):
     notify(
