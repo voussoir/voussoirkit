@@ -190,6 +190,8 @@ def get_level_by_argv(argv):
     and level is either an integer log level, or None if the user did not
     opt in. Even if you are not attaching operatornotify to your logger, you
     can still use this value to make decisions about when/what to notify.
+
+    Raises ValueError if --operatornotify-level X is not a recognized level.
     '''
     # This serves the purpose of normalizing the argument, but also creating a
     # duplicate list so we are not altering sys.argv.
@@ -197,18 +199,27 @@ def get_level_by_argv(argv):
     argv = ['--operatornotify-level' if arg == '--operatornotify_level' else arg for arg in argv]
 
     level = None
-    if '--operatornotify-level' in argv:
-        level = argv.pop(argv.index('--operatornotify-level') + 1)
+
+    try:
+        index = argv.index('--operatornotify-level')
+    except ValueError:
+        pass
+    else:
+        argv.pop(index)
+        level = argv.pop(index)
         try:
             level = int(level)
         except ValueError:
             level = vlogging.get_level_by_name(level)
-        argv.remove('--operatornotify-level')
 
-    if '--operatornotify' in argv:
+    try:
+        index = argv.index('--operatornotify')
+    except ValueError:
+        pass
+    else:
         if level is None:
             level = vlogging.WARNING
-        argv.remove('--operatornotify')
+        argv.pop(index)
 
     return (argv, level)
 
