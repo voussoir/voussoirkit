@@ -25,6 +25,14 @@ def fnmatch(name, pat):
 def glob(pathname, *, recursive=False):
     return python_glob.glob(fix(pathname), recursive=recursive)
 
+def glob_many(patterns, *, recursive=False):
+    '''
+    Given many glob patterns, yield the results as a single generator.
+    Saves you from having to write the nested loop.
+    '''
+    for pattern in patterns:
+        yield from glob(pattern, recursive=recursive)
+
 def is_glob(pattern):
     '''
     Improvements can be made to consider [] ranges for unix, but properly
