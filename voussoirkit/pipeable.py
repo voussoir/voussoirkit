@@ -182,11 +182,14 @@ def _output(stream, line, end):
         stream.flush()
 
 def stdout(line='', end='\n'):
-    _output(sys.stdout, line, end)
+    # In pythonw, stdout is None.
+    if sys.stdout is not None:
+        _output(sys.stdout, line, end)
 
 def stderr(line='', end='\n'):
-    _output(sys.stderr, line, end)
-
+    # In pythonw, stderr is None.
+    if sys.stderr is not None:
+        _output(sys.stderr, line, end)
 
 def go(args=None, *input_args, **input_kwargs):
     '''
