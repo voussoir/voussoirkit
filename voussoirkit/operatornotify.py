@@ -106,11 +106,6 @@ class LogHandler(vlogging.StreamHandler):
         self.notify_every_line = notify_every_line
         super().__init__(stream=self.log_buffer)
 
-    def __del__(self):
-        # Remember that del is not guaranteed to execute, but this should help
-        # out in cases where notify is never called.
-        self.notify()
-
     def emit(self, record):
         # The StreamHandler emit will write the line into the stringio buffer.
         super().emit(record)
