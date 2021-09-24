@@ -187,8 +187,6 @@ def stdout(line='', end='\n'):
 def stderr(line='', end='\n'):
     _output(sys.stderr, line, end)
 
-# backwards compat
-output = stdout
 
 def go(args=None, *input_args, **input_kwargs):
     '''
