@@ -235,6 +235,9 @@ class Path:
     def is_dir(self):
         return os.path.isdir(self.absolute_path)
 
+    is_directory = is_dir
+    is_folder = is_dir
+
     @property
     def is_file(self):
         return os.path.isfile(self.absolute_path)
