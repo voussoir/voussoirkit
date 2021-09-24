@@ -32,9 +32,9 @@ class NoArguments(PipeableException):
 
 def ctrlc_return1(function):
     '''
-    Apply this decorator to your argparse gateways, and if the user presses
-    ctrl+c then the gateway will return 1 as its status code without the
-    stacktrace appearing.
+    Apply this decorator to your argparse gateways or main function, and if the
+    user presses ctrl+c then the gateway will return 1 as its status code
+    without the stacktrace appearing.
 
     This helps me avoid wrapping the entire function in a try-except block.
 
