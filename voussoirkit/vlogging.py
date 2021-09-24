@@ -51,6 +51,7 @@ def get_level_by_argv(argv):
 
     --loud: LOUD
     --debug: DEBUG
+    --warning: WARNING
     --quiet: ERROR
     --silent: SILENT
     none of the above: INFO
@@ -63,6 +64,9 @@ def get_level_by_argv(argv):
     elif '--debug' in argv:
         level = DEBUG
         argv.remove('--debug')
+    elif '--warning' in argv:
+        level = WARNING
+        argv.remove('--warning')
     elif '--quiet' in argv:
         level = ERROR
         argv.remove('--quiet')
