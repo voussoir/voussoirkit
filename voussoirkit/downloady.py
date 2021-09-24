@@ -3,7 +3,6 @@ import os
 import requests
 import sys
 import urllib
-import warnings
 
 from voussoirkit import bytestring
 from voussoirkit import dotdict
@@ -13,8 +12,6 @@ from voussoirkit import ratelimiter
 from voussoirkit import vlogging
 
 log = vlogging.getLogger(__name__, 'downloady')
-
-warnings.simplefilter('ignore')
 
 USERAGENT = '''
 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko)
@@ -46,6 +43,13 @@ class NotEnoughBytes(DownloadyException):
 class ServerNoRange(DownloadyException):
     pass
 
+class SpecialPath:
+    def __init__(self, path):
+        self.absolute_path = path
+
+    def open(self, *args, **kwargs):
+        return open(self.absolute_path, *args, **kwargs)
+
 def download_file(
         url,
         localname=None,
@@ -60,23 +64,6 @@ def download_file(
         verbose=False,
         verify_ssl=True,
     ):
-    headers = headers or {}
-
-    url = sanitize_url(url)
-    if localname in [None, '']:
-        localname = basename_from_url(url)
-
-    if not is_special_file(localname):
-        localname = pathclass.Path(localname)
-        if localname.is_dir:
-            localname = localname.with_child(basename_from_url(url))
-
-        localname = localname.absolute_path
-        localname = sanitize_filename(localname)
-
-    log.debug('URL: %s', url)
-    log.debug('File: %s', localname)
-
     plan = prepare_plan(
         url,
         localname,
@@ -97,23 +84,17 @@ def download_file(
     return download_plan(plan)
 
 def download_plan(plan):
-    temp_localname = plan.download_into
-    real_localname = plan.real_localname
-    directory = os.path.split(temp_localname)[0]
-
-    if directory != '' and not is_special_file(temp_localname):
-        os.makedirs(directory, exist_ok=True)
-
-    if not is_special_file(temp_localname):
-        touch(temp_localname)
+    if not isinstance(plan.download_into, SpecialPath):
+        plan.download_into.parent.makedirs(exist_ok=True)
+        plan.download_into.touch()
 
     if plan.plan_type in ['resume', 'partial']:
-        file_handle = open(temp_localname, 'r+b')
+        file_handle = plan.download_into.open('r+b')
         file_handle.seek(plan.seek_to)
         bytes_downloaded = plan.seek_to
 
     elif plan.plan_type == 'fulldownload':
-        file_handle = open(temp_localname, 'wb')
+        file_handle = plan.download_into.open('wb')
         bytes_downloaded = 0
 
     if plan.header_range_min is not None:
@@ -121,6 +102,8 @@ def download_plan(plan):
             min=plan.header_range_min,
             max=plan.header_range_max,
         )
+
+    log.info('Downloading %s into "%s"', plan.url, plan.real_localname.absolute_path)
 
     download_stream = request(
         'get',
@@ -152,18 +135,20 @@ def download_plan(plan):
     file_handle.close()
 
     # Don't try to rename /dev/null or other special names
-    if not is_special_file(temp_localname) and not is_special_file(real_localname):
-        localsize = os.path.getsize(temp_localname)
-        undersized = plan.plan_type != 'partial' and localsize < plan.remote_total_bytes
-        if plan.raise_for_undersized and undersized:
-            message = 'File does not contain expected number of bytes. Received {size} / {total}'
-            message = message.format(size=localsize, total=plan.remote_total_bytes)
-            raise NotEnoughBytes(message)
+    if isinstance(plan.real_localname, SpecialPath):
+        return plan.real_localname
 
-        if temp_localname != real_localname:
-            os.rename(temp_localname, real_localname)
+    temp_localsize = plan.download_into.size
+    undersized = plan.plan_type != 'partial' and temp_localsize < plan.remote_total_bytes
+    if undersized and plan.raise_for_undersized:
+        message = 'File does not contain expected number of bytes. Received {size} / {total}'
+        message = message.format(size=temp_localsize, total=plan.remote_total_bytes)
+        raise NotEnoughBytes(message)
 
-    return real_localname
+    if plan.download_into != plan.real_localname:
+        os.rename(plan.download_into.absolute_path, plan.real_localname.absolute_path)
+
+    return plan.real_localname
 
 def prepare_plan(
         url,
@@ -181,20 +166,34 @@ def prepare_plan(
     # Chapter 1: File existence
     headers = headers or {}
     user_provided_range = 'range' in headers
-    real_localname = localname
+
+    url = sanitize_url(url)
+    if localname in [None, '']:
+        localname = basename_from_url(url)
+
     if is_special_file(localname):
-        temp_localname = localname
+        real_localname = SpecialPath(localname)
+        temp_localname = SpecialPath(localname)
+        real_exists = False
+        temp_exists = False
     else:
-        temp_localname = localname + TEMP_EXTENSION
-    real_exists = os.path.exists(real_localname)
+        localname = pathclass.Path(localname)
+        if localname.is_dir:
+            localname = localname.with_child(basename_from_url(url))
+        localname = sanitize_filename(localname.absolute_path)
+        real_localname = pathclass.Path(localname)
+        temp_localname = real_localname.add_extension(TEMP_EXTENSION)
+        real_exists = real_localname.exists
+        temp_exists = temp_localname.exists
 
     if real_exists and overwrite is False and not user_provided_range:
         log.debug('File exists and overwrite is off. Nothing to do.')
         return None
 
-    temp_exists = os.path.exists(temp_localname)
-    real_localsize = int(real_exists and os.path.getsize(real_localname))
-    temp_localsize = int(temp_exists and os.path.getsize(temp_localname))
+    if isinstance(real_localname, SpecialPath):
+        temp_localsize = 0
+    else:
+        temp_localsize = int(temp_exists and temp_localname.size)
 
     # Chapter 2: Ratelimiting
     if bytespersecond is None:
@@ -220,7 +219,7 @@ def prepare_plan(
     if user_provided_range and not do_head:
         raise DownloadyException('Cannot determine range support without the head request')
 
-    temp_headers = headers
+    temp_headers = headers.copy()
     temp_headers.update({'range': 'bytes=0-'})
 
     if do_head:
@@ -304,7 +303,6 @@ def prepare_plan(
 
     raise DownloadyException('No plan was chosen?')
 
-
 class Progress1:
     def __init__(self, total_bytes):
         self.limiter = ratelimiter.Ratelimiter(allowance=8, mode='reject')
@@ -318,8 +316,8 @@ class Progress1:
 
     def step(self, bytes_downloaded):
         percent = bytes_downloaded / self.total_bytes
-        percent = min(1, percent)
-        if self.limiter.limit(1) is False and percent < 1:
+        percent = min(1.00, percent)
+        if self.limiter.limit(1) is False and percent < 1.00:
             return
 
         downloaded_string = bytestring.bytestring(bytes_downloaded, force_unit=self.divisor)
@@ -336,8 +334,7 @@ class Progress1:
             total_bytes=self.total_format,
             statusbar=statusbar,
         )
-        print(message, end=end, flush=True)
-
+        pipeable.stderr(message, end=end)
 
 class Progress2:
     def __init__(self, total_bytes):
@@ -348,12 +345,13 @@ class Progress2:
         self.bytes_downloaded_string = '{:%d,}' % len(self.total_bytes_string)
 
     def step(self, bytes_downloaded):
-        percent = (bytes_downloaded * 100) / self.total_bytes
-        percent = min(100, percent)
-        if self.limiter.limit(1) is False and percent < 100:
+        percent = bytes_downloaded / self.total_bytes
+        percent = min(1.00, percent)
+        if self.limiter.limit(1) is False and percent < 1.00:
             return
 
-        percent_string = '%08.4f' % percent
+        percent *= 100
+        percent_string = f'{percent:08.4f}'
         bytes_downloaded_string = self.bytes_downloaded_string.format(bytes_downloaded)
 
         end = '\n' if percent == 100 else ''
@@ -363,8 +361,7 @@ class Progress2:
             total_bytes=self.total_bytes_string,
             percent=percent_string,
         )
-        print(message, end=end, flush=True)
-
+        pipeable.stderr(message, end=end)
 
 def basename_from_url(url):
     '''
@@ -373,12 +370,8 @@ def basename_from_url(url):
     localname = urllib.parse.unquote(url)
     localname = localname.rstrip('/')
     localname = localname.split('?')[0]
-    localname = localname.split('/')[-1]
+    localname = localname.rsplit('/', 1)[-1]
     return localname
-
-def get_permission(prompt='y/n\n>', affirmative=['y', 'yes']):
-    permission = input(prompt)
-    return permission.lower() in affirmative
 
 def is_special_file(file):
     if isinstance(file, pathclass.Path):
@@ -388,11 +381,15 @@ def is_special_file(file):
     file = os.path.normcase(file)
     return file in SPECIAL_FILENAMES
 
-def request(method, url, stream=False, headers=None, timeout=TIMEOUT, verify_ssl=True, **kwargs):
+def request(method, url, headers=None, timeout=TIMEOUT, verify_ssl=True, **kwargs):
     if headers is None:
         headers = {}
+    else:
+        headers = headers.copy()
+
     for (key, value) in HEADERS.items():
         headers.setdefault(key, value)
+
     session = requests.Session()
     a = requests.adapters.HTTPAdapter(max_retries=30)
     b = requests.adapters.HTTPAdapter(max_retries=30)
@@ -405,7 +402,8 @@ def request(method, url, stream=False, headers=None, timeout=TIMEOUT, verify_ssl
         'head': session.head,
         'post': session.post,
     }[method]
-    req = method(url, stream=stream, headers=headers, timeout=timeout, verify=verify_ssl, **kwargs)
+
+    req = method(url, headers=headers, timeout=timeout, verify=verify_ssl, **kwargs)
     req.raise_for_status()
     return req
 
@@ -426,11 +424,6 @@ def sanitize_filename(text, exclusions=''):
 def sanitize_url(url):
     url = url.replace('%3A//', '://')
     return url
-
-def touch(filename):
-    f = open(filename, 'ab')
-    f.close()
-    return
 
 def download_argparse(args):
     url = args.url
