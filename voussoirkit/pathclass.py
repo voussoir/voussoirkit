@@ -2,6 +2,8 @@ import glob
 import os
 import re
 
+_glob = glob
+
 from voussoirkit import winglob
 
 WINDOWS_GLOBAL_BADCHARS = {'*', '?', '<', '>', '|', '"'}
@@ -419,7 +421,7 @@ def get_path_casing(path):
     pattern = drive + os.sep + pattern
 
     try:
-        cased = glob.glob(pattern)[0]
+        cased = _glob.glob(pattern)[0]
     except IndexError:
         return input_path.absolute_path
 
@@ -431,6 +433,46 @@ def get_path_casing(path):
     if os.sep not in cased:
         cased += os.sep
     return cased
+
+def glob(pattern, files=None, directories=None):
+    '''
+    Just like regular glob, except it returns Path objects instead of strings.
+
+    files, directories:
+        Pass these arguments to filter the results. Leave both as None to get
+        all items, set either to True to get just those items.
+
+    If you want to recurse, consider using spinal.walk with glob_filenames
+    instead.
+    '''
+    if files is None and directories is None:
+        files = True
+        directories = True
+
+    if not files and not directories:
+        raise ValueError('files and directories can\'t both be False.')
+
+    paths = (Path(p) for p in winglob.glob(pattern))
+
+    if files and directories:
+        return list(paths)
+    if files:
+        return [p for p in paths if p.is_file]
+    if directories:
+        return [p for p in paths if p.is_dir]
+
+def glob_many(patterns, files=None, directories=None):
+    '''
+    Given many glob patterns, yield the results as a single generator.
+    Saves you from having to write the nested loop.
+
+    If you want to recurse, consider using spinal.walk(glob_filenames=[...])
+    instead. The important difference between this function and spinal.walk is
+    that spinal.walk starts from a root directory and looks for descendants
+    that match the glob. This function can take patterns with no common root.
+    '''
+    for pattern in patterns:
+        yield from glob(pattern, files=files, directories=directories)
 
 def glob_patternize(piece):
     '''
@@ -448,7 +490,7 @@ def glob_patternize(piece):
         If the path consists entirely of these special characters, then the
         casing doesn't need to be corrected anyway.
     '''
-    piece = glob.escape(piece)
+    piece = _glob.escape(piece)
     for character in piece:
         if character not in '![]':
             replacement = f'[{character}]'
