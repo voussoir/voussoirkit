@@ -479,13 +479,14 @@ def glob_many(patterns, files=None, directories=None):
 
 def glob_patternize(piece):
     '''
-    Create a pattern like "[u]ser" from "user", forcing glob to look up the
-    correct path name, while guaranteeing that the only result will be the correct path.
+    Create a pattern like "[u]ser" from "user". This forces glob to look up the
+    correct path name, while guaranteeing that the only result will be
+    the correct path.
 
     Special cases are:
         `!`
-            because in glob syntax, [!x] tells glob to look for paths that don't contain
-            "x", and [!] is invalid syntax.
+            because in glob syntax, [!x] tells glob to look for paths that
+            don't contain "x", and [!] is invalid syntax.
         `[`, `]`
             because this starts a glob capture group
 
