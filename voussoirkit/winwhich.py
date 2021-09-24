@@ -14,6 +14,9 @@ import os
 import shutil
 try:
     import winshell
+    # This fixes some "CoInitialize has not been called" errors which I found
+    # were occuring intermittently on some subprocess calls.
+    winshell.pythoncom.CoInitialize()
 except ImportError:
     winshell = None
 
