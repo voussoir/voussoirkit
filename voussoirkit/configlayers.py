@@ -64,7 +64,7 @@ def layer_json(target, supply):
     '''
     target_keys = recursive_dict_keys(target)
     supply_keys = recursive_dict_keys(supply)
-    needs_rewrite = target_keys > supply_keys
+    needs_rewrite = len(target_keys.difference(supply_keys)) > 0
     recursive_dict_update(target=target, supply=supply)
     return (target, needs_rewrite)
 
