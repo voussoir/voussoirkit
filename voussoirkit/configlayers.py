@@ -68,7 +68,7 @@ def layer_json(target, supply):
     recursive_dict_update(target=target, supply=supply)
     return (target, needs_rewrite)
 
-def load_file(filepath, defaults):
+def load_file(filepath, default_config):
     '''
     Given a filepath to a user-supplied config file, and a dict of default
     values, return a new dict containing the user-supplied values overlaid onto
@@ -82,14 +82,14 @@ def load_file(filepath, defaults):
     # defaults, so that as we go through the user's config we can overwrite the
     # user-specified keys, and the keys which the user does not specify will
     # remain default.
-    config = copy.deepcopy(defaults)
+    final_config = copy.deepcopy(default_config)
     needs_rewrite = False
 
     if user_config_exists:
         with path.open('r', encoding='utf-8') as handle:
             user_config = json.load(handle)
-        (config, needs_rewrite) = layer_json(config, user_config)
+        (final_config, needs_rewrite) = layer_json(target=final_config, supply=user_config)
     else:
         needs_rewrite = True
 
-    return (config, needs_rewrite)
+    return (final_config, needs_rewrite)
