@@ -17,6 +17,12 @@ class WormException(Exception):
 class BadTable(WormException):
     pass
 
+class DeletedObject(WormException):
+    '''
+    For when thing.deleted == True.
+    '''
+    pass
+
 def slice_before(li, item):
     index = li.index(item)
     return li[:index]
@@ -489,6 +495,7 @@ class Object:
     def __init__(self, database):
         # Used for transaction
         self._worms_database = database
+        self.deleted = False
 
     def __reinit__(self):
         '''
@@ -517,3 +524,10 @@ class Object:
 
     def __hash__(self):
         return hash(f'{self.table}.{self.id}')
+
+    def assert_not_deleted(self) -> None:
+        '''
+        Raises DeletedObject if this object is deleted.
+        '''
+        if self.deleted:
+            raise DeletedObject(self)
