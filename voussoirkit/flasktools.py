@@ -143,11 +143,13 @@ def gzip_response(request, response):
 
     return response
 
-def make_json_response(j, *args, **kwargs):
+def json_response(j, *args, **kwargs):
     dumped = json.dumps(j)
     response = flask.Response(dumped, *args, **kwargs)
     response.headers['Content-Type'] = 'application/json;charset=utf-8'
     return response
+
+make_json_response = json_response
 
 def required_fields(fields, forbid_whitespace=False):
     '''
@@ -172,7 +174,7 @@ def required_fields(fields, forbid_whitespace=False):
                         'error_type': 'MISSING_FIELDS',
                         'error_message': 'Required fields: %s' % ', '.join(fields),
                     }
-                    response = make_json_response(response, status=400)
+                    response = json_response(response, status=400)
                     return response
             return function(*args, **kwargs)
         return wrapped
