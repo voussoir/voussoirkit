@@ -35,12 +35,13 @@ If your application already uses the logging module, consider these options:
 Commandline usage:
 > operatornotify --subject XXX [--body XXX]
 
---subject:
+--subject xxx:
     A string. Uses pipeable to support !c clipboard, !i stdin.
     Required.
 
---body:
+--body xxx:
     A string. Uses pipeable to support !c clipboard, !i stdin.
+    Optional.
 
 Examples:
 > some_process && operatornotify --subject success || operatornotify --subject fail
@@ -222,9 +223,18 @@ def get_level_by_argv(argv):
 def main_decorator(subject, *args, **kwargs):
     '''
     Add this decorator to your application's main function to automatically
-    wrap it in a main_log_context and log the final return value.
+    wrap it in a main_log_context and log the final return value. For example:
 
-    1. Opt into operatornotify by --operatornotify or --operatornotify-level X.
+    @operatornotify.main_decorator(subject='myprogram.py')
+    def main(argv):
+        ...
+
+    if __name__ == '__main__':
+        raise SystemExit(main(sys.argv[1:]))
+
+    This will:
+    1. Allow the user to opt into operatornotify by --operatornotify or
+       --operatornotify-level X.
     2. Remove those args from argv so your argparse doesn't know the difference.
     3. Wrap main call with main_log_context.
     '''
