@@ -275,6 +275,20 @@ class Path:
         parent = os.path.dirname(self.absolute_path)
         return self.spawn(parent)
 
+    def read(self, mode, **kwargs):
+        '''
+        Shortcut function for opening the file handle and reading data from it.
+        '''
+        with self.open(mode, **kwargs) as handle:
+            return handle.read()
+
+    def readlines(self, mode, **kwargs):
+        '''
+        Shortcut function for opening the file handle and reading lines from it.
+        '''
+        with self.open(mode, **kwargs) as handle:
+            return handle.readlines()
+
     @property
     def relative_path(self):
         return self.relative_to(os.getcwd())
@@ -357,6 +371,13 @@ class Path:
 
     def with_child(self, basename):
         return self.join(os.path.basename(basename))
+
+    def write(self, mode, data, **kwargs):
+        '''
+        Shortcut function for opening the file handle and writing data into it.
+        '''
+        with self.open(mode, **kwargs) as handle:
+            return handle.write(data)
 
 def common_path(paths, fallback):
     '''
