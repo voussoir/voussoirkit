@@ -1,6 +1,7 @@
 '''
 Worms is an SQL ORM with the strength and resilience of the humble earthworm.
 '''
+import abc
 import functools
 import re
 import typing
@@ -57,7 +58,7 @@ def transaction(method):
 
     return wrapped_transaction
 
-class Database:
+class Database(metaclass=abc.ABCMeta):
     '''
     When your class subclasses this class, you need to ensure the following:
     - self.COLUMNS is a dictionary of {table: [columns]} like what comes out of
@@ -72,6 +73,25 @@ class Database:
         self.on_commit_queue = []
         self.on_rollback_queue = []
         self.savepoints = []
+
+    @abc.abstractmethod
+    def _init_column_index(self):
+        '''
+        Your subclass needs to set self.COLUMNS and self.COLUMN_INDEX, where
+        COLUMNS is a dictionary of {'table': ['column1', 'column2', ...]} and
+        COLUMN_INDEX is a dict of {'table': {'column1': 0, 'column2': 1}}.
+
+        These outputs can come from sqlhelpers.extract_table_column_map and
+        reverse_table_column_map.
+        '''
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def _init_sql(self):
+        '''
+        Your subclass needs to set self.sql, which is a database connection.
+        '''
+        raise NotImplementedError
 
     def assert_table_exists(self, table) -> None:
         if table not in self.get_tables():
@@ -334,10 +354,22 @@ class Database:
         query = f'UPDATE {table} {qmarks}'
         self.execute(query, bindings)
 
-class DatabaseWithCaching(Database):
+class DatabaseWithCaching(Database, metaclass=abc.ABCMeta):
     def __init__(self):
         super().__init__()
         self.caches = {}
+
+    def _init_caches(self):
+        '''
+        Your subclass needs to set self.caches, which is a dictionary of
+        {object: cache} where object is one of your data object types
+        (use the class itself as the key) and cache is a dictionary or
+        cacheclass.Cache or anything that supports subscripting.
+
+        If any types are omitted from this dictionary, objects of those
+        types will not be cached.
+        '''
+        raise NotImplementedError
 
     def clear_all_caches(self) -> None:
         for cache in self.caches:
@@ -483,7 +515,7 @@ class DatabaseWithCaching(Database):
         for object_row in object_rows:
             yield self.get_cached_instance(object_class, object_row)
 
-class Object:
+class Object(metaclass=abc.ABCMeta):
     '''
     When your objects subclass this class, you need to ensure the following:
 
