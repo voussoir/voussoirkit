@@ -40,6 +40,28 @@ def add_loud(log):
     addLevelName(LOUD, 'LOUD')
     log.loud = loud.__get__(log, log.__class__)
 
+def basic_config(level):
+    '''
+    This adds a handler with the given level to the root logger, but only
+    if it has no handlers yet.
+    '''
+    # Previously I was using basicConfig to prepare the handlers and then
+    # setting root.setLevel, but the problem is that prevents any other
+    # handlers on the root from receiving messages at a lower level.
+    # It works best if the logger itself doesn't have a level and the handlers
+    # can choose what they want.
+    root = getLogger()
+
+    if root.handlers:
+        return
+
+    root.setLevel(NOTSET)
+
+    handler = StreamHandler()
+    handler.setFormatter(Formatter('{levelname}:{name}:{message}', style='{'))
+    handler.setLevel(level)
+    root.addHandler(handler)
+
 def get_level_by_argv(argv):
     '''
     If any of the following arguments are present in argv, return the
@@ -139,17 +161,6 @@ def main_level_by_argv(argv):
     '''
     (level, argv) = get_level_by_argv(argv)
 
-    # Previously I was using basicConfig to prepare the handlers and then
-    # setting root.setLevel, but the problem is that prevents any other
-    # handlers on the root from receiving messages at a lower level.
-    # It works best if the logger itself doesn't have a level and the handlers
-    # can choose what they want.
-    root = getLogger()
-    root.setLevel(NOTSET)
-
-    handler = StreamHandler()
-    handler.setFormatter(Formatter('{levelname}:{name}:{message}', style='{'))
-    handler.setLevel(level)
-    root.addHandler(handler)
+    basic_config(level)
 
     return argv
