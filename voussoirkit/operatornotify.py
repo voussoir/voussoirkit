@@ -243,6 +243,13 @@ def main_decorator(subject, *args, **kwargs):
             (argv, level) = get_level_by_argv(argv)
             context = main_log_context(subject, level, *args, **kwargs)
 
+            # We need to call basic_config so that operatornotify's logs have
+            # somewhere to go. We do this only during wrapped, not before, so
+            # that if the main also has vlogging.main_decorator or any other
+            # decorators that will prepare the logging before main is called,
+            # this shouldn't interfere with those.
+            vlogging.basic_config(vlogging.INFO)
+
             if isinstance(context, contextlib.nullcontext):
                 return main(argv)
 
