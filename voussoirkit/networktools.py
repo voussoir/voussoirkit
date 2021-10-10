@@ -23,14 +23,14 @@ class NetworkToolsException(Exception):
 class NoInternet(NetworkToolsException):
     pass
 
-def get_external_ip():
+def get_external_ip() -> str:
     url = 'https://voussoir.net/whatsmyip'
     response = requests.get(url)
     response.raise_for_status()
     ip = response.text.strip()
     return ip
 
-def get_lan_ip():
+def get_lan_ip() -> str:
     '''
     thank you unknwntech
     https://stackoverflow.com/a/166589
@@ -47,7 +47,10 @@ def has_lan():
     # Open a socket to the router
     raise NotImplementedError
 
-def has_internet(timeout=2):
+def has_internet(timeout=2) -> bool:
+    '''
+    Return True if an internet connection is available.
+    '''
     socket.setdefaulttimeout(timeout)
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -56,7 +59,16 @@ def has_internet(timeout=2):
     except socket.error as exc:
         return False
 
-def wait_for_internet(timeout):
+def wait_for_internet(timeout) -> None:
+    '''
+    This function blocks until an internet connection is available, or the
+    timeout is reached.
+
+    Raises NoInternet if the timeout expires.
+    '''
+    if timeout <= 0:
+        raise ValueError(f'timeout should be greater than 0, not {timeout}.')
+
     started = time.time()
     while True:
         if time.time() - started >= timeout:
