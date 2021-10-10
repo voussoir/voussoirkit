@@ -220,7 +220,7 @@ def get_level_by_argv(argv):
 
     return (argv, level)
 
-def main_decorator(subject, **kwargs):
+def main_decorator(subject, *, log_return_value=True, **kwargs):
     '''
     Add this decorator to your application's main function to automatically
     wrap it in a main_log_context and log the final return value. For example:
@@ -255,7 +255,8 @@ def main_decorator(subject, **kwargs):
 
             with context:
                 status = main(argv)
-                log.info('Program finished, returned %s.', status)
+                if log_return_value:
+                    log.info('Program finished, returned %s.', status)
                 return status
         return wrapped
     return wrapper
