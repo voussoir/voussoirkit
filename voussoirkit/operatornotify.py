@@ -220,7 +220,7 @@ def get_level_by_argv(argv):
 
     return (argv, level)
 
-def main_decorator(subject, *args, **kwargs):
+def main_decorator(subject, **kwargs):
     '''
     Add this decorator to your application's main function to automatically
     wrap it in a main_log_context and log the final return value. For example:
@@ -241,7 +241,7 @@ def main_decorator(subject, *args, **kwargs):
     def wrapper(main):
         def wrapped(argv):
             (argv, level) = get_level_by_argv(argv)
-            context = main_log_context(subject, level, *args, **kwargs)
+            context = main_log_context(subject, level, **kwargs)
 
             # We need to call basic_config so that operatornotify's logs have
             # somewhere to go. We do this only during wrapped, not before, so
@@ -260,7 +260,7 @@ def main_decorator(subject, *args, **kwargs):
         return wrapped
     return wrapper
 
-def main_log_context(subject, level, *args, **kwargs):
+def main_log_context(subject, level, **kwargs):
     '''
     Returns a context manager with which you'll wrap your function.
     Will be nullcontext if the level is None (user did not opt in).
@@ -271,14 +271,14 @@ def main_log_context(subject, level, *args, **kwargs):
        that kills your function.
     3. Results are sent at the end of the context, when your function returns.
 
-    Additional *args, **kwargs go to LogHandler init, so you can
+    Additional **kwargs go to LogHandler init, so you can
     pass notify_every_line, etc.
     '''
     if level is None:
         return contextlib.nullcontext()
 
     log = vlogging.getLogger()
-    handler = LogHandler(subject, *args, **kwargs)
+    handler = LogHandler(subject, **kwargs)
     handler.setLevel(level)
     handler.setFormatter(vlogging.Formatter('{levelname}:{name}:{message}', style='{'))
     context = LogHandlerContext(log, handler)
