@@ -167,6 +167,8 @@ class Path:
         if self.is_dir:
             raise IsDirectory(self)
 
+    assert_not_dir = assert_not_directory
+
     def assert_not_link(self):
         if self.is_link:
             raise IsLink(self)
@@ -178,6 +180,8 @@ class Path:
     def assert_is_directory(self):
         if not self.is_dir:
             raise NotDirectory(self)
+
+    assert_is_dir = assert_is_directory
 
     def assert_is_link(self):
         if not self.is_link:
