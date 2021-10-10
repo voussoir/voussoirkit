@@ -232,11 +232,11 @@ class Path:
         return children
 
     @property
-    def is_dir(self):
+    def is_directory(self):
         return os.path.isdir(self.absolute_path)
 
-    is_directory = is_dir
-    is_folder = is_dir
+    is_dir = is_directory
+    is_folder = is_directory
 
     @property
     def is_file(self):
