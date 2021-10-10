@@ -1,7 +1,13 @@
 '''
 This module provides functions for interactive command line UIs.
 '''
+import sys
+
 from voussoirkit import pipeable
+
+def assert_stdin():
+    if sys.stdin is None:
+        raise RuntimeError('Interactive functions don\'t work when stdin is None.')
 
 ####################################################################################################
 # ABC_CHOOSER ######################################################################################
@@ -26,6 +32,8 @@ def abc_chooser(options, prompt='', must_pick=False):
     The return value is the item from the options list, or None if must_pick is
     False and the user entered nothing.
     '''
+    assert_stdin()
+
     option_letters = _abc_make_option_letters(options)
 
     while True:
@@ -55,6 +63,8 @@ def abc_chooser_many(options, prompt='', label='X'):
     they like, and submit their selection by entering one more blank line.
     The return value is a list of items from the options list.
     '''
+    assert_stdin()
+
     selected = set()
     option_letters = _abc_make_option_letters(options)
 
@@ -110,6 +120,8 @@ def getpermission(
     until they choose an acceptable answer. Either way, the intended usage of
     `if getpermission():` will always only accept in case of explicit yes.
     '''
+    assert_stdin()
+
     if prompt is not None:
         pipeable.stderr(prompt)
     while True:
