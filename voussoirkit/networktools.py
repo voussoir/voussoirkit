@@ -13,6 +13,10 @@ from voussoirkit import vlogging
 
 log = vlogging.getLogger(__name__, 'networktools')
 
+# This is the IP address we'll use to determine if we have an internet
+# connection. Change it if this server ever becomes unavailable.
+INTERNET_IP = '8.8.8.8'
+
 class NetworkToolsException(Exception):
     pass
 
@@ -32,7 +36,7 @@ def get_lan_ip():
     https://stackoverflow.com/a/166589
     '''
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.connect(('8.8.8.8', 80))
+    sock.connect((INTERNET_IP, 80))
     return sock.getsockname()[0]
 
 def get_gateway_ip():
@@ -47,7 +51,7 @@ def has_internet(timeout=2):
     socket.setdefaulttimeout(timeout)
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect(('8.8.8.8', 53))
+        sock.connect((INTERNET_IP, 53))
         return True
     except socket.error as exc:
         return False
