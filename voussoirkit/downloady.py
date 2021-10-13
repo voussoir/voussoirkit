@@ -277,7 +277,7 @@ def prepare_plan(
     # Chapter 6: Redeem your meal vouchers here
     if real_exists:
         if overwrite:
-            os.remove(real_localname)
+            os.remove(real_localname.absolute_path)
 
         if user_provided_range:
             return plan_partial
