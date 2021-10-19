@@ -12,6 +12,15 @@ from logging import *
 
 _getLogger = getLogger
 
+# Python gives the root logger a level of WARNING. The problem is that prevents
+# any handlers you add to it from receiving lower level messages. WARNING might
+# be fine for the stderr handler, but you might like to have a log file
+# containing everything including info and debug.
+# I find that logging works best if the root logger itself doesn't have a level
+# and the handlers can choose what they want.
+root = getLogger()
+root.setLevel(NOTSET)
+
 LOUD = 1
 SILENT = 99999999999
 
@@ -45,18 +54,6 @@ def basic_config(level):
     This adds a handler with the given level to the root logger, but only
     if it has no handlers yet.
     '''
-    # Previously I was using basicConfig to prepare the handlers and then
-    # setting root.setLevel, but the problem is that prevents any other
-    # handlers on the root from receiving messages at a lower level.
-    # It works best if the logger itself doesn't have a level and the handlers
-    # can choose what they want.
-    root = getLogger()
-
-    if root.handlers:
-        return
-
-    root.setLevel(NOTSET)
-
     handler = StreamHandler()
     handler.setFormatter(Formatter('{levelname}:{name}:{message}', style='{'))
     handler.setLevel(level)
