@@ -215,7 +215,10 @@ class Path:
 
     @property
     def drive(self):
-        return os.path.splitdrive(self.absolute_path)[0]
+        drive = os.path.splitdrive(self.absolute_path)[0]
+        if not drive.endswith(self.sep):
+            drive += self.sep
+        return self.spawn(drive)
 
     @property
     def exists(self):
