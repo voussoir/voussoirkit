@@ -35,6 +35,13 @@ def add_loud(log):
     addLevelName(LOUD, 'LOUD')
     log.loud = loud.__get__(log, log.__class__)
 
+def add_root_handler(level):
+    handler = StreamHandler()
+    handler.setFormatter(Formatter('{levelname}:{name}:{message}', style='{'))
+    handler.setLevel(level)
+    root.addHandler(handler)
+    return handler
+
 def basic_config(level):
     '''
     This adds a handler with the given level to the root logger, but only
@@ -43,10 +50,16 @@ def basic_config(level):
     if root.handlers:
         return
 
-    handler = StreamHandler()
-    handler.setFormatter(Formatter('{levelname}:{name}:{message}', style='{'))
-    handler.setLevel(level)
-    root.addHandler(handler)
+    add_root_handler(level)
+
+def basic_config_by_argv(argv):
+    '''
+    This function does basic_config with a level set by the flags in argv, then
+    returns the rest of argv which you can pass to your argparser.
+    '''
+    (level, argv) = get_level_by_argv(argv)
+    basic_config(level)
+    return argv
 
 def get_level_by_argv(argv):
     '''
@@ -153,18 +166,7 @@ def main_decorator(main):
     changes to your argparser.
     '''
     def wrapped(argv):
-        argv = main_level_by_argv(argv)
+        (level, argv) = get_level_by_argv(argv)
+        add_root_handler(level)
         return main(argv)
     return wrapped
-
-def main_level_by_argv(argv):
-    '''
-    This function puts a handler on the root logger with a level set by the
-    flags in argv, then returns the rest of argv which you can pass to
-    your argparser.
-    '''
-    (level, argv) = get_level_by_argv(argv)
-
-    basic_config(level)
-
-    return argv
