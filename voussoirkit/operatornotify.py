@@ -241,11 +241,10 @@ def main_decorator(subject, *, log_return_value=True, **kwargs):
     def wrapper(main):
         def wrapped(argv):
             (argv, level) = get_level_by_argv(argv)
-            context = main_log_context(subject, level, **kwargs)
-
-            if isinstance(context, contextlib.nullcontext):
+            if level is None:
                 return main(argv)
 
+            context = main_log_context(subject, level, **kwargs)
             with context:
                 status = main(argv)
                 if log_return_value:
