@@ -66,21 +66,23 @@ def get_level_by_argv(argv):
     '''
     argv = argv[:]
 
-    if '--loud' in argv:
+    def tryremove(lst, item):
+        try:
+            lst.remove(item)
+            return True
+        except ValueError:
+            return False
+
+    if tryremove(argv, '--loud'):
         level = LOUD
-        argv.remove('--loud')
-    elif '--debug' in argv:
+    elif tryremove(argv, '--debug'):
         level = DEBUG
-        argv.remove('--debug')
-    elif '--warning' in argv:
+    elif tryremove(argv, '--warning'):
         level = WARNING
-        argv.remove('--warning')
-    elif '--quiet' in argv:
+    elif tryremove(argv, '--quiet'):
         level = ERROR
-        argv.remove('--quiet')
-    elif '--silent' in argv:
+    elif tryremove(argv, '--silent'):
         level = SILENT
-        argv.remove('--silent')
     else:
         level = INFO
 
