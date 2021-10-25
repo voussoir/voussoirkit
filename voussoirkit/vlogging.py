@@ -9,6 +9,7 @@ and SILENT, and all loggers from getLogger are given the `loud` method.
 Don't forget to like, comment, and subscribe.
 '''
 from logging import *
+import sys
 
 _getLogger = getLogger
 
@@ -60,6 +61,22 @@ def basic_config_by_argv(argv):
     (level, argv) = get_level_by_argv(argv)
     basic_config(level)
     return argv
+
+def earlybird_config():
+    '''
+    This function will call basic_config_by_argv and **overwrite** sys.argv with
+    the remaining arguments. You can import vlogging and call this function
+    before doing anything else to ensure that logging is ready from the very
+    beginning.
+
+    This can be used if waiting until main runs (@main_decorator) is too
+    late because you have log statements that run while your modules / imports
+    are loading.
+
+    However, this might have the downside of making your program more difficult
+    to debug because sys.argv is permanently altered.
+    '''
+    sys.argv = basic_config_by_argv(sys.argv)
 
 def get_level_by_argv(argv):
     '''
