@@ -242,6 +242,11 @@ class HTTP599(HTTP5XX): pass
 _requests_raise_for_status = requests.Response.raise_for_status
 
 def monkeypatch_requests():
+    '''
+    This function will replace requests.Response.raise_for_status with our
+    function. You can use this if one of your dependency modules uses requests
+    and raises HTTPErrors, but you want it to raise these errors instead.
+    '''
     import requests
     requests.Response.raise_for_status = raise_for_status
 
