@@ -54,6 +54,9 @@ def basic_config(level):
     This adds a handler with the given level to the root logger, but only
     if it has no handlers yet.
     '''
+    if root.handlers:
+        return
+
     handler = StreamHandler()
     handler.setFormatter(Formatter('{levelname}:{name}:{message}', style='{'))
     handler.setLevel(level)
