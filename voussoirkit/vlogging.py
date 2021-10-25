@@ -24,9 +24,9 @@ root.setLevel(NOTSET)
 LOUD = 1
 SILENT = 99999999999
 
-def getLogger(name=None, main_fallback=None):
+def get_logger(name=None, main_fallback=None):
     '''
-    Normally it is best practice to use getLogger(__name__), but when running
+    Normally it is best practice to use get_logger(__name__), but when running
     a script directly you'll see "__main__" in the output, which I think is
     ugly and unexpected for anyone who doesn't know what's going on behind
     the scenes. But hardcoding your logger name is not good either.
@@ -37,6 +37,8 @@ def getLogger(name=None, main_fallback=None):
     log = _getLogger(name)
     add_loud(log)
     return log
+
+getLogger = get_logger
 
 def add_loud(log):
     '''
