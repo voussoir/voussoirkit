@@ -24,22 +24,6 @@ root.setLevel(NOTSET)
 LOUD = 1
 SILENT = 99999999999
 
-def get_logger(name=None, main_fallback=None):
-    '''
-    Normally it is best practice to use get_logger(__name__), but when running
-    a script directly you'll see "__main__" in the output, which I think is
-    ugly and unexpected for anyone who doesn't know what's going on behind
-    the scenes. But hardcoding your logger name is not good either.
-    So, main_fallback is used to present your preferred name in case of main.
-    '''
-    if name == '__main__' and main_fallback is not None:
-        name = main_fallback
-    log = _getLogger(name)
-    add_loud(log)
-    return log
-
-getLogger = get_logger
-
 def add_loud(log):
     '''
     Add the `loud` method to the given logger.
@@ -142,6 +126,22 @@ def get_level_by_name(name):
         raise ValueError(f'{name} is not a known level.')
 
     return value
+
+def get_logger(name=None, main_fallback=None):
+    '''
+    Normally it is best practice to use get_logger(__name__), but when running
+    a script directly you'll see "__main__" in the output, which I think is
+    ugly and unexpected for anyone who doesn't know what's going on behind
+    the scenes. But hardcoding your logger name is not good either.
+    So, main_fallback is used to present your preferred name in case of main.
+    '''
+    if name == '__main__' and main_fallback is not None:
+        name = main_fallback
+    log = _getLogger(name)
+    add_loud(log)
+    return log
+
+getLogger = get_logger
 
 def main_decorator(main):
     '''
