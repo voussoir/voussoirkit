@@ -239,14 +239,14 @@ def main_decorator(subject, *, log_return_value=True, **kwargs):
     3. Wrap main call with main_log_context.
     '''
     def wrapper(main):
-        def wrapped(argv):
+        def wrapped(argv, *args, **kwargs):
             (argv, level) = get_level_by_argv(argv)
             if level is None:
-                return main(argv)
+                return main(argv, *args, **kwargs)
 
             context = main_log_context(subject, level, **kwargs)
             with context:
-                status = main(argv)
+                status = main(argv, *args, **kwargs)
                 if log_return_value:
                     log.info('Program finished, returned %s.', status)
                 return status

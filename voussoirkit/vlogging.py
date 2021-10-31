@@ -182,8 +182,8 @@ def main_decorator(main):
     to use --debug, --quiet, etc. on the command line without making any
     changes to your argparser.
     '''
-    def wrapped(argv):
+    def wrapped(argv, *args, **kwargs):
         (level, argv) = get_level_by_argv(argv)
         add_root_handler(level)
-        return main(argv)
+        return main(argv, *args, **kwargs)
     return wrapped
