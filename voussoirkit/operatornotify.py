@@ -49,6 +49,7 @@ Examples:
 '''
 import argparse
 import contextlib
+import functools
 import io
 import sys
 import traceback
@@ -239,6 +240,7 @@ def main_decorator(subject, *, log_return_value=True, **kwargs):
     3. Wrap main call with main_log_context.
     '''
     def wrapper(main):
+        @functools.wraps(main)
         def wrapped(argv, *args, **kwargs):
             (argv, level) = get_level_by_argv(argv)
             if level is None:

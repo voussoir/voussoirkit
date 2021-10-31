@@ -8,6 +8,7 @@ and SILENT, and all loggers from getLogger are given the `loud` method.
 
 Don't forget to like, comment, and subscribe.
 '''
+import functools
 from logging import *
 import sys
 
@@ -182,6 +183,7 @@ def main_decorator(main):
     to use --debug, --quiet, etc. on the command line without making any
     changes to your argparser.
     '''
+    @functools.wraps(main)
     def wrapped(argv, *args, **kwargs):
         (level, argv) = get_level_by_argv(argv)
         add_root_handler(level)
