@@ -96,6 +96,40 @@ def cached_endpoint(max_age):
         return wrapped
     return wrapper
 
+def decorate_and_route(flask_app, decorators):
+    '''
+    Flask provides decorators for before_request and after_request, but not for
+    wrapping the whole request. Sometimes I want to wrap the whole request,
+    either to catch exceptions (which don't get passed through after_request)
+    or to maintain some state before running the function and adding it to the
+    response after.
+
+    Instead of pasting my decorators onto every single endpoint and forgetting
+    to keep up with them in the future, we can just hijack the decorator I know
+    every endpoint will have: route.
+
+    You should set:
+    flask_app.route = flasktools.decorate_and_route(flask_app, decorators[...])
+
+    So every time your route something, it will also get the other decorators.
+    '''
+    old_route = flask_app.route
+    @functools.wraps(old_route)
+    def new_route(*route_args, **route_kwargs):
+        def wrapper(endpoint):
+            # Since a single endpoint function can have multiple route
+            # decorators on it, we might see the same function come through
+            # here multiple times. We'll only do the user's decorators once.
+            if not hasattr(endpoint, '_fully_decorated'):
+                for decorator in decorators:
+                    endpoint = decorator(endpoint)
+                endpoint._fully_decorated = True
+
+            endpoint = old_route(*route_args, **route_kwargs)(endpoint)
+            return endpoint
+        return wrapper
+    return new_route
+
 def ensure_response_type(function):
     @functools.wraps(function)
     def wrapped(*args, **kwargs):
