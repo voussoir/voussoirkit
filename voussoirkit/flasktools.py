@@ -105,6 +105,28 @@ def ensure_response_type(function):
         return response
     return wrapped
 
+def give_theme_cookie(function, *, cookie_name, default_theme):
+    @functools.wraps(function)
+    def wrapped(*args, **kwargs):
+        old_theme = request.cookies.get(cookie_name, None)
+        new_theme = request.args.get('theme', None)
+        theme = new_theme or old_theme or default_theme
+
+        request.cookies = werkzeug.datastructures.MultiDict(request.cookies)
+        request.cookies[cookie_name] = theme
+
+        response = function(*args, **kwargs)
+
+        if new_theme is None:
+            pass
+        elif new_theme == '':
+            response.set_cookie(cookie_name, value='', expires=0)
+        elif new_theme != old_theme:
+            response.set_cookie(cookie_name, value=new_theme, expires=2147483647)
+
+        return response
+    return wrapped
+
 def gzip_response(request, response):
     if response.direct_passthrough:
         return response
