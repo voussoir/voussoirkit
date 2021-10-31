@@ -106,13 +106,29 @@ def ensure_response_type(function):
     return wrapped
 
 def give_theme_cookie(function, *, cookie_name, default_theme):
+    '''
+    This decorator is one component of a theming system, where the user gets a
+    CSS stylesheet based on the value of their theme cookie.
+
+    Add this decorator to your endpoint. Then, use request.cookies.get to
+    check what theme they want. This decorator will inject the cookie before
+    your function runs. Add the appropriate stylesheet to your response HTML.
+
+    The user can change their theme by adding ?theme=name to the end of any URL
+    which uses this decorator.
+    '''
     @functools.wraps(function)
     def wrapped(*args, **kwargs):
         old_theme = request.cookies.get(cookie_name, None)
         new_theme = request.args.get('theme', None)
         theme = new_theme or old_theme or default_theme
 
+        # The original data structure for request.cookies is immutable and we
+        # must turn it into this multidict.
         request.cookies = werkzeug.datastructures.MultiDict(request.cookies)
+        # By injecting the cookie here, we allow the endpoint function to check
+        # request.cookies even if the client didn't actually have one when they
+        # started the request.
         request.cookies[cookie_name] = theme
 
         response = function(*args, **kwargs)
