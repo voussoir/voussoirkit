@@ -112,7 +112,7 @@ class Path:
             absolute_path = path.absolute_path
         else:
             path = path.strip()
-            if re.search('^[A-Za-z]:$', path):
+            if re.match(r'^[A-Za-z]:$', path):
                 # Bare Windows drive letter.
                 path += self.sep
             path = normalize_sep(path)
