@@ -96,10 +96,10 @@ def copy_dir(
         callback_directory_progress=None,
         callback_file_progress=None,
         callback_permission_denied=None,
+        callback_post_file=None,
         callback_pre_directory=None,
         callback_pre_file=None,
         callback_verify_hash_progress=None,
-        callback_post_file=None,
         chunk_size='dynamic',
         destination_new_root=None,
         dry_run=False,
@@ -285,6 +285,9 @@ def copy_dir(
             if callback_pre_directory(directory, destination_dir, dry_run=dry_run) is BAIL:
                 continue
 
+            if stop_event and stop_event.is_set():
+                break
+
             for source_file in files:
                 destination_file = destination_dir.with_child(source_file.basename)
                 yield (source_file, destination_file)
@@ -309,9 +312,9 @@ def copy_dir(
             source_file,
             destination_file,
             bytes_per_second=bytes_per_second,
-            callback_progress=callback_file_progress,
             callback_permission_denied=callback_permission_denied,
             callback_pre_copy=callback_pre_file,
+            callback_progress=callback_file_progress,
             callback_verify_hash_progress=callback_verify_hash_progress,
             chunk_size=chunk_size,
             dry_run=dry_run,
@@ -425,8 +428,10 @@ def copy_file(
         and its hash will be compared against the hash of the source file.
         If hash_class is None, then the global HASH_CLASS is used.
 
-    Returns a dotdict containing at least `source`, `destination` (Pathclass),
-    `written` (False if file was skipped, True if written), and
+    Returns a dotdict containing at least these values:
+    `source` (Pathclass),
+    `destination` (Pathclass),
+    `written` (False if file was skipped, True if written),
     `written_bytes` (integer).
     '''
     # Prepare parameters
