@@ -199,6 +199,10 @@ class Database(metaclass=abc.ABCMeta):
         This is better than calling get_object_by_id in a loop because we can
         use a single SQL select to get batches of up to 999 items.
 
+        This method does not raise exceptions for IDs that are not present in
+        the database. You will need to compare the set of returned objects with
+        the set of requested IDs.
+
         Note: The order of the output is not guaranteed to match the order of
         the input. Consider using get_objects_by_sql if that is a necessity.
         '''
