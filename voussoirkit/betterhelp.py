@@ -4,9 +4,32 @@ import functools
 from voussoirkit import pipeable
 from voussoirkit import vlogging
 
-log = vlogging.getLogger(__name__)
+log = vlogging.get_logger(__name__)
 
-HELPSTRINGS = {'', 'help', '-h', '--help'}
+# When using a single parser or a command of a subparser, the presence of any
+# of these strings in argv will trigger the helptext.
+# > application.py --help
+# > application.py command --help
+HELP_ARGS = {'-h', '--help'}
+
+# When using a subparser, the command name can be any of these to trigger
+# the helptext.
+# > application.py help
+# > application.py --help
+# This does not apply to single-parser applications because the user might try
+# to pass the word "help" as the actual argument to the program, but in a
+# subparser application it's very unlikely that there is an actual command
+# called help.
+HELP_COMMANDS = {'help', '-h', '--help'}
+
+# Modules can add additional helptexts to this set, and they will appear
+# after the program's main docstring is shown. This is used when the module
+# intercepts sys.argv to change program behavior beyond the options provided
+# by the program's argparse. For example, voussoirkit.vlogging.main_decorator
+# adds command-line arguments like --debug which the application's argparse
+# is not aware of. vlogging registers an epilogue here so that all vlogging-
+# enabled applications gain the relevant helptext for free.
+HELPTEXT_EPILOGUES = set()
 
 # INTERNALS
 ################################################################################
@@ -85,19 +108,32 @@ def listget(li, index, fallback=None):
     except IndexError:
         return fallback
 
+def print_helptext(text) -> None:
+    '''
+    Print the given text to stderr, along with any epilogues added by
+    other modules.
+    '''
+    fulltext = [text.strip()] + sorted(epi.strip() for epi in HELPTEXT_EPILOGUES)
+    fulltext = '\n\n'.join(fulltext)
+    pipeable.stderr()
+    pipeable.stderr(fulltext)
+
 def set_alias_docstrings(sub_docstrings, subparser_action) -> dict:
     '''
-    When using subparser aliases:
+    When using subparser aliases like the following:
 
-        subp = parser.add_subparser('command', aliases=['comm'])
+        subp = parser.add_subparser('do_this', aliases=['do-this'])
 
     The _SubParsersAction will contain a dictionary `choices` of
-    {'command': ArgumentParser, 'comm': ArgumentParser}.
+    {'do_this': ArgumentParser, 'do-this': ArgumentParser}.
     This choices dict does not indicate which one was the original name;
     all aliases are equal. So, we'll identify which names are aliases because
     their ArgumentParsers will have the same ID in memory. And, as long as one
     of those aliases is in the provided docstrings, all the other aliases will
     get that docstring too.
+
+    This function modifies the given sub_docstrings so that all aliases are
+    present as keys.
     '''
     sub_docstrings = {name.lower(): docstring for (name, docstring) in sub_docstrings.items()}
     # aliases is a map of {action object's id(): [list of alias name strings]}.
@@ -140,12 +176,15 @@ def single_betterhelp(parser, docstring):
     def wrapper(main):
         @functools.wraps(main)
         def wrapped(argv):
-            argument = listget(argv, 0, '').lower()
+            if len(argv) == 0 and can_bare:
+                return main(argv)
 
-            if argument == '' and can_bare:
-                pass
-            elif argument in HELPSTRINGS:
-                pipeable.stderr(docstring)
+            if len(argv) == 0:
+                print_helptext(docstring)
+                return 1
+
+            if any(arg.lower() in HELP_ARGS for arg in argv):
+                print_helptext(docstring)
                 return 1
 
             return main(argv)
@@ -166,21 +205,33 @@ def subparser_betterhelp(parser, main_docstring, sub_docstrings):
             if command == '' and can_bare:
                 return main(argv)
 
-            if command not in sub_docstrings:
-                pipeable.stderr(main_docstring)
-                if command == '':
-                    because = 'you did not choose a command'
-                    pipeable.stderr(f'You are seeing the default help text because {because}.')
-                elif command not in HELPSTRINGS:
-                    because = f'"{command}" was not recognized'
-                    pipeable.stderr(f'You are seeing the default help text because {because}.')
+            if command == '':
+                print_helptext(main_docstring)
+                because = 'you did not choose a command'
+                pipeable.stderr(f'\nYou are seeing the default help text because {because}.')
                 return 1
 
-            argument = listget(argv, 1, '').lower()
-            if argument == '' and command in can_bares:
-                pass
-            elif argument in HELPSTRINGS:
-                pipeable.stderr(sub_docstrings[command])
+            if command in HELP_COMMANDS:
+                print_helptext(main_docstring)
+                return 1
+
+            if command not in sub_docstrings:
+                print_helptext(main_docstring)
+                because = f'"{command}" was not recognized'
+                pipeable.stderr(f'\nYou are seeing the default help text because {because}.')
+                return 1
+
+            arguments = argv[1:]
+
+            if len(arguments) == 0 and command in can_bares:
+                return main(argv)
+
+            if len(arguments) == 0:
+                print_helptext(sub_docstrings[command])
+                return 1
+
+            if any(arg.lower() in HELP_ARGS for arg in arguments):
+                print_helptext(sub_docstrings[command])
                 return 1
 
             return main(argv)

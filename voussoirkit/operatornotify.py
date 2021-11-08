@@ -54,11 +54,24 @@ import io
 import sys
 import traceback
 
-from voussoirkit import betterhelp
 from voussoirkit import pipeable
 from voussoirkit import vlogging
 
 log = vlogging.getLogger(__name__, 'operatornotify')
+
+BETTERHELP_EPILOGUE = '''
+This program uses voussoirkit.operatornotify to allow the program operator to
+receive messages about important events. See operatornotify.py's docstring to
+learn how to create your own my_operatornotify file. Then, you can call this
+program with the following arguments:
+
+--operatornotify
+    opts in to notifications and will capture logging at the WARNING level.
+
+--operatornotify-level X
+    opts in to notifications and will capture logging at level X, where X is
+    e.g. debug, info, warning, error, critical.
+'''
 
 ####################################################################################################
 
@@ -239,6 +252,8 @@ def main_decorator(subject, *, log_return_value=True, **kwargs):
     2. Remove those args from argv so your argparse doesn't know the difference.
     3. Wrap main call with main_log_context.
     '''
+    from voussoirkit import betterhelp
+    betterhelp.HELPTEXT_EPILOGUES.add(BETTERHELP_EPILOGUE)
     def wrapper(main):
         @functools.wraps(main)
         def wrapped(argv, *args, **kwargs):

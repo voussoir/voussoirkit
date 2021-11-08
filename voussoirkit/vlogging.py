@@ -14,6 +14,18 @@ import sys
 
 _getLogger = getLogger
 
+BETTERHELP_EPILOGUE = '''
+This program uses voussoirkit.vlogging to make logging controls accessible via
+command line arguments. You can add the following arguments to change the
+logging level:
+
+--loud
+--debug
+--warning
+--quiet
+--silent
+'''
+
 # Python gives the root logger a level of WARNING. The problem is that prevents
 # any handlers you add to it from receiving lower level messages. WARNING might
 # be fine for the stderr handler, but you might like to have a log file
@@ -183,6 +195,8 @@ def main_decorator(main):
     to use --debug, --quiet, etc. on the command line without making any
     changes to your argparser.
     '''
+    from voussoirkit import betterhelp
+    betterhelp.HELPTEXT_EPILOGUES.add(BETTERHELP_EPILOGUE)
     @functools.wraps(main)
     def wrapped(argv, *args, **kwargs):
         (level, argv) = get_level_by_argv(argv)
