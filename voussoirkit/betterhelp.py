@@ -10,6 +10,19 @@ HELPSTRINGS = {'', 'help', '-h', '--help'}
 
 # INTERNALS
 ################################################################################
+def add_previews(docstring, sub_docstrings) -> str:
+    '''
+    Given a primary docstring which contains {command_name} formatting elements,
+    and a dict of sub_docstrings of {command_name: docstring}, insert previews
+    of each command into the primary docstring.
+    '''
+    previews = {
+        sub_name: docstring_preview(sub_text)
+        for (sub_name, sub_text) in sub_docstrings.items()
+    }
+    docstring = docstring.format(**previews)
+    return docstring
+
 def can_use_bare(parser) -> bool:
     '''
     Return true if the given parser has no required arguments, ie can run bare.
@@ -60,30 +73,17 @@ def docstring_preview(text) -> str:
     text = text.split('\n\n')[0].strip()
     return text
 
-def listget(li, index, fallback=None):
-    try:
-        return li[index]
-    except IndexError:
-        return fallback
-
-def add_previews(docstring, sub_docstrings) -> str:
-    '''
-    Given a primary docstring which contains {command_name} formatting elements,
-    and a dict of sub_docstrings of {command_name: docstring}, insert previews
-    of each command into the primary docstring.
-    '''
-    previews = {
-        sub_name: docstring_preview(sub_text)
-        for (sub_name, sub_text) in sub_docstrings.items()
-    }
-    docstring = docstring.format(**previews)
-    return docstring
-
 def get_subparser_action(parser):
     for action in parser._actions:
         if isinstance(action, argparse._SubParsersAction):
             return action
     raise TypeError('Couldn\'t locate the SubParsersAction.')
+
+def listget(li, index, fallback=None):
+    try:
+        return li[index]
+    except IndexError:
+        return fallback
 
 def set_alias_docstrings(sub_docstrings, subparser_action) -> dict:
     '''
