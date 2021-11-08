@@ -271,6 +271,12 @@ class Path:
         children = [self.join(child, _case_correct=self._case_correct) for child in children]
         return children
 
+    def listdir_directories(self):
+        return [p for p in self.listdir() if p.is_dir]
+
+    def listdir_files(self):
+        return [p for p in self.listdir() if p.is_file]
+
     def makedirs(self, mode=0o777, exist_ok=False):
         return os.makedirs(self.absolute_path, mode=mode, exist_ok=exist_ok)
 
