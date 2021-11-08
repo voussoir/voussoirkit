@@ -242,6 +242,7 @@ class Path:
     def is_directory(self):
         return os.path.isdir(self.absolute_path)
 
+    # Aliases for your convenience.
     is_dir = is_directory
     is_folder = is_directory
 
@@ -253,16 +254,15 @@ class Path:
     def is_link(self):
         return os.path.islink(self.absolute_path)
 
-    def join(self, subpath):
+    def join(self, subpath, **spawn_kwargs):
         if not isinstance(subpath, str):
             raise TypeError('subpath must be a string')
         path = os.path.join(self.absolute_path, subpath)
-        return self.spawn(path)
+        return self.spawn(path, **spawn_kwargs)
 
     def listdir(self):
         children = os.listdir(self.absolute_path)
-        children = [os.path.join(self.absolute_path, child) for child in children]
-        children = [self.spawn(child, _case_correct=self._case_correct) for child in children]
+        children = [self.join(child, _case_correct=self._case_correct) for child in children]
         return children
 
     def makedirs(self, mode=0o777, exist_ok=False):
