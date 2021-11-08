@@ -39,6 +39,9 @@ class DestinationIsDirectory(SpinalException):
 class DestinationIsFile(SpinalException):
     pass
 
+class HashVerificationFailed(SpinalException):
+    pass
+
 class RecursiveDirectory(SpinalException):
     pass
 
@@ -49,9 +52,6 @@ class SourceNotFile(SpinalException):
     pass
 
 class SpinalError(SpinalException):
-    pass
-
-class ValidationError(SpinalException):
     pass
 
 def callback_progress_v1(path, written_bytes, total_bytes):
@@ -98,6 +98,7 @@ def copy_dir(
         callback_permission_denied=None,
         callback_pre_directory=None,
         callback_pre_file=None,
+        callback_verify_hash_progress=None,
         callback_post_file=None,
         chunk_size='dynamic',
         destination_new_root=None,
@@ -110,7 +111,7 @@ def copy_dir(
         precalcsize=False,
         skip_symlinks=True,
         stop_event=None,
-        validate_hash=False,
+        verify_hash=False,
     ):
     '''
     Copy all of the contents from source to destination,
@@ -158,6 +159,9 @@ def copy_dir(
         If you think copy_dir should be rewritten as a generator instead,
         I agree!
 
+    callback_verify_hash_progress:
+        Passed into each `copy_file` as `callback_verify_hash_progress`.
+
     chunk_size:
         Passed into each `copy_file` as `chunk_size`.
 
@@ -203,8 +207,8 @@ def copy_dir(
         For example, you can run this function in a thread and let the main
         thread catch ctrl+c to set the stop_event, so the copy can stop cleanly.
 
-    validate_hash:
-        Passed into each `copy_file` as `validate_hash`.
+    verify_hash:
+        Passed into each `copy_file` as `verify_hash`.
 
     Returns a dotdict containing at least `source`, `destination`,
     and `written_bytes`. (Written bytes is 0 if all files already existed.)
@@ -308,11 +312,12 @@ def copy_dir(
             callback_progress=callback_file_progress,
             callback_permission_denied=callback_permission_denied,
             callback_pre_copy=callback_pre_file,
+            callback_verify_hash_progress=callback_verify_hash_progress,
             chunk_size=chunk_size,
             dry_run=dry_run,
             hash_class=hash_class,
             overwrite_old=overwrite_old,
-            validate_hash=validate_hash,
+            verify_hash=verify_hash,
         )
 
         written_bytes += copied.written_bytes
@@ -341,16 +346,15 @@ def copy_file(
         *,
         destination_new_root=None,
         bytes_per_second=None,
-        callback_hash_progress=None,
+        callback_verify_hash_progress=None,
         callback_progress=None,
         callback_permission_denied=None,
         callback_pre_copy=None,
-        callback_validate_hash=None,
         chunk_size='dynamic',
         dry_run=False,
         hash_class=None,
         overwrite_old=True,
-        validate_hash=False,
+        verify_hash=False,
     ):
     '''
     Copy a file from one place to another.
@@ -392,8 +396,8 @@ def copy_file(
         the Path object being copied, number of bytes written so far,
         total number of bytes needed.
 
-    callback_hash_progress:
-        Passed into `hash_file` as callback_progress when validating the hash.
+    callback_verify_hash_progress:
+        Passed into `hash_file` as callback_progress when verifying the hash.
 
     chunk_size:
         An integer number of bytes to read and write at a time.
@@ -416,7 +420,7 @@ def copy_file(
         has a more recent "last modified" timestamp.
         If False, existing files will be skipped no matter what.
 
-    validate_hash:
+    verify_hash:
         If True, the copied file will be read back after the copy is complete,
         and its hash will be compared against the hash of the source file.
         If hash_class is None, then the global HASH_CLASS is used.
@@ -505,7 +509,7 @@ def copy_file(
 
     if hash_class is not None:
         results.hash = hash_class()
-    elif validate_hash:
+    elif verify_hash:
         hash_class = HASH_CLASS
         results.hash = HASH_CLASS()
 
@@ -557,14 +561,15 @@ def copy_file(
     shutil.copystat(source.absolute_path, destination.absolute_path)
     results.written = True
 
-    if validate_hash:
-        verify_hash(
+    if verify_hash:
+        file_hash = _verify_hash(
             destination,
-            callback_progress=callback_hash_progress,
+            callback_progress=callback_verify_hash_progress,
             hash_class=hash_class,
             known_hash=results.hash.hexdigest(),
             known_size=source_bytes,
         )
+        results.verified_hash = file_hash
 
     return results
 
@@ -732,7 +737,7 @@ def verify_hash(
     ):
     '''
     Calculate the file's hash and compare it against a previous known hash.
-    Raises ValidationError if they differ, returns None if they match.
+    Raises HashVerificationFailed if they differ, returns None if they match.
 
     hash_class:
         Should be a hashlib class or a callable that returns an instance of one.
@@ -747,18 +752,24 @@ def verify_hash(
     path = pathclass.Path(path)
     path.assert_is_file()
 
-    log.debug('Validating hash for "%s" against %s.', path.absolute_path, known_hash)
+    log.debug('Verifying hash for "%s" against %s.', path.absolute_path, known_hash)
 
     if known_size is not None:
         file_size = path.size
         if file_size != known_size:
-            raise ValidationError(f'File size {file_size} != known size {known_size}.')
+            raise HashVerificationFailed(f'File size {file_size} != known size {known_size}.')
 
-    file_hash = hash_file(path, hash_class=hash_class, **hash_kwargs).hexdigest()
-    if file_hash != known_hash:
-        raise ValidationError(f'File hash "{file_hash}" != known hash "{known_hash}".')
+    file_hash = hash_file(path, hash_class=hash_class, **hash_kwargs)
+    digest = file_hash.hexdigest()
+    if digest != known_hash:
+        raise HashVerificationFailed(f'File hash "{digest}" != known hash "{known_hash}".')
 
-    log.debug('Hash validation passed.')
+    log.debug('Hash verification passed.')
+    return file_hash
+
+# For the purpose of allowing the copy_file function to have an argument called
+# verify_hash, we need to have an alternate name by which to call the function.
+_verify_hash = verify_hash
 
 def walk(
         path='.',
