@@ -238,6 +238,12 @@ class Path:
         children = [self.with_child(child) for child in children]
         return children
 
+    def glob_directories(self, pattern):
+        return [p for p in self.glob(pattern) if p.is_dir]
+
+    def glob_files(self, pattern):
+        return [p for p in self.glob(pattern) if p.is_file]
+
     @property
     def is_directory(self):
         return os.path.isdir(self.absolute_path)
@@ -465,34 +471,22 @@ def get_path_casing(path):
         cased += os.sep
     return cased
 
-def glob(pattern, files=None, directories=None):
+def glob(pattern):
     '''
     Just like regular glob, except it returns Path objects instead of strings.
-
-    files, directories:
-        Pass these arguments to filter the results. Leave both as None to get
-        all items, set either to True to get just those items.
 
     If you want to recurse, consider using spinal.walk with glob_filenames
     instead.
     '''
-    if files is None and directories is None:
-        files = True
-        directories = True
+    return [Path(p) for p in winglob.glob(pattern)]
 
-    if not files and not directories:
-        raise ValueError('files and directories can\'t both be False.')
+def glob_directories(pattern):
+    return [p for p in glob(pattern) if p.is_dir]
 
-    paths = (Path(p) for p in winglob.glob(pattern))
+def glob_files(pattern):
+    return [p for p in glob(pattern) if p.is_file]
 
-    if files and directories:
-        return list(paths)
-    if files:
-        return [p for p in paths if p.is_file]
-    if directories:
-        return [p for p in paths if p.is_dir]
-
-def glob_many(patterns, files=None, directories=None):
+def glob_many(patterns):
     '''
     Given many glob patterns, yield the results as a single generator.
     Saves you from having to write the nested loop.
@@ -503,7 +497,15 @@ def glob_many(patterns, files=None, directories=None):
     that match the glob. This function can take patterns with no common root.
     '''
     for pattern in patterns:
-        yield from glob(pattern, files=files, directories=directories)
+        yield from glob(pattern)
+
+def glob_many_directories(patterns):
+    for pattern in patterns:
+        yield from glob_directories(pattern)
+
+def glob_many_files(patterns):
+    for pattern in patterns:
+        yield from glob_files(pattern)
 
 def glob_patternize(piece):
     '''
