@@ -73,21 +73,6 @@ def callback_progress_v1(path, written_bytes, total_bytes):
     safeprint.safeprint(status, end=ends)
     sys.stdout.flush()
 
-def copy(source, file_args=None, file_kwargs=None, dir_args=None, dir_kwargs=None):
-    '''
-    Perform copy_dir or copy_file as appropriate for the source path.
-    '''
-    source = pathclass.Path(source)
-    if source.is_file:
-        file_args = file_args or tuple()
-        file_kwargs = file_kwargs or dict()
-        return copy_file(source, *file_args, **file_kwargs)
-    elif source.is_dir:
-        dir_args = dir_args or tuple()
-        dir_kwargs = dir_kwargs or dict()
-        return copy_dir(source, *dir_args, **dir_kwargs)
-    raise SpinalError(f'Neither file nor dir: {source}')
-
 def copy_dir(
         source,
         destination=None,
