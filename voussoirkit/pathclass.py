@@ -87,8 +87,8 @@ class Path:
     def __init__(
             self,
             path,
-            force_sep=None,
             *,
+            force_sep=None,
             _case_correct=False,
         ):
         '''
