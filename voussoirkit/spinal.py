@@ -73,7 +73,7 @@ def callback_progress_v1(path, written_bytes, total_bytes):
     safeprint.safeprint(status, end=ends)
     sys.stdout.flush()
 
-def copy_dir(
+def copy_directory(
         source,
         destination=None,
         *,
@@ -327,6 +327,9 @@ def copy_dir(
         default=None,
     )
     return results
+
+# Alias for your convenience.
+copy_dir = copy_directory
 
 def copy_file(
         source,
