@@ -66,10 +66,10 @@ learn how to create your own my_operatornotify file. Then, you can call this
 program with the following arguments:
 
 --operatornotify
-    opts in to notifications and will capture logging at the WARNING level.
+    Opts in to notifications and will capture logging at the WARNING level.
 
 --operatornotify-level X
-    opts in to notifications and will capture logging at level X, where X is
+    Opts in to notifications and will capture logging at level X, where X is
     e.g. debug, info, warning, error, critical.
 '''
 
