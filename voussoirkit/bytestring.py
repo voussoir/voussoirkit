@@ -66,7 +66,7 @@ class BytestringException(Exception):
 class ParseError(BytestringException, ValueError):
     pass
 
-def bytestring(size, decimal_places=3, force_unit=None):
+def bytestring(size, decimal_places=3, force_unit=None, thousands_separator=False):
     '''
     Convert a number into a string like "100 MiB".
 
@@ -80,6 +80,9 @@ def bytestring(size, decimal_places=3, force_unit=None):
     '762.939 MiB'
     >>> bytestring(800000000, decimal_places=0)
     '763 MiB'
+    >>> bytestring(100000000, force_unit=KIBIBYTE, thousands_separator=True)
+    '97,656.250 KiB'
+
     decimal_places:
         The number of digits after the decimal, including trailing zeros,
         for all divisors except bytes.
@@ -87,6 +90,9 @@ def bytestring(size, decimal_places=3, force_unit=None):
     force_unit:
         You can provide one of the size constants to force that divisor.
         If None, an appropriate size unit is chosen automatically.
+
+    thousands_separator:
+        If True, the strings will have thousands separators.
     '''
     if force_unit is None:
         divisor = get_appropriate_divisor(size)
@@ -101,7 +107,11 @@ def bytestring(size, decimal_places=3, force_unit=None):
     if divisor == BYTE:
         decimal_places = 0
 
-    size_string = '{number:.0{decimal_places}f} {unit}'
+    if thousands_separator:
+        size_string = '{number:,.0{decimal_places}f} {unit}'
+    else:
+        size_string = '{number:.0{decimal_places}f} {unit}'
+
     size_string = size_string.format(
         decimal_places=decimal_places,
         number=size/divisor,
