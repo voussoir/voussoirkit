@@ -80,10 +80,13 @@ def bytestring(size, decimal_places=3, force_unit=None):
     '762.939 MiB'
     >>> bytestring(800000000, decimal_places=0)
     '763 MiB'
+    decimal_places:
+        The number of digits after the decimal, including trailing zeros,
+        for all divisors except bytes.
 
     force_unit:
+        You can provide one of the size constants to force that divisor.
         If None, an appropriate size unit is chosen automatically.
-        Otherwise, you can provide one of the size constants to force that divisor.
     '''
     if force_unit is None:
         divisor = get_appropriate_divisor(size)
