@@ -234,7 +234,7 @@ def get_level_by_argv(argv):
 
     return (argv, level)
 
-def main_decorator(subject, *, log_return_value=True, **kwargs):
+def main_decorator(subject, *, log_return_value=True, **context_kwargs):
     '''
     Add this decorator to your application's main function to automatically
     wrap it in a main_log_context and log the final return value. For example:
@@ -256,14 +256,14 @@ def main_decorator(subject, *, log_return_value=True, **kwargs):
     betterhelp.HELPTEXT_EPILOGUES.add(BETTERHELP_EPILOGUE)
     def wrapper(main):
         @functools.wraps(main)
-        def wrapped(argv, *args, **kwargs):
+        def wrapped(argv, *main_args, **main_kwargs):
             (argv, level) = get_level_by_argv(argv)
             if level is None:
-                return main(argv, *args, **kwargs)
+                return main(argv, *main_args, **main_kwargs)
 
-            context = main_log_context(subject, level, **kwargs)
+            context = main_log_context(subject, level, **context_kwargs)
             with context:
-                status = main(argv, *args, **kwargs)
+                status = main(argv, *main_args, **main_kwargs)
                 if log_return_value:
                     log.info('Program finished, returned %s.', status)
                 return status
