@@ -50,11 +50,12 @@ def has_lan():
 
 def has_internet(timeout=2) -> bool:
     '''
-    Return True if an internet connection is available.
+    Return True if an internet connection is available. Returns False if the
+    timeout expires.
     '''
-    socket.setdefaulttimeout(timeout)
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
         sock.connect((INTERNET_IP, 53))
         return True
     except socket.error as exc:
