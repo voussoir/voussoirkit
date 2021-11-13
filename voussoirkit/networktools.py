@@ -9,6 +9,7 @@ import requests
 import socket
 import time
 
+from voussoirkit import httperrors
 from voussoirkit import vlogging
 
 log = vlogging.getLogger(__name__, 'networktools')
@@ -26,7 +27,7 @@ class NoInternet(NetworkToolsException):
 def get_external_ip(timeout=10) -> str:
     url = 'https://voussoir.net/whatsmyip'
     response = requests.get(url, timeout=timeout)
-    response.raise_for_status()
+    httperrors.raise_for_status(response)
     ip = response.text.strip()
     return ip
 
