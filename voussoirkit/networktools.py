@@ -23,9 +23,9 @@ class NetworkToolsException(Exception):
 class NoInternet(NetworkToolsException):
     pass
 
-def get_external_ip() -> str:
+def get_external_ip(timeout=10) -> str:
     url = 'https://voussoir.net/whatsmyip'
-    response = requests.get(url)
+    response = requests.get(url, timeout=timeout)
     response.raise_for_status()
     ip = response.text.strip()
     return ip
