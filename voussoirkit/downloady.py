@@ -6,6 +6,7 @@ import urllib
 
 from voussoirkit import bytestring
 from voussoirkit import dotdict
+from voussoirkit import httperrors
 from voussoirkit import pathclass
 from voussoirkit import pipeable
 from voussoirkit import ratelimiter
@@ -403,9 +404,9 @@ def request(method, url, headers=None, timeout=TIMEOUT, verify_ssl=True, **kwarg
         'post': session.post,
     }[method]
 
-    req = method(url, headers=headers, timeout=timeout, verify=verify_ssl, **kwargs)
-    req.raise_for_status()
-    return req
+    response = method(url, headers=headers, timeout=timeout, verify=verify_ssl, **kwargs)
+    httperrors.raise_for_status(response)
+    return response
 
 def sanitize_filename(text, exclusions=''):
     to_remove = FILENAME_BADCHARS
