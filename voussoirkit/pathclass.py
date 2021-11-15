@@ -109,16 +109,19 @@ class Path:
         self._case_correct = _case_correct
 
         if isinstance(path, Path):
-            absolute_path = path.absolute_path
-        else:
-            path = path.strip()
-            if re.match(r'^[A-Za-z]:$', path):
-                # Bare Windows drive letter.
-                path += self.sep
-            path = normalize_sep(path)
-            path = os.path.normpath(path)
-            absolute_path = os.path.abspath(path)
+            self._absolute_path = path.absolute_path
+            return
 
+        if not isinstance(path, str):
+            raise TypeError(f'path must be {Path} or {str}, not {type(path)}.')
+
+        path = path.strip()
+        if re.match(r'^[A-Za-z]:$', path):
+            # Bare Windows drive letter.
+            path += self.sep
+        path = normalize_sep(path)
+        path = os.path.normpath(path)
+        absolute_path = os.path.abspath(path)
         self._absolute_path = normalize_sep(absolute_path, self.sep)
 
     def __contains__(self, other):
