@@ -377,7 +377,7 @@ def basename_from_url(url):
 def is_special_file(file):
     if isinstance(file, pathclass.Path):
         return False
-    file = pathclass.normalize_sep(file)
+    file = os.path.normpath(file)
     file = file.rsplit(os.sep)[-1]
     file = os.path.normcase(file)
     return file in SPECIAL_FILENAMES
