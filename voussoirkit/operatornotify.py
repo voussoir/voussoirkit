@@ -54,6 +54,8 @@ import io
 import sys
 import traceback
 
+from voussoirkit import betterhelp
+from voussoirkit import dotdict
 from voussoirkit import pipeable
 from voussoirkit import vlogging
 
@@ -71,6 +73,10 @@ program with the following arguments:
 --operatornotify-level X
     Opts in to notifications and will capture logging at level X, where X is
     e.g. debug, info, warning, error, critical.
+
+--operatornotify-subject X
+    Overrides the application's default subject line. Also opts in to logging
+    at the WARNING level if --operatornotify-level isn't used.
 '''
 
 ####################################################################################################
@@ -191,49 +197,6 @@ class LogHandlerContext:
         self.handler.notify()
         self.log.removeHandler(self.handler)
 
-def get_level_by_argv(argv):
-    '''
-    The user can provide --operatornotify to opt-in to receive notifications at
-    the default level (warning), or --operatornotify-level X where X is e.g.
-    "debug", "info", "warning", "error".
-
-    Returns (argv, level) where argv has the --operatornotify arguments removed,
-    and level is either an integer log level, or None if the user did not
-    opt in. Even if you are not attaching operatornotify to your logger, you
-    can still use this value to make decisions about when/what to notify.
-
-    Raises ValueError if --operatornotify-level X is not a recognized level.
-    '''
-    # This serves the purpose of normalizing the argument, but also creating a
-    # duplicate list so we are not altering sys.argv.
-    # Do not modiy this code without considering both effects.
-    argv = ['--operatornotify-level' if arg == '--operatornotify_level' else arg for arg in argv]
-
-    level = None
-
-    try:
-        index = argv.index('--operatornotify-level')
-    except ValueError:
-        pass
-    else:
-        argv.pop(index)
-        level = argv.pop(index)
-        try:
-            level = int(level)
-        except ValueError:
-            level = vlogging.get_level_by_name(level)
-
-    try:
-        index = argv.index('--operatornotify')
-    except ValueError:
-        pass
-    else:
-        if level is None:
-            level = vlogging.WARNING
-        argv.pop(index)
-
-    return (argv, level)
-
 def main_decorator(subject, *, log_return_value=True, **context_kwargs):
     '''
     Add this decorator to your application's main function to automatically
@@ -252,16 +215,21 @@ def main_decorator(subject, *, log_return_value=True, **context_kwargs):
     2. Remove those args from argv so your argparse doesn't know the difference.
     3. Wrap main call with main_log_context.
     '''
-    from voussoirkit import betterhelp
     betterhelp.HELPTEXT_EPILOGUES.add(BETTERHELP_EPILOGUE)
     def wrapper(main):
         @functools.wraps(main)
         def wrapped(argv, *main_args, **main_kwargs):
-            (argv, level) = get_level_by_argv(argv)
-            if level is None:
+            parsed = parse_argv(argv)
+            argv = parsed.argv
+
+            if parsed.level is None:
                 return main(argv, *main_args, **main_kwargs)
 
-            context = main_log_context(subject, level, **context_kwargs)
+            context = main_log_context(
+                subject=parsed.subject or subject,
+                level=parsed.level,
+                **context_kwargs,
+            )
             with context:
                 status = main(argv, *main_args, **main_kwargs)
                 if log_return_value:
@@ -293,6 +261,63 @@ def main_log_context(subject, level, **kwargs):
     handler.setFormatter(vlogging.Formatter('{levelname}:{name}:{message}', style='{'))
     context = LogHandlerContext(log, handler)
     return context
+
+def parse_argv(argv):
+    '''
+    Parses argv looking for the following arguments:
+    --operatornotify to opt in to notifications and logging at the default
+      level, WARNING.
+    --operatornotify-level X where X is e.g. debug, info, warning, error.
+    --operatornotify-subject X where X is any string. This allows the user to
+      override the default subject line provided by the application. Opts in
+      to logging at WARNING by default.
+
+    Returns a dotdict with these keys:
+    - argv, which has all --operatornotify* arguments removed.
+    - level, either an integer log level or None. Even if you are not attaching
+      operatornotify to your logger, you can still use this value to make
+      decisions about when/what to notify. None means did not opt-in.
+    - subject, either a string to override the application's subject or None.
+
+    Raises ValueError if --operatornotify-level X is not a recognized level.
+    '''
+    level = None
+    subject = None
+    new_argv = []
+    index = 0
+    while index < len(argv):
+        arg = argv[index]
+
+        if arg in {'--operatornotify_level', '--operatornotify-level'}:
+            level = argv[index + 1]
+            index += 1
+
+        elif arg in {'--operatornotify_subject', '--operatornotify-subject'}:
+            if level is None:
+                level = vlogging.WARNING
+            subject = argv[index + 1]
+            index += 1
+
+        elif arg == '--operatornotify':
+            if level is None:
+                level = vlogging.WARNING
+
+        else:
+            new_argv.append(arg)
+
+        index += 1
+
+    if isinstance(level, str):
+        try:
+            level = int(level)
+        except ValueError:
+            level = vlogging.get_level_by_name(level)
+
+    return dotdict.DotDict(
+        argv=new_argv,
+        level=level,
+        subject=subject,
+    )
 
 def operatornotify_argparse(args):
     notify(
