@@ -113,8 +113,12 @@ def print_helptext(text) -> None:
     Print the given text to stderr, along with any epilogues added by
     other modules.
     '''
-    fulltext = [text.strip()] + sorted(epi.strip() for epi in HELPTEXT_EPILOGUES)
-    fulltext = '\n\n'.join(fulltext)
+    fulltext = []
+    fulltext.append(text.strip())
+    fulltext.extend(sorted(epi.strip() for epi in HELPTEXT_EPILOGUES))
+    separator = '\n' + ('-'*80) + '\n'
+    fulltext = separator.join(fulltext)
+    # Ensure one blank line above helptext.
     pipeable.stderr()
     pipeable.stderr(fulltext)
 
