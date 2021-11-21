@@ -338,11 +338,9 @@ class ThreadPool:
         while self._jobs_available.is_set() or not self._result_queue.empty():
             job = self._result_queue.get()
             if job is NO_MORE_JOBS:
-                self._result_queue.task_done()
                 break
             job.join()
             yield job
-            self._result_queue.task_done()
         self._result_queue = None
 
         if was_paused:
