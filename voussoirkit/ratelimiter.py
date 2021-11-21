@@ -53,6 +53,9 @@ class Ratelimiter:
         self.last_operation = time.monotonic()
         self.balance = 0
 
+    def __repr__(self):
+        return f'{self.__class__.__name__}(allowance={self.allowance}, period={self.period})'
+
     @property
     def gain_rate(self):
         return self.allowance / self.period
