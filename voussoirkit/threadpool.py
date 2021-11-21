@@ -67,7 +67,7 @@ class PooledThread:
     '''
     def __init__(self, pool):
         self.pool = pool
-        self.thread = threading.Thread(target=self.start, daemon=True)
+        self.thread = threading.Thread(target=self.mainloop, daemon=True)
         self.thread.start()
 
     def __repr__(self):
@@ -103,7 +103,7 @@ class PooledThread:
         log.debug('%s is joining.', self)
         self.thread.join()
 
-    def start(self):
+    def mainloop(self):
         while True:
             # Let's wait for jobs_available first and unpaused second.
             # If the time between the two waits is very long, the worst thing
