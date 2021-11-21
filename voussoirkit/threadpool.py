@@ -414,8 +414,8 @@ class Job:
 
         self._done_event.set()
 
-    def join(self):
+    def join(self, timeout=None):
         '''
         Block until this job runs and completes.
         '''
-        self._done_event.wait()
+        self._done_event.wait(timeout=timeout)
