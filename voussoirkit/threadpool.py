@@ -174,7 +174,7 @@ class ThreadPool:
         # Should be held while manipulating self._running_count.
         self._running_count_lock = threading.Lock()
         self._size = size
-        self._threads = [PooledThread(pool=self) for x in range(size)]
+        self._threads = {PooledThread(pool=self) for x in range(size)}
 
     @property
     def closed(self) -> bool:
