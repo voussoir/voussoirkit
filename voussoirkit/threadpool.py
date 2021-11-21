@@ -92,12 +92,17 @@ class PooledThread:
             return NO_MORE_JOBS
 
         log.debug('%s is running job %s.', self, job)
-        self.pool._running_count += 1
+
+        with self.pool._running_count_lock:
+            self.pool._running_count += 1
+
         try:
             job.run()
         except BaseException:
             traceback.print_traceback()
-        self.pool._running_count -= 1
+
+        with self.pool._running_count_lock:
+            self.pool._running_count -= 1
 
     def join(self) -> None:
         log.debug('%s is joining.', self)
@@ -163,8 +168,11 @@ class ThreadPool:
         self._running_count = 0
         self._result_queue = None
         self._pending_jobs = lazychain.LazyChain()
+        # Should be held while manipulating self._pending_jobs.
         self._job_manager_lock = threading.Lock()
 
+        # Should be held while manipulating self._running_count.
+        self._running_count_lock = threading.Lock()
         self._size = size
         self._threads = [PooledThread(pool=self) for x in range(size)]
 
