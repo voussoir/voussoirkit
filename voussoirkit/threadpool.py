@@ -33,15 +33,15 @@ Here are some examples of threadpool in use:
 >>> pool.add_many(kwargss)
 >>> pool.join()
 '''
-import logging
 import queue
 import threading
 import traceback
 
 from voussoirkit import lazychain
 from voussoirkit import sentinel
+from voussoirkit import vlogging
 
-log = logging.getLogger('threadpool')
+log = vlogging.get_logger(__name__, 'threadpool')
 
 PENDING = sentinel.Sentinel('PENDING')
 RUNNING = sentinel.Sentinel('RUNNING')
