@@ -60,10 +60,14 @@ class PoolClosed(ThreadPoolException):
     pass
 
 class PooledThread:
+    '''
+    The PooledThreads are created when the pool is created, and live as long as
+    the pool does. Each PooledThread will continuously fetch jobs from the pool
+    and work on them.
+    '''
     def __init__(self, pool):
         self.pool = pool
-        self.thread = threading.Thread(target=self.start)
-        self.thread.daemon = True
+        self.thread = threading.Thread(target=self.start, daemon=True)
         self.thread.start()
 
     def __repr__(self):
@@ -250,6 +254,10 @@ class ThreadPool:
         return these_jobs
 
     def get_next_job(self):
+        '''
+        Return the next available Job object, or NO_MORE_JOBS if the pending
+        queue is empty. This function does not block like a Queue.get would.
+        '''
         with self._job_manager_lock:
             try:
                 job = next(self._pending_jobs)
