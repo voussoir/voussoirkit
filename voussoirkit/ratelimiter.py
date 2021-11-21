@@ -66,22 +66,22 @@ class Ratelimiter:
         self.balance += time_diff * self.gain_rate
         self.balance = min(self.balance, self.allowance)
 
-        if self.balance >= cost:
-            self.balance -= cost
-            successful = True
+        self.balance -= cost
+
+        if self.balance >= 0:
+            success = True
+            sleep_needed = 0
 
         elif self.mode == 'reject':
-            successful = False
+            success = False
+            sleep_needed = 0
 
         else:
-            deficit = cost - self.balance
-            time_needed = deficit / self.gain_rate
-            time.sleep(time_needed)
-            self.balance = 0
-            successful = True
+            success = True
+            sleep_needed = abs(self.balance) / self.gain_rate
 
         self.last_operation = now
-        return successful
+        return (success, sleep_needed)
 
     def limit(self, cost=None):
         '''
@@ -91,4 +91,9 @@ class Ratelimiter:
             cost = self.operation_cost
 
         with self.lock:
-            return self._limit(cost)
+            (success, sleep_needed) = self._limit(cost)
+
+        if sleep_needed > 0:
+            time.sleep(sleep_needed)
+
+        return success
