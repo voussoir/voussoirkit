@@ -50,7 +50,7 @@ class Ratelimiter:
         self.mode = mode
         self.lock = threading.Lock()
 
-        self.last_operation = time.time()
+        self.last_operation = time.monotonic()
         self.balance = 0
 
     @property
@@ -58,7 +58,8 @@ class Ratelimiter:
         return self.allowance / self.period
 
     def _limit(self, cost):
-        time_diff = time.time() - self.last_operation
+        now = time.monotonic()
+        time_diff = now - self.last_operation
         self.balance += time_diff * self.gain_rate
         self.balance = min(self.balance, self.allowance)
 
@@ -76,7 +77,7 @@ class Ratelimiter:
             self.balance = 0
             successful = True
 
-        self.last_operation = time.time()
+        self.last_operation = now
         return successful
 
     def limit(self, cost=None):
