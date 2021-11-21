@@ -260,6 +260,20 @@ class ThreadPool:
 
         return these_jobs
 
+    def close(self) -> None:
+        '''
+        Permanently close the pool, preventing any new jobs from being added.
+        This function does not block. The pending jobs will continue to be
+        processed in the background.
+
+        This function does not start the pool. Make sure to call `start`.
+        '''
+        self._closed = True
+        # The threads which are currently paused at _jobs_available.wait() need
+        # to be woken up so they can realize the pool is closed and finish
+        # their mainloop.
+        self._jobs_available.set()
+
     def get_next_job(self):
         '''
         Return the next available Job object, or NO_MORE_JOBS if the pending
@@ -293,10 +307,7 @@ class ThreadPool:
         and block until all jobs are complete.
         '''
         log.debug('%s is joining.', self)
-        self._closed = True
-        # The threads which are currently paused at _jobs_available.wait() need
-        # to be woken up so they can realize the pool is closed and break.
-        self._jobs_available.set()
+        self.close()
         self.start()
         for thread in self._threads:
             thread.join()
