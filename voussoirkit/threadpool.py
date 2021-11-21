@@ -99,11 +99,11 @@ class PooledThread:
             traceback.print_traceback()
         self.pool._running_count -= 1
 
-    def join(self):
+    def join(self) -> None:
         log.debug('%s is joining.', self)
         self.thread.join()
 
-    def mainloop(self):
+    def mainloop(self) -> None:
         while True:
             # Let's wait for jobs_available first and unpaused second.
             # If the time between the two waits is very long, the worst thing
@@ -169,29 +169,36 @@ class ThreadPool:
         self._threads = [PooledThread(pool=self) for x in range(size)]
 
     @property
-    def closed(self):
+    def closed(self) -> bool:
+        '''
+        closed indicates that the pool will not accept any more jobs, but the
+        previously added jobs may still be running.
+        '''
         return self._closed
 
     @property
-    def paused(self):
+    def paused(self) -> bool:
         return not self._unpaused_event.is_set()
 
     @property
-    def running_count(self):
+    def running_count(self) -> int:
         return self._running_count
 
     @property
-    def size(self):
+    def size(self) -> int:
         return self._size
 
-    def assert_not_closed(self):
+    def assert_not_closed(self) -> None:
         '''
-        If the pool is closed (because you called `join`), raise PoolClosed.
-        Otherwise do nothing.
+        Raises PoolClosed if the pool is closed (because you called `close` or
+        `join`).
+
+        Otherwise does nothing.
         '''
         if self._closed:
             raise PoolClosed()
 
+    # Will add -> Job when forward references are supported.
     def add(self, function, *, name=None, callback=None, args=tuple(), kwargs=dict()):
         '''
         Add a new job to the pool.
@@ -212,7 +219,7 @@ class ThreadPool:
 
         return job
 
-    def add_generator(self, kwargs_gen):
+    def add_generator(self, kwargs_gen) -> None:
         '''
         Add jobs from a generator which yields kwarg dictionaries. Unlike
         `add` and `add_many`, the Job objects are not returned by this method
@@ -228,7 +235,7 @@ class ThreadPool:
         self._pending_jobs.extend(these_jobs)
         self._jobs_available.set()
 
-    def add_many(self, kwargss):
+    def add_many(self, kwargss) -> list:
         '''
         Add multiple new jobs to the pool at once. This is better than calling
         `add` in a loop because we only have to aquire the lock one time.
@@ -280,7 +287,7 @@ class ThreadPool:
                     self._result_queue.put(job)
                 return job
 
-    def join(self):
+    def join(self) -> None:
         '''
         Permanently close the pool, preventing any new jobs from being added,
         and block until all jobs are complete.
@@ -354,10 +361,10 @@ class ThreadPool:
         if was_paused:
             self.pause()
 
-    def pause(self):
+    def pause(self) -> None:
         self._unpaused_event.clear()
 
-    def start(self):
+    def start(self) -> None:
         self._unpaused_event.set()
 
 class Job:
@@ -406,7 +413,7 @@ class Job:
         else:
             return f'<{self.status.name} Job on {self.function}>'
 
-    def run(self):
+    def run(self) -> None:
         self.status = RUNNING
         try:
             self.value = self.function(*self.args, **self.kwargs)
@@ -420,7 +427,7 @@ class Job:
 
         self._done_event.set()
 
-    def join(self, timeout=None):
+    def join(self, timeout=None) -> None:
         '''
         Block until this job runs and completes.
         '''
