@@ -61,6 +61,7 @@ def download_file(
         headers=None,
         overwrite=False,
         raise_for_undersized=True,
+        ratemeter=None,
         timeout=None,
         verbose=False,
         verify_ssl=True,
@@ -75,6 +76,7 @@ def download_file(
         headers=headers,
         overwrite=overwrite,
         raise_for_undersized=raise_for_undersized,
+        ratemeter=ratemeter,
         timeout=timeout,
         verify_ssl=verify_ssl,
     )
@@ -133,6 +135,9 @@ def download_plan(plan):
         if plan.limiter is not None and bytes_downloaded < plan.remote_total_bytes:
             plan.limiter.limit(len(chunk))
 
+        if plan.ratemeter is not None:
+            plan.ratemeter.digest(len(chunk))
+
     file_handle.close()
 
     # Don't try to rename /dev/null or other special names
@@ -161,6 +166,7 @@ def prepare_plan(
         headers=None,
         overwrite=False,
         raise_for_undersized=True,
+        ratemeter=None,
         timeout=TIMEOUT,
         verify_ssl=True,
     ):
@@ -246,6 +252,7 @@ def prepare_plan(
         'headers': headers,
         'real_localname': real_localname,
         'raise_for_undersized': raise_for_undersized,
+        'ratemeter': ratemeter,
         'remote_total_bytes': remote_total_bytes,
         'timeout': timeout,
         'verify_ssl': verify_ssl,
