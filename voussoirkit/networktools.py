@@ -61,10 +61,21 @@ def has_internet(timeout=2) -> bool:
     except socket.error as exc:
         return False
 
-def wait_for_internet(timeout) -> None:
+def wait_for_internet(timeout, *, backoff=None) -> None:
     '''
     This function blocks until an internet connection is available, or the
     timeout is reached.
+
+    timeout:
+        Number of seconds after which we raise NoInternet.
+
+    backoff:
+        You can provide an instance of a voussoirkit.backoff class to introduce
+        sleeps between each internet check. This can help reduce busywaiting at
+        the expense of not getting the earliest possible return.
+
+        If None, there will be no sleeps between checks, though there is still
+        a timeout on each individual check.
 
     Raises NoInternet if the timeout expires.
     '''
@@ -73,7 +84,9 @@ def wait_for_internet(timeout) -> None:
 
     started = time.time()
     while True:
+        if has_internet(timeout=2):
+            return
         if time.time() - started >= timeout:
             raise NoInternet()
-        if has_internet(timeout=1):
-            return
+        if backoff is not None:
+            time.sleep(backoff.next())
