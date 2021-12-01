@@ -2,6 +2,7 @@
 This module provides functions related to walking the filesystem and
 copying files and folders.
 '''
+import collections
 import hashlib
 import os
 import shutil
@@ -20,6 +21,8 @@ from voussoirkit import winglob
 log = vlogging.getLogger(__name__)
 
 BAIL = sentinel.Sentinel('BAIL')
+YIELD_STYLE_FLAT = sentinel.Sentinel('yield style flat')
+YIELD_STYLE_NESTED = sentinel.Sentinel('yield style nested')
 
 # Number of bytes to read and write at a time
 CHUNK_SIZE = 2 * bytestring.MIBIBYTE
@@ -123,7 +126,7 @@ def copy_directory(
         Passed into each `copy_file` as `callback_progress`.
 
     callback_permission_denied:
-        Passed into each `copy_file` as `callback_permission_denied`.
+        Passed into `walk` and each `copy_file` as `callback_permission_denied`.
 
     callback_pre_directory:
         This function will be called before each directory and subdirectory
@@ -237,9 +240,11 @@ def copy_directory(
     # Copy
     walker = walk(
         source,
+        callback_permission_denied=callback_permission_denied,
         exclude_directories=exclude_directories,
         exclude_filenames=exclude_filenames,
-        yield_style='nested',
+        sort=True,
+        yield_style=YIELD_STYLE_NESTED,
     )
 
     def denester(walker):
@@ -773,9 +778,10 @@ def walk(
         glob_directories=None,
         glob_filenames=None,
         recurse=True,
+        sort=False,
         yield_directories=False,
         yield_files=True,
-        yield_style='flat',
+        yield_style=YIELD_STYLE_FLAT,
     ):
     '''
     Yield pathclass.Path objects for files in the tree, similar to os.walk.
@@ -805,7 +811,16 @@ def walk(
         at least one of these patterns.
 
     recurse:
-        Yield from subdirectories. If False, only immediate files are returned.
+        If False, we will yield only the items from the starting path and then
+        stop. This might seem silly for a walk function, but it makes it easier
+        on the calling side to have a recurse/no-recurse option without having
+        to call a separate function with different arguments for each case,
+        while still taking advantage of the other filtering features here.
+
+    sort:
+        If True, items are sorted before they are yielded. Otherwise, they
+        come in whatever order the filesystem returns them, which may not
+        be alphabetical.
 
     yield_directories:
         Should the generator produce directories? True or False.
@@ -823,10 +838,15 @@ def walk(
     if not yield_directories and not yield_files:
         raise ValueError('yield_directories and yield_files cannot both be False.')
 
-    if yield_style not in ['flat', 'nested']:
+    yield_style = {
+        'flat': YIELD_STYLE_FLAT,
+        'nested': YIELD_STYLE_NESTED,
+    }.get(yield_style, yield_style)
+
+    if yield_style not in [YIELD_STYLE_FLAT, YIELD_STYLE_NESTED]:
         raise ValueError(f'yield_style should be "flat" or "nested", not {yield_style}.')
 
-    callback_permission_denied = callback_permission_denied or do_nothing
+    callback_permission_denied = callback_permission_denied or None
 
     if exclude_filenames is not None:
         exclude_filenames = {normalize(f) for f in exclude_filenames}
@@ -858,8 +878,8 @@ def walk(
             exclude = not any(winglob.fnmatch(basename, whitelisted) for whitelisted in whitelist)
 
         if blacklist is not None and not exclude:
-            n_basename = normalize(basename)
-            n_abspath = normalize(abspath)
+            n_basename = os.path.normcase(basename)
+            n_abspath = os.path.normcase(abspath)
 
             exclude = any(
                 n_basename == blacklisted or
@@ -875,68 +895,81 @@ def walk(
     if handle_exclusion(None, exclude_directories, path.basename, path.absolute_path):
         return
 
-    # In the following loops, I found joining the os.sep with fstrings to be
+    # In the following loop, I found joining the os.sep with fstrings to be
     # 10x faster than `os.path.join`, reducing a 6.75 second walk to 5.7.
     # Because we trust the values of current_location and the child names,
     # we don't run the risk of producing bad values this way.
 
-    def walkstep_nested(current_location, child_dirs, child_files):
-        directories = []
-        new_child_dirs = []
-        for child_dir in child_dirs:
-            child_dir_abspath = f'{current_location}{os.sep}{child_dir}'
-            if handle_exclusion(glob_directories, exclude_directories, child_dir, child_dir_abspath):
+    queue = collections.deque()
+    queue.append(path)
+    while queue:
+        current = queue.pop()
+        log.debug('Scanning %s.', current)
+        current_rstrip = current.absolute_path.rstrip(os.sep)
+
+        if yield_style is YIELD_STYLE_NESTED:
+            child_dirs = []
+            child_files = []
+
+        try:
+            entries = list(os.scandir(current))
+        except (OSError, PermissionError) as exc:
+            if callback_permission_denied is not None:
+                callback_permission_denied(exc)
                 continue
+            else:
+                raise
 
-            new_child_dirs.append(child_dir)
-            directories.append(pathclass.Path(child_dir_abspath, _case_correct=True))
+        if sort:
+            entries = sorted(entries, key=lambda e: os.path.normcase(e.name))
 
-        # This will actually affect the results of the os.walk going forward!
-        child_dirs[:] = new_child_dirs
+        # The problem with stack-based depth-first search is that the last item
+        # from the parent dir becomes the first to be walked, leading to
+        # reverse-alphabetical order directory traversal. But we also don't
+        # want to reverse the input entries because then the files come out
+        # backwards. So instead we keep a more_queue to which we appendleft so
+        # that it's backwards, and popping will make it forward again.
+        more_queue = collections.deque()
+        for entry in entries:
+            entry_abspath = f'{current_rstrip}{os.sep}{entry.name}'
 
-        files = []
-        for child_file in child_files:
-            child_file_abspath = f'{current_location}{os.sep}{child_file}'
-            if handle_exclusion(glob_filenames, exclude_filenames, child_file, child_file_abspath):
-                continue
-
-            files.append(pathclass.Path(child_file_abspath, _case_correct=True))
-
-        current_location = pathclass.Path(current_location, _case_correct=True)
-        yield (current_location, directories, files)
-
-    def walkstep_flat(current_location, child_dirs, child_files):
-        new_child_dirs = []
-        for child_dir in child_dirs:
-            child_dir_abspath = f'{current_location}{os.sep}{child_dir}'
-            if handle_exclusion(glob_directories, exclude_directories, child_dir, child_dir_abspath):
-                continue
-
-            new_child_dirs.append(child_dir)
-            if yield_directories:
-                yield pathclass.Path(child_dir_abspath, _case_correct=True)
-
-        # This will actually affect the results of the os.walk going forward!
-        child_dirs[:] = new_child_dirs
-
-        if yield_files:
-            for child_file in child_files:
-                child_file_abspath = f'{current_location}{os.sep}{child_file}'
-                if handle_exclusion(glob_filenames, exclude_filenames, child_file, child_file_abspath):
+            if entry.is_dir():
+                if handle_exclusion(
+                        whitelist=glob_directories,
+                        blacklist=exclude_directories,
+                        basename=entry.name,
+                        abspath=entry_abspath,
+                    ):
                     continue
 
-                yield pathclass.Path(child_file_abspath, _case_correct=True)
+                child = current.with_child(entry.name, _case_correct=True)
+                if yield_directories and yield_style is YIELD_STYLE_FLAT:
+                    yield child
+                elif yield_style is YIELD_STYLE_NESTED:
+                    child_dirs.append(child)
 
-    walker = os.walk(path.absolute_path, onerror=callback_permission_denied, followlinks=True)
-    if yield_style == 'flat':
-        my_stepper = walkstep_flat
-    if yield_style == 'nested':
-        my_stepper = walkstep_nested
+                if recurse:
+                    more_queue.appendleft(child)
 
-    for step in walker:
-        yield from my_stepper(*step)
-        if not recurse:
-            break
+            elif entry.is_file():
+                if handle_exclusion(
+                        whitelist=glob_filenames,
+                        blacklist=exclude_filenames,
+                        basename=entry.name,
+                        abspath=entry_abspath,
+                    ):
+                    continue
+
+                child = current.with_child(entry.name, _case_correct=True)
+                if yield_files and yield_style is YIELD_STYLE_FLAT:
+                    yield child
+                elif yield_style is YIELD_STYLE_NESTED:
+                    child_files.append(child)
+
+        queue.extend(more_queue)
+
+        if yield_style is YIELD_STYLE_NESTED:
+            yield (current, child_dirs, child_files)
 
 # Backwards compatibility
 walk_generator = walk
