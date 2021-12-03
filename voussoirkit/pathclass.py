@@ -270,7 +270,7 @@ class Path:
 
     @property
     def exists(self):
-        return os.path.exists(self.absolute_path)
+        return os.path.exists(self)
 
     @property
     def extension(self):
@@ -318,7 +318,7 @@ class Path:
 
     @property
     def is_directory(self):
-        return os.path.isdir(self.absolute_path)
+        return os.path.isdir(self)
 
     # Aliases for your convenience.
     is_dir = is_directory
@@ -326,11 +326,11 @@ class Path:
 
     @property
     def is_file(self):
-        return os.path.isfile(self.absolute_path)
+        return os.path.isfile(self)
 
     @property
     def is_link(self):
-        return os.path.islink(self.absolute_path)
+        return os.path.islink(self)
 
     def join(self, subpath, **spawn_kwargs):
         '''
@@ -342,7 +342,7 @@ class Path:
         return Path(path, **spawn_kwargs)
 
     def listdir(self):
-        children = os.listdir(self.absolute_path)
+        children = os.listdir(self)
         children = [self.with_child(child, _case_correct=self._case_correct) for child in children]
         return children
 
@@ -353,14 +353,14 @@ class Path:
         return [p for p in self.listdir() if p.is_file]
 
     def makedirs(self, mode=0o777, exist_ok=False):
-        return os.makedirs(self.absolute_path, mode=mode, exist_ok=exist_ok)
+        return os.makedirs(self, mode=mode, exist_ok=exist_ok)
 
     @property
     def normcase(self):
         return os.path.normcase(self.absolute_path)
 
     def open(self, *args, **kwargs):
-        return open(self.absolute_path, *args, **kwargs)
+        return open(self, *args, **kwargs)
 
     @property
     def parent(self):
@@ -431,20 +431,20 @@ class Path:
     def size(self):
         self.assert_exists()
         if self.is_file:
-            return os.path.getsize(self.absolute_path)
+            return os.path.getsize(self)
         elif self.is_dir:
             return sum(file.size for file in self.walk() if file.is_file)
 
     @property
     def stat(self):
-        return os.stat(self.absolute_path)
+        return os.stat(self)
 
     def touch(self):
         '''
         Update the file's mtime if it exists, or create it.
         '''
         try:
-            os.utime(self.absolute_path)
+            os.utime(self)
         except FileNotFoundError:
             self.open('a').close()
 
@@ -454,8 +454,7 @@ class Path:
         '''
         directories = []
 
-        entries = os.scandir(self.absolute_path)
-        for entry in entries:
+        for entry in os.scandir(self):
             child = self.with_child(entry.name, _case_correct=self._case_correct)
             if entry.is_dir():
                 directories.append(child)

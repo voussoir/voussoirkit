@@ -152,7 +152,7 @@ def download_plan(plan):
         raise NotEnoughBytes(message)
 
     if plan.download_into != plan.real_localname:
-        os.rename(plan.download_into.absolute_path, plan.real_localname.absolute_path)
+        os.rename(plan.download_into, plan.real_localname)
 
     return plan.real_localname
 
@@ -285,7 +285,7 @@ def prepare_plan(
     # Chapter 6: Redeem your meal vouchers here
     if real_exists:
         if overwrite:
-            os.remove(real_localname.absolute_path)
+            os.remove(real_localname)
 
         if user_provided_range:
             return plan_partial
