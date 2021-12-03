@@ -834,6 +834,9 @@ def walk(
         If 'flat', yield individual files and directories one by one.
         If 'nested', yield tuple(root, directories, files) like os.walk does,
         except using pathclass.Path objects for everything.
+
+    raises pathclass.NotDirectory if the starting path is not an existing
+    directory.
     '''
     if not yield_directories and not yield_files:
         raise ValueError('yield_directories and yield_files cannot both be False.')
@@ -869,6 +872,7 @@ def walk(
         glob_directories = set(glob_directories)
 
     path = pathclass.Path(path)
+    path.assert_is_directory()
     path.correct_case()
 
     def handle_exclusion(whitelist, blacklist, basename, abspath):
