@@ -466,6 +466,8 @@ class Path:
             yield from directory.walk()
 
     def with_child(self, basename, **spawn_kwargs):
+        if not isinstance(basename, str):
+            raise TypeError(f'basename must be {str}, not {type(basename)}.')
         parts = (*self._parts, basename)
         return Path(parts, **spawn_kwargs)
 
