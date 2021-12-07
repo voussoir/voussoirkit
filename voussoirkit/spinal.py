@@ -556,7 +556,7 @@ def copy_file(
     log.debug('Closing dest handle.')
     destination_handle.close()
     log.debug('Copying metadata.')
-    shutil.copystat(source.absolute_path, destination.absolute_path)
+    shutil.copystat(source, destination)
     results.written = True
 
     if verify_hash:
@@ -712,12 +712,9 @@ def new_root(filepath, root):
     I use this so that my G: drive can have backups from my C: and D: drives
     while preserving directory structure in G:\\D and G:\\C.
     '''
-    filepath = pathclass.Path(filepath).absolute_path
-    root = pathclass.Path(root).absolute_path
-    filepath = filepath.replace(':', os.sep)
-    filepath = os.path.normpath(filepath)
-    filepath = os.path.join(root, filepath)
-    return pathclass.Path(filepath)
+    filepath = pathclass.Path(filepath).absolute_path.replace(':', os.sep)
+    new_path = pathclass.Path(root).join(filepath)
+    return new_path
 
 def normalize(text):
     '''
@@ -746,6 +743,9 @@ def verify_hash(
     known_size:
         Optional, should be the previously known integer number of bytes.
         This makes failing the file much easier if the sizes differ.
+
+    **hash_kwargs:
+        Passed into `hash_file`.
     '''
     path = pathclass.Path(path)
     path.assert_is_file()
