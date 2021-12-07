@@ -49,6 +49,11 @@ class NotLink(PathclassException):
     pass
 
 class Drive:
+    '''
+    The Drive part will contain everything up to but not including the final
+    slash. On Unix this will usually just be '', on Windows it will be the
+    drive letter 'C:' or the UNC path '\\\\?\\host'
+    '''
     def __init__(self, name):
         name = name.rstrip(os.sep)
         self._name = name
@@ -465,6 +470,26 @@ class Path:
             yield directory
             yield from directory.walk()
 
+    def walk_directories(self):
+        '''
+        Yield directories from this directory and subdirectories.
+        '''
+        for entry in os.scandir(self):
+            if entry.is_dir():
+                child = self.with_child(entry.name, _case_correct=self._case_correct)
+                yield child
+                yield from child.walk_directories()
+
+    def walk_files(self):
+        '''
+        Yield files from this directory and subdirectories.
+        '''
+        # It would be nice to optimize this to not create Path objects for the
+        # directories since we don't yield them, but it's cheaper to do many
+        # directory.with_child(file) than it is to instantiate each file from
+        # the path string anyway.
+        return (item for item in self.walk() if item.is_file)
+
     def with_child(self, basename, **spawn_kwargs):
         if not isinstance(basename, str):
             raise TypeError(f'basename must be {str}, not {type(basename)}.')
@@ -479,6 +504,11 @@ class Path:
             return handle.write(data)
 
 class PathPart:
+    '''
+    The PathPart is any part after the drive. Each individual part must not
+    contain path separators, those will be added when we join the tuple of
+    parts back into a string.
+    '''
     def __init__(self, name):
         if any(sep in name for sep in SEPS):
             raise ValueError('A path part cannot contain path separators.')
