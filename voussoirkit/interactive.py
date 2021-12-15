@@ -26,21 +26,42 @@ def _abc_make_option_letters(options):
 
     return option_letters
 
-def abc_chooser(options, prompt='', must_pick=False):
+def abc_chooser(options, *, prompt='', must_pick=False, tostring=None):
     '''
     Given a list of options, the user will pick one by the corresponding letter.
     The return value is the item from the options list, or None if must_pick is
     False and the user entered nothing.
+
+    options:
+        A list of options to choose from. The returned value will be one of
+        these, or None if must_pick is false and the user made no selection.
+
+    prompt:
+        A prompt string to appear at the bottom of the menu where the user
+        makes their choice.
+
+    must_pick:
+        If True, the menu will keep repeating until the user makes a choice.
+        If False, the user can submit a blank line to choose None.
+
+    tostring:
+        A function that converts the items from options into strings. Use this
+        if the objects' normal __str__ method is not suitable for your menu.
+        This way you don't have to convert your objects into strings and then
+        back again after getting the returned choice.
     '''
     assert_stdin()
 
     option_letters = _abc_make_option_letters(options)
+    if tostring is not None:
+        options_rendered = {letter: tostring(option) for (letter, option) in option_letters.items()}
+    else:
+        options_rendered = option_letters
 
     while True:
-        message = []
-        for (letter, option) in option_letters.items():
-            message.append(f'{letter}. {option}')
-        pipeable.stderr('\n'.join(message))
+        for (letter, option) in options_rendered.items():
+            pipeable.stderr(f'{letter}. {option}')
+
         choice = input(prompt).strip().lower()
 
         if not choice:
@@ -48,7 +69,7 @@ def abc_chooser(options, prompt='', must_pick=False):
                 pipeable.stderr()
                 continue
             else:
-                return
+                return None
 
         if choice not in option_letters:
             pipeable.stderr()
@@ -56,25 +77,45 @@ def abc_chooser(options, prompt='', must_pick=False):
 
         return option_letters[choice]
 
-def abc_chooser_many(options, prompt='', label='X'):
+def abc_chooser_many(options, *, prompt='', label='X', tostring=None) -> list:
     '''
-    Given a list of options, the user may pick zero or many options by their
-    corresponding letter. They can toggle the options on and off as long as
-    they like, and submit their selection by entering one more blank line.
+    Given a list of options, the user may pick zero or more options by their
+    corresponding letter. They can toggle the options on and off as many times
+    as they like, and submit their selection by entering a blank line.
     The return value is a list of items from the options list.
+
+    options:
+        A list of options to choose from. The returned list will be a subset
+        of this.
+
+    prompt:
+        A prompt string to appear at the bottom of the menu where the user
+        makes their choices.
+
+    label:
+        This label is placed between square brackets and indicates which
+        choices are currently selected. For example [X] or [ACTIVE].
+
+    tostring:
+        A function that converts the items from options into strings. Use this
+        if the objects' normal __str__ method is not suitable for your menu.
+        This way you don't have to convert your objects into strings and then
+        back again after getting the returned choices.
     '''
     assert_stdin()
 
-    selected = set()
     option_letters = _abc_make_option_letters(options)
+    if tostring is not None:
+        options_rendered = {letter: tostring(option) for (letter, option) in option_letters.items()}
+    else:
+        options_rendered = option_letters
 
+    selected = set()
     while True:
-        message = []
-        for (letter, option) in option_letters.items():
+        for (letter, option) in options_rendered.items():
             this_label = label if letter in selected else ''
             this_label = this_label.center(len(label))
-            message.append(f'{letter}. [{this_label}] {option}')
-        pipeable.stderr('\n'.join(message))
+            pipeable.stderr(f'{letter}. [{this_label}] {option}')
 
         choice = input(prompt).strip().lower()
 
@@ -91,7 +132,7 @@ def abc_chooser_many(options, prompt='', label='X'):
             selected.add(choice)
         pipeable.stderr()
 
-    choices = [option_letters[letter] for letter in option_letters if letter in selected]
+    choices = [option_letters[letter] for letter in sorted(selected)]
     return choices
 
 ####################################################################################################
@@ -113,12 +154,21 @@ def getpermission(
 
     Return True for yes, False for no, and None if undecided.
 
-    You can customize the strings that mean yes or no. For example, you could
-    create a "type the name of the thing you're about to delete" prompt.
+    prompt:
+        This string will appear above the yes/no input.
 
-    If `must_pick`, then undecided is not allowed and the input will repeat
-    until they choose an acceptable answer. Either way, the intended usage of
-    `if getpermission():` will always only accept in case of explicit yes.
+    yes_strings,
+    no_strings:
+        You can customize the strings that mean yes or no. For example, you
+        could require the user to confirm a deletion by making the resource name
+        the only yes string.
+        yes_strings and no_strings should be tuples/lists instead of sets because
+        the [0] item will be the one shown on the prompt. The rest are still
+        acceptable answers.
+
+    must_pick:
+        If True, the menu will keep repeating until the user makes a choice.
+        If False, the user can submit a blank line to choose None.
     '''
     assert_stdin()
 
