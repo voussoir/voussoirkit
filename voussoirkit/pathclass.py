@@ -294,32 +294,31 @@ class Path:
         '''
         Return Paths that match a glob pattern within this directory.
         '''
-        pattern = os.path.normpath(pattern)
-
-        if os.sep in pattern:
-            # If the user wants to glob names in a different path, they should
-            # create a Pathclass for that directory first and do it normally.
-            raise TypeError('glob pattern should not have path separators.')
-
-        if not pattern:
-            raise ValueError('glob pattern should not be empty.')
-
-        # I would like to rewrite this using listdir + fnmatch.filter so we can
-        # get straight to the basenames, but I need to learn what corner cases
-        # are handled by glob for us before I do so.
-        pattern_root = f'{self.absolute_path}{os.sep}'
-        cut_length = len(pattern_root)
-        pattern = f'{pattern_root}{pattern}'
-        items = winglob.glob(pattern)
-        basenames = (item[cut_length:] for item in items)
-        items = [self.with_child(item, _case_correct=self._case_correct) for item in basenames]
+        pattern = normalize_basename_glob(pattern)
+        # By sidestepping the glob function and going straight for fnmatch
+        # filter, we have slightly different behavior than normal, which is
+        # that glob.glob treats .* as hidden files and won't match them with
+        # patterns that don't also start with .*.
+        children = os.listdir(self)
+        children = winglob.fnmatch_filter(children, pattern)
+        items = [self.with_child(c, _case_correct=self._case_correct) for c in children]
         return items
 
     def glob_directories(self, pattern):
-        return [p for p in self.glob(pattern) if p.is_dir]
+        pattern = normalize_basename_glob(pattern)
+        # Instead of turning all children into Path objects and filtering by
+        # the stat, let's filter by the stat from scandir first.
+        children = (e.name for e in os.scandir(self) if e.is_dir())
+        children = winglob.fnmatch_filter(children, pattern)
+        items = [self.with_child(c, _case_correct=self._case_correct) for c in children]
+        return items
 
     def glob_files(self, pattern):
-        return [p for p in self.glob(pattern) if p.is_file]
+        pattern = normalize_basename_glob(pattern)
+        children = (e.name for e in os.scandir(self) if e.is_file())
+        children = winglob.fnmatch_filter(children, pattern)
+        items = [self.with_child(c, _case_correct=self._case_correct) for c in children]
+        return items
 
     @property
     def is_directory(self):
@@ -352,10 +351,14 @@ class Path:
         return children
 
     def listdir_directories(self):
-        return [p for p in self.listdir() if p.is_dir]
+        children = (e.name for e in os.scandir(self) if e.is_dir())
+        items = [self.with_child(c, _case_correct=self._case_correct) for c in children]
+        return items
 
     def listdir_files(self):
-        return [p for p in self.listdir() if p.is_file]
+        children = (e.name for e in os.scandir(self) if e.is_file())
+        items = [self.with_child(c, _case_correct=self._case_correct) for c in children]
+        return items
 
     def makedirs(self, mode=0o777, exist_ok=False):
         return os.makedirs(self, mode=mode, exist_ok=exist_ok)
@@ -599,13 +602,16 @@ def glob(pattern):
     If you want to recurse, consider using spinal.walk with glob_filenames
     instead.
     '''
-    return [Path(p) for p in winglob.glob(pattern)]
+    (dirname, pattern) = os.path.split(pattern)
+    return Path(dirname).glob(pattern)
 
 def glob_directories(pattern):
-    return [p for p in glob(pattern) if p.is_dir]
+    (dirname, pattern) = os.path.split(pattern)
+    return Path(dirname).glob_directories(pattern)
 
 def glob_files(pattern):
-    return [p for p in glob(pattern) if p.is_file]
+    (dirname, pattern) = os.path.split(pattern)
+    return Path(dirname).glob_files(pattern)
 
 def glob_many(patterns):
     '''
@@ -657,6 +663,19 @@ def normalize_drive(name):
     if type(name) is Drive:
         return name
     return Drive(name)
+
+def normalize_basename_glob(pattern):
+    pattern = os.path.normpath(pattern)
+
+    if os.sep in pattern:
+        # If the user wants to glob names in a different path, they should
+        # create a Pathclass for that directory first and do it normally.
+        raise TypeError('glob pattern should not have path separators.')
+
+    if not pattern:
+        raise ValueError('glob pattern should not be empty.')
+
+    return pattern
 
 def normalize_pathpart(name):
     if type(name) is PathPart:
