@@ -153,3 +153,26 @@ def truthystring(
         raise ValueError(s)
 
     return fallback
+
+def unicode_width(s) -> int:
+    '''
+    Some unicode characters are considered "wide" or "full-width" and occupy two
+    spaces when shown in a monospace font.
+
+    This function returns the integer number of spaces you can expect the given
+    string to occupy on a monospace display. This is important when aligning the
+    text with other elements such as an underline or enclosing brackets, where
+    len() creates bad results.
+    '''
+    width = 0
+
+    for character in s:
+        # If there are any other width considerations besides east_asian_width
+        # we can add them. That's why the title of this function doesn't mention
+        # it specifically.
+        if unicodedata.east_asian_width(character) in {'W', 'F'}:
+            width += 2
+        else:
+            width += 1
+
+    return width
