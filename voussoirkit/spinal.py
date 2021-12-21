@@ -908,7 +908,7 @@ def walk(
     queue.append(path)
     while queue:
         current = queue.pop()
-        log.debug('Scanning %s.', current)
+        log.debug('Scanning %s.', current.absolute_path)
         current_rstrip = current.absolute_path.rstrip(os.sep)
 
         if yield_style is YIELD_STYLE_NESTED:
