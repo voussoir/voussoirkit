@@ -21,7 +21,8 @@ class Ratelimiter:
             Our spending balance per `period` seconds.
 
         period:
-            The number of seconds over which we can perform `allowance` operations.
+            The number of seconds over which we can perform `allowance`
+            operations.
 
         operation_cost:
             The default amount to remove from our balance after each operation.
@@ -65,22 +66,21 @@ class Ratelimiter:
         time_diff = now - self.last_operation
         self.balance += time_diff * self.gain_rate
         self.balance = min(self.balance, self.allowance)
+        self.last_operation = now
 
-        self.balance -= cost
-
-        if self.balance >= 0:
-            success = True
-            sleep_needed = 0
-
-        elif self.mode == 'reject':
+        if self.mode == 'reject' and self.balance < cost:
             success = False
             sleep_needed = 0
+            return (success, sleep_needed)
 
+        self.balance -= cost
+        success = True
+
+        if self.balance >= 0:
+            sleep_needed = 0
         else:
-            success = True
             sleep_needed = abs(self.balance) / self.gain_rate
 
-        self.last_operation = now
         return (success, sleep_needed)
 
     def limit(self, cost=None):
