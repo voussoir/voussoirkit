@@ -105,7 +105,9 @@ class Database(metaclass=abc.ABCMeta):
             self.sql.close()
 
     def commit(self, message=None) -> None:
-        if message is not None:
+        if message is None:
+            log.debug('Committing.')
+        else:
             log.debug('Committing - %s.', message)
 
         while len(self.on_commit_queue) > 0:
