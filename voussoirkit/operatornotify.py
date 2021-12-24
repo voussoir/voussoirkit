@@ -73,6 +73,8 @@ program with the following arguments:
 --operatornotify-level X
     Opts in to notifications and will capture logging at level X, where X is
     e.g. debug, info, warning, error, critical.
+    The program may choose to send notifications directly instead of using the
+    logging stack. This option will not affect those.
 
 --operatornotify-subject X
     Overrides the application's default subject line. Also opts in to logging
