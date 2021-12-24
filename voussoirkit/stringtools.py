@@ -95,6 +95,7 @@ def title_capitalize(text) -> str:
         'in',
         'of',
         'on',
+        'or',
         'the',
         'to',
     ]
