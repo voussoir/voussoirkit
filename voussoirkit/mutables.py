@@ -1,70 +1,52 @@
-class Boolean:
+class MutableBase:
     def __init__(self, value):
         self.set(value)
+
+    def __repr__(self):
+        return f'{self.__module__}.{self.__class__.__name__}({repr(self._value)})'
+
+    @property
+    def value(self):
+        return self._value
+
+    def get(self):
+        return self._value
+
+    def set(self, value):
+        if type(value) not in self._types:
+            raise TypeError(value)
+
+        self._value = value
+
+class Boolean(MutableBase):
+    _types = [bool]
 
     def __bool__(self):
-        return self.__value
+        return self._value
 
-    def get(self):
-        return self.__value
+class Bytes(MutableBase):
+    _types = [bytes]
 
-    def set(self, value):
-        if type(value) is not bool:
-            raise TypeError(value)
+class Float(MutableBase):
+    _types = [int, float]
 
-        self.__value = value
+    def __int__(self):
+        return int(self._value)
 
-class Bytes:
-    def __init__(self, value):
-        self.set(value)
+    def __float__(self):
+        return float(self._value)
 
-    def get(self):
-        return self.__value
+class Integer(MutableBase):
+    _types = [int]
 
-    def set(self, value):
-        if type(value) is not bytes:
-            raise TypeError(value)
+    def __int__(self):
+        return int(self._value)
 
-        self.__value = value
+    def __float__(self):
+        return float(self._value)
 
-class Float:
-    def __init__(self, value):
-        self.set(value)
-
-    def get(self):
-        return self.__value
-
-    def set(self, value):
-        if type(value) not in (int, float):
-            raise TypeError(value)
-
-        self.__value = value
-
-class Integer:
-    def __init__(self, value):
-        self.set(value)
-
-    def get(self):
-        return self.__value
-
-    def set(self, value):
-        if type(value) is not int:
-            raise TypeError(value)
-
-        self.__value = value
-
-class String:
-    def __init__(self, value):
-        self.set(value)
+class String(MutableBase):
+    _types = [str]
 
     def __str__(self):
-        return self.__value
-
-    def get(self):
-        return self.__value
-
-    def set(self, value):
-        if type(value) is not str:
-            raise TypeError(value)
-
-        self.__value = value
+        return self._value
