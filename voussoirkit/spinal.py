@@ -198,8 +198,11 @@ def copy_directory(
     verify_hash:
         Passed into each `copy_file` as `verify_hash`.
 
-    Returns a dotdict containing at least `source`, `destination`,
-    and `written_bytes`. (Written bytes is 0 if all files already existed.)
+    Returns a dotdict containing at least these values:
+    `source` pathclass.Path
+    `destination` pathclass.Path
+    `written_files` int, number of files that were written
+    `written_bytes` int, number of bytes that were written
     '''
     # Prepare parameters
     if not is_xor(destination, destination_new_root):
@@ -283,6 +286,7 @@ def copy_directory(
                 yield (source_file, destination_file)
 
     walker = denester(walker)
+    written_files = 0
     written_bytes = 0
 
     for (source_file, destination_file) in walker:
@@ -313,7 +317,9 @@ def copy_directory(
             verify_hash=verify_hash,
         )
 
-        written_bytes += copied.written_bytes
+        if copied.written:
+            written_files += 1
+            written_bytes += copied.written_bytes
 
         if precalcsize is False:
             callback_directory_progress(copied.destination, written_bytes, written_bytes)
@@ -328,6 +334,7 @@ def copy_directory(
     results = dotdict.DotDict(
         source=source,
         destination=destination,
+        written_files=written_files,
         written_bytes=written_bytes,
         default=None,
     )
@@ -422,10 +429,10 @@ def copy_file(
         If hash_class is None, then the global HASH_CLASS is used.
 
     Returns a dotdict containing at least these values:
-    `source` (Pathclass),
-    `destination` (Pathclass),
-    `written` (False if file was skipped, True if written),
-    `written_bytes` (integer).
+    `source` pathclass.Path
+    `destination` pathclass.Path
+    `written` bool, False if file was skipped, True if written
+    `written_bytes` int, number of bytes that were written
     '''
     # Prepare parameters
     if not is_xor(destination, destination_new_root):
@@ -787,9 +794,9 @@ def walk(
     Yield pathclass.Path objects for files in the tree, similar to os.walk.
 
     callback_permission_denied:
-        Passed directly into os.walk as onerror. If OSErrors (Permission Denied)
-        occur when trying to list a directory, your function will be called with
-        the exception object as the only argument.
+        If OSErrors (Permission Denied) occur when trying to list a directory,
+        your function will be called with the exception object as the only
+        argument.
 
     exclude_directories:
         A set of directories that will not be yielded. Members can be absolute
