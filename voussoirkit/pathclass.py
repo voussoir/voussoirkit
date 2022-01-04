@@ -462,7 +462,9 @@ class Path:
         '''
         directories = []
 
-        for entry in os.scandir(self):
+        entries = os.scandir(self)
+        entries = sorted(entries, key=lambda e: os.path.normcase(e.name))
+        for entry in entries:
             child = self.with_child(entry.name, _case_correct=self._case_correct)
             if entry.is_dir():
                 directories.append(child)
@@ -477,7 +479,9 @@ class Path:
         '''
         Yield directories from this directory and subdirectories.
         '''
-        for entry in os.scandir(self):
+        entries = os.scandir(self)
+        entries = sorted(entries, key=lambda e: os.path.normcase(e.name))
+        for entry in entries:
             if entry.is_dir():
                 child = self.with_child(entry.name, _case_correct=self._case_correct)
                 yield child
