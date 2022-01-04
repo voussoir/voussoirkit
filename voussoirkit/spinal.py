@@ -24,6 +24,9 @@ BAIL = sentinel.Sentinel('BAIL')
 YIELD_STYLE_FLAT = sentinel.Sentinel('yield style flat')
 YIELD_STYLE_NESTED = sentinel.Sentinel('yield style nested')
 
+OVERWRITE_ALL = sentinel.Sentinel('overwrite all files')
+OVERWRITE_OLD = sentinel.Sentinel('overwrite old files')
+
 # Number of bytes to read and write at a time
 CHUNK_SIZE = 2 * bytestring.MIBIBYTE
 
@@ -95,7 +98,7 @@ def copy_directory(
         exclude_filenames=None,
         files_per_second=None,
         hash_class=None,
-        overwrite_old=True,
+        overwrite=OVERWRITE_OLD,
         precalcsize=False,
         skip_symlinks=True,
         stop_event=None,
@@ -176,8 +179,8 @@ def copy_directory(
     hash_class:
         Passed into each `copy_file` as `hash_class`.
 
-    overwrite_old:
-        Passed into each `copy_file` as `overwrite_old`.
+    overwrite:
+        Passed into each `copy_file` as `overwrite`.
 
     precalcsize:
         If True, calculate the size of source before beginning the copy.
@@ -313,7 +316,7 @@ def copy_directory(
             chunk_size=chunk_size,
             dry_run=dry_run,
             hash_class=hash_class,
-            overwrite_old=overwrite_old,
+            overwrite=overwrite,
             verify_hash=verify_hash,
         )
 
@@ -356,7 +359,7 @@ def copy_file(
         chunk_size='dynamic',
         dry_run=False,
         hash_class=None,
-        overwrite_old=True,
+        overwrite=OVERWRITE_OLD,
         verify_hash=False,
     ):
     '''
@@ -418,10 +421,13 @@ def copy_file(
         needing overwrite, this won't be set, so be prepared to handle None.
         If None, the hash will not be calculated.
 
-    overwrite_old:
-        If True, overwrite the destination file if the source file
-        has a more recent "last modified" timestamp.
-        If False, existing files will be skipped no matter what.
+    overwrite:
+        This option decides what to do when the destination file already exists.
+        If OVERWRITE_ALL, the file will be overwritten.
+        If OVERWRITE_OLD, the file will be overwritten if the source file
+        has a more recent "last modified" timestamp (i.e. stat.mtime).
+        If any other value, the file will not be overwritten. False or None
+        would be good values to pass.
 
     verify_hash:
         If True, the copied file will be read back after the copy is complete,
@@ -466,17 +472,17 @@ def copy_file(
         default=None,
     )
 
-    # Determine overwrite
-    if destination.exists:
-        if not overwrite_old:
-            return results
+    # I'm putting the overwrite_all test first since an `is` is faster and
+    # cheaper than the dest.exists which will invoke a stat check.
+    should_overwrite = (
+        (overwrite is OVERWRITE_ALL) or
+        (not destination.exists) or
+        (overwrite is OVERWRITE_OLD and source.stat.st_mtime > destination.stat.st_mtime)
+    )
 
-        source_modtime = source.stat.st_mtime
-        destination_modtime = destination.stat.st_mtime
-        if source_modtime == destination_modtime:
-            return results
+    if not should_overwrite:
+        return results
 
-    # Copy
     if dry_run:
         if callback_progress is not None:
             callback_progress(destination, 0, 0)
@@ -500,8 +506,9 @@ def copy_file(
             else:
                 raise
 
-    log.debug('Opening handles.')
+    log.loud('Opening source handle.')
     source_handle = handlehelper(source, 'rb')
+    log.loud('Opening dest handle.')
     destination_handle = handlehelper(destination, 'wb')
 
     if source_handle is None and destination_handle:
@@ -558,9 +565,9 @@ def copy_file(
         callback_progress(destination, results.written_bytes, source_bytes)
 
     # Fin
-    log.debug('Closing source handle.')
+    log.loud('Closing source handle.')
     source_handle.close()
-    log.debug('Closing dest handle.')
+    log.loud('Closing dest handle.')
     destination_handle.close()
     log.debug('Copying metadata.')
     shutil.copystat(source, destination)
