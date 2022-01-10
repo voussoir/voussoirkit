@@ -15,7 +15,15 @@ class Ratelimiter:
             download_limiter.limit()
             download(file_url)
     '''
-    def __init__(self, allowance, period=1, operation_cost=1, mode='sleep'):
+    def __init__(
+            self,
+            allowance,
+            *,
+            mode='sleep',
+            operation_cost=1,
+            period=1,
+            starting_balance=None,
+        ):
         '''
         allowance:
             Our spending balance per `period` seconds.
@@ -37,6 +45,12 @@ class Ratelimiter:
             The number of seconds over which we can perform `allowance`
             operations.
 
+        starting_balance:
+            With a value of None, the limiter will be given a starting balance
+            of `operation_cost` so that you can perform a single operation as
+            soon as you instantiate the object. You can provide another starting
+            balance here.
+
         Although (allowance=1, period=1) and (allowance=30, period=30) can both
         be described as "once per second", the latter allows for much greater
         burstiness of operation. You could spend the whole allowance in a
@@ -52,7 +66,11 @@ class Ratelimiter:
         self.lock = threading.Lock()
 
         self.last_operation = time.monotonic()
-        self.balance = 0
+
+        if starting_balance is None:
+            self.balance = operation_cost
+        else:
+            self.balance = starting_balance
 
     def __repr__(self):
         return f'{self.__class__.__name__}(allowance={self.allowance}, period={self.period})'
