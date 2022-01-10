@@ -2,7 +2,11 @@
 passwordy
 =========
 
-This module provides functions for generating random strings.
+This module provides functions for generating random strings. All functions use
+cryptographically strong randomness if the operating system supports it, and
+non-cs randomness if it does not.
+
+If os.urandom(1) gives you a byte, your system has cs randomness.
 
 Command line usage:
 
@@ -18,13 +22,6 @@ length:
 
 --separator <string>:
     When using sentence mode, the words will be joined with this string.
-
-# urandom mode:
---urandom:
-    If this argument is passed, os.urandom is called for cryptographically
-    strong randomness and the password is shown as hex.
-    Only --upper and --lower can be used in urandom mode (though the hex is
-    lowercase by default).
 
 # Normal mode:
 --letters:
@@ -59,12 +56,19 @@ import sys
 from voussoirkit import betterhelp
 from voussoirkit import pipeable
 
+try:
+    os.urandom(1)
+    RNG = random.SystemRandom()
+except NotImplementedError:
+    RNG = random
+
 def make_password(
         length,
-        letters=False,
+        *,
+        binary=False,
         digits=False,
         hex=False,
-        binary=False,
+        letters=False,
         punctuation=False,
     ):
     alphabet = set()
@@ -82,7 +86,7 @@ def make_password(
     if not alphabet:
         raise ValueError('No alphabet options chosen.')
 
-    return ''.join(random.choices(tuple(alphabet), k=length))
+    return ''.join(RNG.choices(tuple(alphabet), k=length))
 
 def make_sentence(length, separator=' '):
     '''
@@ -90,18 +94,21 @@ def make_sentence(length, separator=' '):
     dictionary.common.
     '''
     import dictionary.common as common
-    words = random.choices(common.words, k=length)
+    words = RNG.choices(common.words, k=length)
     words = [w.replace(' ', separator) for w in words]
     result = separator.join(words)
     return result
 
-def random_hex(length):
-    randbytes = os.urandom(math.ceil(length / 2))
-    token = ''.join('{:02x}'.format(x) for x in randbytes)
-    token = token[:length]
-    return token
+def random_digits(length):
+    '''
+    Shortcut function for when you don't want to type the make_password call.
+    '''
+    return ''.join(RNG.choices(string.digits, k=length))
 
-def urandom_hex(length):
+def random_hex(length):
+    '''
+    Shortcut function for when you don't want to type the make_password call.
+    '''
     randbytes = os.urandom(math.ceil(length / 2))
     token = ''.join('{:02x}'.format(x) for x in randbytes)
     token = token[:length]
@@ -110,19 +117,17 @@ def urandom_hex(length):
 def passwordy_argparse(args):
     if args.sentence:
         password = make_sentence(args.length, args.separator)
-    elif args.urandom:
-        password = urandom_hex(args.length)
     else:
         if not any([args.letters, args.digits, args.hex, args.binary, args.punctuation]):
             letters = True
         else:
             letters = args.letters
         password = make_password(
-            length=args.length,
-            letters=letters,
+            args.length,
+            binary=args.binary,
             digits=args.digits,
             hex=args.hex,
-            binary=args.binary,
+            letters=letters,
             punctuation=args.punctuation,
         )
     if args.lower:
@@ -136,9 +141,8 @@ def main(argv):
     parser = argparse.ArgumentParser(description=__doc__)
 
     parser.add_argument('length', type=int)
-    parser.add_argument('--urandom', action='store_true')
     parser.add_argument('--sentence', action='store_true')
-    parser.add_argument('--separator', nargs='?', default=' ')
+    parser.add_argument('--separator', default=' ')
     parser.add_argument('--letters', action='store_true')
     parser.add_argument('--digits', action='store_true')
     parser.add_argument('--hex', action='store_true')
