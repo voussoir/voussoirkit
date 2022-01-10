@@ -20,14 +20,6 @@ class Ratelimiter:
         allowance:
             Our spending balance per `period` seconds.
 
-        period:
-            The number of seconds over which we can perform `allowance`
-            operations.
-
-        operation_cost:
-            The default amount to remove from our balance after each operation.
-            Pass a `cost` parameter to `self.limit` to use a nondefault value.
-
         mode:
             'sleep':
                 If we do not have the balance for an operation, sleep until we
@@ -36,6 +28,14 @@ class Ratelimiter:
             'reject':
                 If we do not have the balance for an operation, do nothing and
                 return False. Otherwise subtract the cost and return True.
+
+        operation_cost:
+            The default amount to remove from our balance after each operation.
+            Pass a `cost` parameter to `self.limit` to use a nondefault value.
+
+        period:
+            The number of seconds over which we can perform `allowance`
+            operations.
 
         Although (allowance=1, period=1) and (allowance=30, period=30) can both
         be described as "once per second", the latter allows for much greater
