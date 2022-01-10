@@ -36,6 +36,7 @@ def fit_into_bounds(
         image_height,
         frame_width,
         frame_height,
+        *,
         only_shrink=False,
     ) -> tuple:
     '''
