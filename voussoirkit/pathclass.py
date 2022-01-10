@@ -686,5 +686,22 @@ def normalize_pathpart(name):
         return name
     return PathPart(name)
 
+def normalize_sep(path) -> str:
+    '''
+    Normalize path separators as appropriate for the operating system.
+
+    On Windows, forward slash / is replaced with backslash \\.
+
+    Note: os.path.normpath also performs separator normalization, but it also
+    eliminates leading ./ which you may want to keep in your string.
+    '''
+    if os.name == 'nt':
+        path = path.replace('/', '\\')
+
+    # On unix, backslashes are valid filename characters so we do not normalize
+    # them to forward slash.
+
+    return path
+
 def system_root():
     return Path(os.sep)
