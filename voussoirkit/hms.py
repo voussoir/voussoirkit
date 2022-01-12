@@ -69,7 +69,7 @@ def main(args):
     for line in lines:
         if ':' in line:
             line = hms_to_seconds(line)
-        if 's' in line:
+        elif 's' in line:
             line = hms_letters_to_seconds(line)
         else:
             line = float(line)
