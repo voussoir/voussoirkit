@@ -20,10 +20,6 @@ CLIPBOARD_STRINGS = ['!c', '!clip', '!clipboard']
 INPUT_STRINGS = ['!i', '!in', '!input', '!stdin']
 EOF = '\x1a'
 
-# In pythonw, stdin and stdout are None.
-IN_PIPE = (sys.stdin is not None) and (not sys.stdin.isatty())
-OUT_PIPE = (sys.stdout is not None) and (not sys.stdout.isatty())
-
 class PipeableException(Exception):
     pass
 
@@ -48,7 +44,7 @@ def ctrlc_return1(function):
     return wrapped
 
 def _multi_line_input(prompt=None):
-    if prompt is not None and not IN_PIPE:
+    if prompt is not None and not stdin_pipe():
         sys.stderr.write(prompt)
         sys.stderr.flush()
 
@@ -81,7 +77,7 @@ def multi_line_input(prompt=None):
     adjust your `prompt` argument for pipe/non-pipe usage.
     '''
     lines = _multi_line_input(prompt=prompt)
-    if not IN_PIPE:
+    if stdin_tty():
         # Wait until the user finishes all their lines before continuing.
         # The caller might be processing + printing these lines in a loop
         # and it would be weird if they start outputting before the user has
@@ -178,7 +174,7 @@ def _output(stream, line, end):
     stream.write(line)
     if not line.endswith(end):
         stream.write(end)
-    if not OUT_PIPE:
+    if stream.isatty():
         stream.flush()
 
 def stdout(line='', end='\n'):
@@ -190,6 +186,31 @@ def stderr(line='', end='\n'):
     # In pythonw, stderr is None.
     if sys.stderr is not None:
         _output(sys.stderr, line, end)
+
+# In pythonw, stdin and stdout are None.
+def stdin_tty():
+    if sys.stdin is not None and sys.stdin.isatty():
+        return sys.stdin
+
+def stdout_tty():
+    if sys.stdout is not None and sys.stdout.isatty():
+        return sys.stdout
+
+def stderr_tty():
+    if sys.stderr is not None and sys.stderr.isatty():
+        return sys.stderr
+
+def stdin_pipe():
+    if sys.stdin is not None and not sys.stdin.isatty():
+        return sys.stdin
+
+def stdout_pipe():
+    if sys.stdout is not None and not sys.stdout.isatty():
+        return sys.stdout
+
+def stderr_pipe():
+    if sys.stderr is not None and not sys.stderr.isatty():
+        return sys.stderr
 
 def go(args=None, *input_args, **input_kwargs):
     '''
@@ -207,7 +228,7 @@ def go(args=None, *input_args, **input_kwargs):
 
     if not args:
         # There are no arguments, and...
-        if IN_PIPE:
+        if stdin_pipe():
             # we are being piped to, so read the pipe.
             args = [INPUT_STRINGS[0]]
         else:
