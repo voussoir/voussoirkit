@@ -48,6 +48,7 @@ class NotEnoughSpace(PathclassException):
         self.free = free
         self.reserve = reserve
         self.path = path
+        self.args = (f'Only {free} available of requested {reserve}.',)
 
 class NotFile(PathclassException):
     pass
