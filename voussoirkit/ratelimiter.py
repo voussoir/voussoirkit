@@ -56,21 +56,30 @@ class Ratelimiter:
         burstiness of operation. You could spend the whole allowance in a
         single second, then relax for 29 seconds, for example.
         '''
+        def positive(x, name):
+            if not isinstance(x, (int, float)):
+                raise TypeError(f'{name} should be int or float, not {type(x)}.')
+
+            if x <= 0:
+                raise ValueError(f'{name} should be > 0, not {x}.')
+
+            return x
+
         if mode not in ('sleep', 'reject'):
             raise ValueError(f'Invalid mode {repr(mode)}.')
 
-        self.allowance = allowance
-        self.period = period
-        self.operation_cost = operation_cost
+        self.allowance = positive(allowance, 'allowance')
+        self.period = positive(period, 'period')
+        self.operation_cost = positive(operation_cost, 'operation_cost')
         self.mode = mode
-        self.lock = threading.Lock()
-
-        self.last_operation = time.monotonic()
 
         if starting_balance is None:
             self.balance = operation_cost
         else:
-            self.balance = starting_balance
+            self.balance = positive(starting_balance, 'starting_balance')
+
+        self.lock = threading.Lock()
+        self.last_operation = time.monotonic()
 
     def __repr__(self):
         return f'{self.__class__.__name__}(allowance={self.allowance}, period={self.period})'
