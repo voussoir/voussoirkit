@@ -14,6 +14,15 @@ import shutil
 from voussoirkit import dotdict
 from voussoirkit import stringtools
 
+ASCII_BOX = dotdict.DotDict(
+    upper_left='+',
+    upper_right='+',
+    top='-',
+    lower_left='+',
+    lower_right='+',
+    side='|',
+)
+
 SINGLE_BOX = dotdict.DotDict(
     upper_left='┌',
     upper_right='┐',
