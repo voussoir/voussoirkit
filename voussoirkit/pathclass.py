@@ -620,6 +620,12 @@ def glob(pattern):
     If you want to recurse, consider using spinal.walk with glob_filenames
     instead.
     '''
+    if pattern == '.':
+        return [cwd()]
+
+    elif pattern == '..':
+        return [cwd().parent]
+
     (dirname, pattern) = os.path.split(pattern)
     return Path(dirname).glob(pattern)
 
