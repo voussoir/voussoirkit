@@ -1,5 +1,6 @@
 import glob
 import os
+import shutil
 
 _glob = glob
 
@@ -41,6 +42,13 @@ class NotDirectory(PathclassException):
 
 class NotExists(PathclassException):
     pass
+
+class NotEnoughSpace(PathclassException):
+    def __init__(self, free, reserve, path):
+        self.free = free
+        self.reserve = reserve
+        self.path = path
+
 class NotFile(PathclassException):
     pass
 
@@ -206,6 +214,12 @@ class Path:
         absolute = drive._name + os.sep + os.sep.join(part._name for part in parts)
         self._absolute_path = absolute
         return self._absolute_path
+
+    def assert_disk_space(self, reserve):
+        free = shutil.disk_usage(self).free
+        if free < reserve:
+            raise NotEnoughSpace(path=self, reserve=reserve, free=free)
+        return free
 
     def assert_exists(self):
         if not self.exists:
