@@ -18,7 +18,6 @@ length:
 # Sentence mode:
 --sentence:
     If this argument is passed, `length` random words are chosen.
-    Only --separator, --upper, and --lower can be used in sentence mode.
 
 --separator <string>:
     When using sentence mode, the words will be joined with this string.
@@ -40,11 +39,18 @@ length:
 --punctuation
     Include punctuation symbols in the password.
 
+# Both modes:
 --upper
     Convert the entire password to uppercase.
 
 --lower
     Convert the entire password to lowercase.
+
+--prefix X:
+    Add a static prefix to the password.
+
+--suffix X:
+    Add a static suffix to the password.
 '''
 import argparse
 import math
@@ -134,6 +140,11 @@ def passwordy_argparse(args):
         password = password.lower()
     elif args.upper:
         password = password.upper()
+
+    prefix = args.prefix or ''
+    suffix = args.suffix or ''
+    password = f'{prefix}{password}{suffix}'
+
     pipeable.stdout(password)
     return 0
 
@@ -150,6 +161,8 @@ def main(argv):
     parser.add_argument('--punctuation', action='store_true')
     parser.add_argument('--lower', action='store_true')
     parser.add_argument('--upper', action='store_true')
+    parser.add_argument('--prefix', default=None)
+    parser.add_argument('--suffix', default=None)
     parser.set_defaults(func=passwordy_argparse)
 
     return betterhelp.single_main(argv, parser, __doc__)
