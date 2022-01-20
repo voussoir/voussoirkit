@@ -1,6 +1,11 @@
 import threading
 import time
 
+from voussoirkit import sentinel
+
+REJECT = sentinel.Sentinel('reject mode')
+SLEEP = sentinel.Sentinel('sleep mode')
+
 class Ratelimiter:
     '''
     The Ratelimiter class is used to limit how often you perform some other
@@ -19,7 +24,7 @@ class Ratelimiter:
             self,
             allowance,
             *,
-            mode='sleep',
+            mode=SLEEP,
             operation_cost=1,
             period=1,
             starting_balance=None,
@@ -29,11 +34,11 @@ class Ratelimiter:
             Our spending balance per `period` seconds.
 
         mode:
-            'sleep':
+            SLEEP:
                 If we do not have the balance for an operation, sleep until we
                 do. Then return True every time.
 
-            'reject':
+            REJECT:
                 If we do not have the balance for an operation, do nothing and
                 return False. Otherwise subtract the cost and return True.
 
@@ -65,18 +70,24 @@ class Ratelimiter:
 
             return x
 
-        if mode not in ('sleep', 'reject'):
-            raise ValueError(f'Invalid mode {repr(mode)}.')
-
         self.allowance = positive(allowance, 'allowance')
         self.period = positive(period, 'period')
         self.operation_cost = positive(operation_cost, 'operation_cost')
-        self.mode = mode
 
         if starting_balance is None:
             self.balance = operation_cost
         else:
             self.balance = positive(starting_balance, 'starting_balance')
+
+        mode = {
+            'reject': REJECT,
+            'sleep': SLEEP,
+        }.get(mode, mode)
+
+        if mode is not SLEEP and mode is not REJECT:
+            raise ValueError(f'mode should be SLEEP or REJECT, not {repr(mode)}.')
+
+        self.mode = mode
 
         self.lock = threading.Lock()
         self.last_operation = time.monotonic()
@@ -95,7 +106,7 @@ class Ratelimiter:
         self.balance = min(self.balance, self.allowance)
         self.last_operation = now
 
-        if self.mode == 'reject' and self.balance < cost:
+        if self.mode is REJECT and self.balance < cost:
             success = False
             sleep_needed = 0
             return (success, sleep_needed)
