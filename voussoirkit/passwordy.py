@@ -10,16 +10,17 @@ If os.urandom(1) gives you a byte, your system has cs randomness.
 
 Command line usage:
 
-> passwordy <length> [flags]
+> passwordy length <flags>
 
 length:
-    Integer number of characters, or words when using sentence mode.
+    Integer number of characters in normal mode.
+    Integer number of words in sentence mode.
 
 # Sentence mode:
 --sentence:
     If this argument is passed, `length` random words are chosen.
 
---separator <string>:
+--separator X:
     When using sentence mode, the words will be joined with this string.
 
 # Normal mode:
