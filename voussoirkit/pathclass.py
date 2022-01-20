@@ -36,12 +36,11 @@ class IsDirectory(PathclassException):
 class IsLink(PathclassException):
     pass
 
-class NotExists(PathclassException):
-    pass
-
 class NotDirectory(PathclassException):
     pass
 
+class NotExists(PathclassException):
+    pass
 class NotFile(PathclassException):
     pass
 
