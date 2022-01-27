@@ -169,7 +169,7 @@ def input_many(args, *input_args, **input_kwargs):
     for arg in args:
         yield from input(arg, *input_args, **input_kwargs)
 
-def _output(stream, line, end):
+def output(stream, line, *, end):
     line = str(line)
     stream.write(line)
     if not line.endswith(end):
@@ -180,12 +180,12 @@ def _output(stream, line, end):
 def stdout(line='', end='\n'):
     # In pythonw, stdout is None.
     if sys.stdout is not None:
-        _output(sys.stdout, line, end)
+        output(sys.stdout, line, end=end)
 
 def stderr(line='', end='\n'):
     # In pythonw, stderr is None.
     if sys.stderr is not None:
-        _output(sys.stderr, line, end)
+        output(sys.stderr, line, end=end)
 
 # In pythonw, stdin and stdout are None.
 def stdin_tty():
