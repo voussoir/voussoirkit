@@ -73,6 +73,15 @@ def pad_to_square(image, background_color=None) -> PIL.Image:
     new_image.paste(image, (diff_w, diff_h))
     return new_image
 
+def replace_color(image, from_color, to_color):
+    image = image.copy()
+    pixels = image.load()
+    for y in range(image.size[1]):
+        for x in range(image.size[0]):
+            if pixels[x, y] == from_color:
+                pixels[x, y] = to_color
+    return image
+
 def rotate_by_exif(image):
     '''
     Rotate the image according to its exif data, so that it will display
