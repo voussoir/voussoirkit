@@ -1,57 +1,9 @@
 '''
-passwordy
-=========
-
 This module provides functions for generating random strings. All functions use
 cryptographically strong randomness if the operating system supports it, and
 non-cs randomness if it does not.
 
 If os.urandom(1) gives you a byte, your system has cs randomness.
-
-Command line usage:
-
-> passwordy length <flags>
-
-length:
-    Integer number of characters in normal mode.
-    Integer number of words in sentence mode.
-
-# Sentence mode:
---sentence:
-    If this argument is passed, `length` random words are chosen.
-
---separator X:
-    When using sentence mode, the words will be joined with this string.
-
-# Normal mode:
---letters:
-    Include ASCII letters in the password.
-    If none of the other following options are chosen, letters is the default.
-
---digits:
-    Include digits 0-9 in the password.
-
---hex
-    Include 0-9, a-f in the password.
-
---binary
-    Include 0, 1 in the password.
-
---punctuation
-    Include punctuation symbols in the password.
-
-# Both modes:
---upper
-    Convert the entire password to uppercase.
-
---lower
-    Convert the entire password to lowercase.
-
---prefix X:
-    Add a static prefix to the password.
-
---suffix X:
-    Add a static suffix to the password.
 '''
 import argparse
 import math
@@ -61,6 +13,7 @@ import string
 import sys
 
 from voussoirkit import betterhelp
+from voussoirkit import gentools
 from voussoirkit import pipeable
 
 try:
@@ -142,6 +95,11 @@ def passwordy_argparse(args):
     elif args.upper:
         password = password.upper()
 
+    if args.groups_of is not None:
+        chunks = gentools.chunk_generator(password, args.groups_of)
+        chunks = (''.join(chunk) for chunk in chunks)
+        password = args.separator.join(chunks)
+
     prefix = args.prefix or ''
     suffix = args.suffix or ''
     password = f'{prefix}{password}{suffix}'
@@ -150,23 +108,120 @@ def passwordy_argparse(args):
     return 0
 
 def main(argv):
-    parser = argparse.ArgumentParser(description=__doc__)
-
-    parser.add_argument('length', type=int)
-    parser.add_argument('--sentence', action='store_true')
-    parser.add_argument('--separator', default=' ')
-    parser.add_argument('--letters', action='store_true')
-    parser.add_argument('--digits', action='store_true')
-    parser.add_argument('--hex', action='store_true')
-    parser.add_argument('--binary', action='store_true')
-    parser.add_argument('--punctuation', action='store_true')
-    parser.add_argument('--lower', action='store_true')
-    parser.add_argument('--upper', action='store_true')
-    parser.add_argument('--prefix', default=None)
-    parser.add_argument('--suffix', default=None)
+    parser = argparse.ArgumentParser(
+        description='''
+        Generate random passwords using cryptographically strong randomness.
+        ''',
+    )
+    parser.examples = [
+        {'args': '32 --letters --digits --punctuation', 'run': True},
+        {'args': '48 --hex --upper', 'run': True},
+        {'args': '8 --sentence --separator +', 'run': True},
+        {'args': '16 --digits --groups-of 4 --separator -', 'run': True},
+        {'args': '48 --prefix example.com_ --lower', 'run': True},
+    ]
+    parser.add_argument(
+        'length',
+        type=int,
+        help='''
+        Integer number of characters in normal mode.
+        Integer number of words in sentence mode.
+        ''',
+    )
+    parser.add_argument(
+        '--sentence',
+        action='store_true',
+        help='''
+        If this argument is passed, the password is made of length random words and
+        the other alphabet options are ignored.
+        ''',
+    )
+    parser.add_argument(
+        '--groups_of', '--groups-of',
+        type=int,
+        help='''
+        Split the password up into chunks of this many characters, and join them
+        back together with the --separator.
+        ''',
+    )
+    parser.add_argument(
+        '--separator',
+        type=str,
+        default=' ',
+        help='''
+        In sentence mode, the words will be joined with this string.
+        In normal mode, the --groups-of chunks will be joined with this string.
+        ''',
+    )
+    parser.add_argument(
+        '--letters',
+        action='store_true',
+        help='''
+        Include ASCII letters in the password.
+        If none of the other following options are chosen, letters is the default.
+        ''',
+    )
+    parser.add_argument(
+        '--digits',
+        action='store_true',
+        help='''
+        Include digits 0-9 in the password.
+        ''',
+    )
+    parser.add_argument(
+        '--hex',
+        action='store_true',
+        help='''
+        Include 0-9, a-f in the password.
+        ''',
+    )
+    parser.add_argument(
+        '--binary',
+        action='store_true',
+        help='''
+        Include 0, 1 in the password.
+        ''',
+    )
+    parser.add_argument(
+        '--punctuation',
+        action='store_true',
+        help='''
+        Include punctuation symbols in the password.
+        ''',
+    )
+    parser.add_argument(
+        '--prefix',
+        type=str,
+        default=None,
+        help='''
+        Add a static prefix to the password.
+        ''',
+    )
+    parser.add_argument(
+        '--suffix',
+        type=str,
+        default=None,
+        help='''
+        Add a static suffix to the password.
+        ''',
+    )
+    parser.add_argument(
+        '--lower',
+        action='store_true',
+        help='''
+        Convert the entire password to lowercase.
+        ''',
+    )
+    parser.add_argument(
+        '--upper',
+        action='store_true',
+        help='''
+        Convert the entire password to uppercase.
+        ''',
+    )
     parser.set_defaults(func=passwordy_argparse)
 
-    return betterhelp.single_main(argv, parser, __doc__)
+    return betterhelp.go(parser, argv)
 
 if __name__ == '__main__':
     raise SystemExit(main(sys.argv[1:]))

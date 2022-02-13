@@ -1,23 +1,8 @@
 '''
-bytestring
-==========
-
 This module provides integer constants for power-of-two byte size units, and
 functions for converting between ints and human-readable strings. E.g.:
 bytestring.bytestring(5000000) -> '4.768 MiB'
 bytestring.parsebytes('8.5gb') -> 9126805504
-
-Commandline usage:
-
-> bytestring number1 [number2 number3...]
-
-number:
-    An integer. Uses pipeable to support !c clipboard, !i stdin, which should
-    be one number per line.
-
-Examples:
-> bytestring 12345 89989
-> some_process | bytestring !i
 '''
 import argparse
 import re
@@ -186,22 +171,40 @@ def parsebytes(string):
     return int(number * multiplier)
 
 def bytestring_argparse(args):
-    numbers = pipeable.input_many(args.numbers)
+    numbers = pipeable.input_many(args.numbers, strip=True, skip_blank=True)
     for number in numbers:
         try:
             number = int(number)
+            pipeable.stdout(bytestring(number))
         except ValueError:
-            pipeable.stderr(f'bytestring: Each number should be an integer, not {number}.')
-            return 1
-        pipeable.stdout(bytestring(number))
+            pipeable.stdout(parsebytes(number))
+    return 0
 
 def main(argv):
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description='''
+        Converts integers into byte strings and back again.
+        ''',
+    )
+    parser.examples = [
+        {'args': '10000', 'run': True},
+        {'args': '123456789', 'run': True},
+        {'args': '999999999999 888888888 890', 'run': True},
+        {'args': ['800 gb'], 'run': True},
+        {'args': ['9.2 kib', '100kb', '42b'], 'run': True},
+    ]
 
-    parser.add_argument('numbers', nargs='+')
+    parser.add_argument(
+        'numbers',
+        nargs='+',
+        help='''
+        Uses pipeable to support !c clipboard, !i stdin, which should be one
+        number per line.
+        ''',
+    )
     parser.set_defaults(func=bytestring_argparse)
 
-    return betterhelp.single_main(argv, parser, __doc__)
+    return betterhelp.go(parser, argv)
 
 if __name__ == '__main__':
     raise SystemExit(main(sys.argv[1:]))

@@ -32,20 +32,9 @@ If your application already uses the logging module, consider these options:
 - wrap your function call in a operatornotify.LogHandlerContext, or
 - add @operatornotify.main_decorator to your main function.
 
-Commandline usage:
-> operatornotify --subject XXX [--body XXX]
-
---subject xxx:
-    A string. Uses pipeable to support !c clipboard, !i stdin.
-    Required.
-
---body xxx:
-    A string. Uses pipeable to support !c clipboard, !i stdin.
-    Optional.
-
 Examples:
 > some_process && operatornotify --subject success || operatornotify --subject fail
-> some_process | operatornotify --subject "Results of some_process" --body !i 2>&1
+> some_process 2>&1 | operatornotify --subject "Results of some_process" --body !i
 '''
 import argparse
 import contextlib
@@ -324,19 +313,29 @@ def parse_argv(argv):
 def operatornotify_argparse(args):
     notify(
         subject=pipeable.input(args.subject, split_lines=False).strip(),
-        body=pipeable.input(args.body, split_lines=False),
+        body=pipeable.input(args.body or '', split_lines=False),
     )
     return 0
 
 @vlogging.main_decorator
 def main(argv):
     parser = argparse.ArgumentParser(description=__doc__)
-
-    parser.add_argument('--subject', required=True)
-    parser.add_argument('--body', default='')
+    parser.add_argument(
+        '--subject',
+        required=True,
+        help='''
+        A string. Uses pipeable to support !c clipboard, !i stdin.
+        ''',
+    )
+    parser.add_argument(
+        '--body',
+        help='''
+        A string. Uses pipeable to support !c clipboard, !i stdin.
+        ''',
+    )
     parser.set_defaults(func=operatornotify_argparse)
 
-    return betterhelp.single_main(argv, parser, __doc__)
+    return betterhelp.go(parser, argv)
 
 if __name__ == '__main__':
     raise SystemExit(main(sys.argv[1:]))
