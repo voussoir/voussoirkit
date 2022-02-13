@@ -1,7 +1,9 @@
 import argparse
+import io
 import os
 import requests
 import sys
+import time
 import urllib
 
 from voussoirkit import bytestring
@@ -9,7 +11,9 @@ from voussoirkit import dotdict
 from voussoirkit import httperrors
 from voussoirkit import pathclass
 from voussoirkit import pipeable
+from voussoirkit import progressbars
 from voussoirkit import ratelimiter
+from voussoirkit import sentinel
 from voussoirkit import vlogging
 
 log = vlogging.getLogger(__name__, 'downloady')
@@ -25,7 +29,10 @@ HEADERS = {
 
 FILENAME_BADCHARS = '*?"<>|\r\n'
 
-CHUNKSIZE = 4 * bytestring.KIBIBYTE
+# When using dynamic chunk sizing, this is the ideal time to process a
+# single chunk, in seconds.
+IDEAL_CHUNK_TIME = 0.2
+
 TIMEOUT = 60
 TEMP_EXTENSION = '.downloadytemp'
 
@@ -34,6 +41,8 @@ if os.name == 'nt':
 else:
     SPECIAL_FILENAMES = [os.devnull]
 SPECIAL_FILENAMES = [os.path.normcase(x) for x in SPECIAL_FILENAMES]
+
+FILE_EXISTS = sentinel.Sentinel('file exists no overwrite', truthyness=False)
 
 class DownloadyException(Exception):
     pass
@@ -45,6 +54,12 @@ class ServerNoRange(DownloadyException):
     pass
 
 class SpecialPath:
+    '''
+    This class is to be used for special paths like /dev/null and Windows's nul.
+    Unlike regular download paths, these special paths will not be renamed with
+    a temporary file extension, and the containing paths will not be checked
+    for existence or mkdir'ed.
+    '''
     def __init__(self, path):
         self.absolute_path = path
 
@@ -56,7 +71,7 @@ def download_file(
         localname=None,
         auth=None,
         bytespersecond=None,
-        callback_progress=None,
+        progressbar=None,
         do_head=True,
         headers=None,
         overwrite=False,
@@ -71,7 +86,7 @@ def download_file(
         localname,
         auth=auth,
         bytespersecond=bytespersecond,
-        callback_progress=callback_progress,
+        progressbar=progressbar,
         do_head=do_head,
         headers=headers,
         overwrite=overwrite,
@@ -81,23 +96,31 @@ def download_file(
         verify_ssl=verify_ssl,
     )
 
-    if plan is None:
-        return
+    if isinstance(plan, sentinel.Sentinel):
+        return plan
 
     return download_plan(plan)
 
 def download_plan(plan):
-    if not isinstance(plan.download_into, SpecialPath):
+    if isinstance(plan.download_into, pathclass.Path):
         plan.download_into.parent.makedirs(exist_ok=True)
         plan.download_into.touch()
 
     if plan.plan_type in ['resume', 'partial']:
-        file_handle = plan.download_into.open('r+b')
-        file_handle.seek(plan.seek_to)
+        if isinstance(plan.download_into, io.IOBase):
+            file_handle = plan.download_into
+            if plan.seek_to > 0:
+                file_handle.seek(plan.seek_to)
+        else:
+            file_handle = plan.download_into.open('r+b')
+            file_handle.seek(plan.seek_to)
         bytes_downloaded = plan.seek_to
 
     elif plan.plan_type == 'fulldownload':
-        file_handle = plan.download_into.open('wb')
+        if isinstance(plan.download_into, io.IOBase):
+            file_handle = plan.download_into
+        else:
+            file_handle = plan.download_into.open('wb')
         bytes_downloaded = 0
 
     if plan.header_range_min is not None:
@@ -106,7 +129,7 @@ def download_plan(plan):
             max=plan.header_range_max,
         )
 
-    log.info('Downloading %s into "%s"', plan.url, plan.real_localname.absolute_path)
+    log.info('Downloading %s into "%s"', plan.url, plan.real_localname)
 
     download_stream = request(
         'get',
@@ -120,23 +143,43 @@ def download_plan(plan):
 
     if plan.remote_total_bytes is None:
         # Since we didn't do a head, let's fill this in now.
-        plan.remote_total_bytes = int(download_stream.headers.get('Content-Length', 0))
+        plan.remote_total_bytes = int(download_stream.headers.get('Content-Length', None))
 
-    callback_progress = plan.callback_progress
-    if callback_progress is not None:
-        callback_progress = callback_progress(plan.remote_total_bytes)
+    progressbar = progressbars.normalize_progressbar(plan.progressbar, total=plan.remote_total_bytes)
 
-    for chunk in download_stream.iter_content(chunk_size=CHUNKSIZE):
-        bytes_downloaded += len(chunk)
+    if plan.limiter:
+        chunk_size = int(plan.limiter.allowance * IDEAL_CHUNK_TIME)
+    else:
+        chunk_size = 128 * bytestring.KIBIBYTE
+
+    while True:
+        chunk_start = time.perf_counter()
+        chunk = download_stream.raw.read(chunk_size)
+        chunk_bytes = len(chunk)
+        if chunk_bytes == 0:
+            break
+
         file_handle.write(chunk)
-        if callback_progress is not None:
-            callback_progress.step(bytes_downloaded)
+        bytes_downloaded += chunk_bytes
 
-        if plan.limiter is not None and bytes_downloaded < plan.remote_total_bytes:
-            plan.limiter.limit(len(chunk))
+        if progressbar is not None:
+            progressbar.step(bytes_downloaded)
+
+        if plan.limiter is not None:
+            plan.limiter.limit(chunk_bytes)
 
         if plan.ratemeter is not None:
-            plan.ratemeter.digest(len(chunk))
+            plan.ratemeter.digest(chunk_bytes)
+
+        chunk_time = time.perf_counter() - chunk_start
+        chunk_size = dynamic_chunk_sizer(chunk_size, chunk_time, IDEAL_CHUNK_TIME)
+
+    if progressbar is not None:
+        progressbar.done()
+
+    # Don't close the user's file handle
+    if isinstance(plan.real_localname, io.IOBase):
+        return plan.real_localname
 
     file_handle.close()
 
@@ -145,7 +188,11 @@ def download_plan(plan):
         return plan.real_localname
 
     temp_localsize = plan.download_into.size
-    undersized = plan.plan_type != 'partial' and temp_localsize < plan.remote_total_bytes
+    undersized = (
+        plan.plan_type != 'partial' and
+        plan.remote_total_bytes is not None and
+        temp_localsize < plan.remote_total_bytes
+    )
     if undersized and plan.raise_for_undersized:
         message = 'File does not contain expected number of bytes. Received {size} / {total}'
         message = message.format(size=temp_localsize, total=plan.remote_total_bytes)
@@ -156,12 +203,31 @@ def download_plan(plan):
 
     return plan.real_localname
 
+def dynamic_chunk_sizer(chunk_size, chunk_time, ideal_chunk_time):
+    '''
+    Calculates a new chunk size based on the time it took to do the previous
+    chunk versus the ideal chunk time.
+    '''
+    # If chunk_time = scale * ideal_chunk_time,
+    # Then ideal_chunk_size = chunk_size / scale
+    scale = chunk_time / ideal_chunk_time
+    scale = min(scale, 2)
+    scale = max(scale, 0.5)
+    suggestion = chunk_size / scale
+    # Give the current size double weight so small fluctuations don't send
+    # the needle bouncing all over.
+    new_size = int((chunk_size + chunk_size + suggestion) / 3)
+    # I doubt any real-world scenario will dynamically suggest a chunk_size of
+    # zero, but let's enforce a one-byte minimum anyway.
+    new_size = max(new_size, 1)
+    return new_size
+
 def prepare_plan(
         url,
         localname,
         auth=None,
         bytespersecond=None,
-        callback_progress=None,
+        progressbar=None,
         do_head=True,
         headers=None,
         overwrite=False,
@@ -178,7 +244,12 @@ def prepare_plan(
     if localname in [None, '']:
         localname = basename_from_url(url)
 
-    if is_special_file(localname):
+    if isinstance(localname, io.IOBase):
+        real_localname = localname
+        temp_localname = localname
+        real_exists = False
+        temp_exists = False
+    elif is_special_file(localname):
         real_localname = SpecialPath(localname)
         temp_localname = SpecialPath(localname)
         real_exists = False
@@ -195,10 +266,15 @@ def prepare_plan(
 
     if real_exists and overwrite is False and not user_provided_range:
         log.debug('File exists and overwrite is off. Nothing to do.')
-        return None
+        return FILE_EXISTS
 
     if isinstance(real_localname, SpecialPath):
         temp_localsize = 0
+    elif isinstance(real_localname, io.IOBase):
+        try:
+            temp_localsize = real_localname.tell()
+        except io.UnsupportedOperation:
+            temp_localsize = 0
     else:
         temp_localsize = int(temp_exists and temp_localname.size)
 
@@ -233,7 +309,7 @@ def prepare_plan(
         # I'm using a GET instead of an actual HEAD here because some servers respond
         # differently, even though they're not supposed to.
         head = request('get', url, stream=True, headers=temp_headers, auth=auth)
-        remote_total_bytes = int(head.headers.get('content-length', 0))
+        remote_total_bytes = int(head.headers.get('content-length', None))
         server_respects_range = (head.status_code == 206 and 'content-range' in head.headers)
         head.connection.close()
     else:
@@ -247,7 +323,7 @@ def prepare_plan(
     plan_base = {
         'url': url,
         'auth': auth,
-        'callback_progress': callback_progress,
+        'progressbar': progressbar,
         'limiter': limiter,
         'headers': headers,
         'real_localname': real_localname,
@@ -310,66 +386,6 @@ def prepare_plan(
         return plan_fulldownload
 
     raise DownloadyException('No plan was chosen?')
-
-class Progress1:
-    def __init__(self, total_bytes):
-        self.limiter = ratelimiter.Ratelimiter(allowance=8, mode='reject')
-        self.limiter.balance = 1
-        self.total_bytes = max(1, total_bytes)
-        self.divisor = bytestring.get_appropriate_divisor(total_bytes)
-        self.total_format = bytestring.bytestring(total_bytes, force_unit=self.divisor)
-        self.downloaded_format = '{:>%d}' % len(self.total_format)
-        self.blank_char = ' '
-        self.solid_char = '█'
-
-    def step(self, bytes_downloaded):
-        percent = bytes_downloaded / self.total_bytes
-        percent = min(1.00, percent)
-        if self.limiter.limit(1) is False and percent < 1.00:
-            return
-
-        downloaded_string = bytestring.bytestring(bytes_downloaded, force_unit=self.divisor)
-        downloaded_string = self.downloaded_format.format(downloaded_string)
-        block_count = 50
-        solid_blocks = self.solid_char * int(block_count * percent)
-        statusbar = solid_blocks.ljust(block_count, self.blank_char)
-        statusbar = self.solid_char + statusbar + self.solid_char
-
-        end = '\n' if percent == 1 else ''
-        message = '\r{bytes_downloaded} {statusbar} {total_bytes}'
-        message = message.format(
-            bytes_downloaded=downloaded_string,
-            total_bytes=self.total_format,
-            statusbar=statusbar,
-        )
-        pipeable.stderr(message, end=end)
-
-class Progress2:
-    def __init__(self, total_bytes):
-        self.total_bytes = max(1, total_bytes)
-        self.limiter = ratelimiter.Ratelimiter(allowance=8, mode='reject')
-        self.limiter.balance = 1
-        self.total_bytes_string = '{:,}'.format(self.total_bytes)
-        self.bytes_downloaded_string = '{:%d,}' % len(self.total_bytes_string)
-
-    def step(self, bytes_downloaded):
-        percent = bytes_downloaded / self.total_bytes
-        percent = min(1.00, percent)
-        if self.limiter.limit(1) is False and percent < 1.00:
-            return
-
-        percent *= 100
-        percent_string = f'{percent:08.4f}'
-        bytes_downloaded_string = self.bytes_downloaded_string.format(bytes_downloaded)
-
-        end = '\n' if percent == 100 else ''
-        message = '\r{bytes_downloaded} / {total_bytes} / {percent}%'
-        message = message.format(
-            bytes_downloaded=bytes_downloaded_string,
-            total_bytes=self.total_bytes_string,
-            percent=percent_string,
-        )
-        pipeable.stderr(message, end=end)
 
 def basename_from_url(url):
     '''
@@ -434,14 +450,12 @@ def sanitize_url(url):
     return url
 
 def download_argparse(args):
-    url = args.url
+    url = pipeable.input(args.url, split_lines=False)
 
-    url = pipeable.input(url, split_lines=False)
-    callback = {
-        None: Progress1,
-        '1': Progress1,
-        '2': Progress2,
-    }.get(args.callback, args.callback)
+    if args.progressbar.lower() in {'none', 'off'}:
+        progressbar = None
+    if args.progressbar.lower() == 'bar':
+        progressbar = progressbars.bar1_bytestring
 
     bytespersecond = args.bytespersecond
     if bytespersecond is not None:
@@ -462,7 +476,7 @@ def download_argparse(args):
                 url=url,
                 localname=args.localname,
                 bytespersecond=bytespersecond,
-                callback_progress=callback,
+                progressbar=progressbar,
                 do_head=args.no_head is False,
                 headers=headers,
                 overwrite=args.overwrite,
@@ -483,14 +497,14 @@ def main(argv):
 
     parser.add_argument('url')
     parser.add_argument('localname', nargs='?', default=None)
-    parser.add_argument('-c', '--callback', dest='callback', default=Progress1)
+    parser.add_argument('--progressbar', default='bar')
     parser.add_argument('-bps', '--bytespersecond', dest='bytespersecond', default=None)
-    parser.add_argument('-ow', '--overwrite', dest='overwrite', action='store_true')
-    parser.add_argument('-r', '--range', dest='range', default=None)
-    parser.add_argument('--timeout', dest='timeout', type=int, default=TIMEOUT)
-    parser.add_argument('--retry', dest='retry', nargs='?', type=int, default=1)
-    parser.add_argument('--no-head', dest='no_head', action='store_true')
-    parser.add_argument('--no-ssl', dest='no_ssl', action='store_true')
+    parser.add_argument('--overwrite', action='store_true')
+    parser.add_argument('--range', default=None)
+    parser.add_argument('--timeout', type=int, default=TIMEOUT)
+    parser.add_argument('--retry', nargs='?', type=int, default=1)
+    parser.add_argument('--no_head', '--no-head', dest='no_head', action='store_true')
+    parser.add_argument('--no_ssl', '--no-ssl', dest='no_ssl', action='store_true')
     parser.set_defaults(func=download_argparse)
 
     args = parser.parse_args(argv)
