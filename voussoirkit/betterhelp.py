@@ -555,7 +555,8 @@ def _go_single(parser, argv, *, args_postprocessor=None):
         len(argv) == 0 and not can_bare
     )
     if needs_help:
-        print_helptext(make_helptext(parser))
+        do_colors = os.environ.get('NO_COLOR', None) is None
+        print_helptext(make_helptext(parser, do_colors=do_colors))
         return 1
 
     args = parser.parse_args(argv)
@@ -579,22 +580,24 @@ def _go_multi(parser, argv, *, args_postprocessor=None):
     if command == '' and can_bare:
         return main(argv)
 
+    do_colors = os.environ.get('NO_COLOR', None) is None
+
+    if command == 'helpall':
+        print_helptext(make_helptext(parser, full_subparsers=True, all_command_names=all_command_names, do_colors=do_colors))
+        return 1
+
     if command == '':
-        print_helptext(make_helptext(parser, all_command_names=all_command_names))
+        print_helptext(make_helptext(parser, all_command_names=all_command_names, do_colors=do_colors))
         because = 'you did not choose a command'
         pipeable.stderr(f'\nYou are seeing the default help text because {because}.')
         return 1
 
-    if command == 'helpall':
-        print_helptext(make_helptext(parser, full_subparsers=True, all_command_names=all_command_names))
-        return 1
-
     if command in HELP_COMMANDS:
-        print_helptext(make_helptext(parser, all_command_names=all_command_names))
+        print_helptext(make_helptext(parser, all_command_names=all_command_names, do_colors=do_colors))
         return 1
 
     if command not in subparsers:
-        print_helptext(make_helptext(parser, all_command_names=all_command_names))
+        print_helptext(make_helptext(parser, all_command_names=all_command_names, do_colors=do_colors))
         because = f'"{command}" was not recognized'
         pipeable.stderr(f'\nYou are seeing the default help text because {because}.')
         return 1
@@ -604,7 +607,7 @@ def _go_multi(parser, argv, *, args_postprocessor=None):
 
     no_args = len(arguments) == 0 and not can_use_bare(subparser)
     if no_args or any(arg.lower() in HELP_ARGS for arg in arguments):
-        print_helptext(make_helptext(subparser, command_name=command, all_command_names=all_command_names))
+        print_helptext(make_helptext(subparser, command_name=command, all_command_names=all_command_names, do_colors=do_colors))
         return 1
 
     return main(argv)
