@@ -3,14 +3,16 @@ Worms is an SQL ORM with the strength and resilience of the humble earthworm.
 '''
 import abc
 import functools
+import random
 import re
 import typing
 
-from voussoirkit import passwordy
 from voussoirkit import sqlhelpers
 from voussoirkit import vlogging
 
 log = vlogging.getLogger(__name__, 'worms')
+
+RNG = random.SystemRandom()
 
 class WormException(Exception):
     pass
@@ -112,7 +114,7 @@ class Database(metaclass=abc.ABCMeta):
 
         while len(self.on_commit_queue) > 0:
             task = self.on_commit_queue.pop(-1)
-            if isinstance(task, str):
+            if isinstance(task, int):
                 # savepoints.
                 continue
             args = task.get('args', [])
@@ -309,7 +311,7 @@ class Database(metaclass=abc.ABCMeta):
             task = self.on_rollback_queue.pop(-1)
             if task == savepoint:
                 break
-            if isinstance(task, str):
+            if isinstance(task, int):
                 # Intermediate savepoints.
                 continue
             args = task.get('args', [])
@@ -329,7 +331,7 @@ class Database(metaclass=abc.ABCMeta):
             self.on_commit_queue.clear()
 
     def savepoint(self, message=None) -> str:
-        savepoint_id = passwordy.random_hex(length=16)
+        savepoint_id = RNG.getrandbits(32)
         if message:
             log.log(5, 'Savepoint %s for %s.', savepoint_id, message)
         else:
