@@ -455,7 +455,7 @@ class DatabaseWithCaching(Database, metaclass=abc.ABCMeta):
         instance = object_class(self, object_row)
 
         if object_cache is not None:
-            object_cache[object_id] = instance
+            object_cache[instance.id] = instance
 
         return instance
 
