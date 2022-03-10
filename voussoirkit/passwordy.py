@@ -80,12 +80,14 @@ def passwordy_argparse(args):
     else:
         if not any([args.letters, args.digits, args.hex, args.binary, args.punctuation]):
             letters = True
+            digits = True
         else:
             letters = args.letters
+            digits = args.digits
         password = make_password(
             args.length,
             binary=args.binary,
-            digits=args.digits,
+            digits=digits,
             hex=args.hex,
             letters=letters,
             punctuation=args.punctuation,
