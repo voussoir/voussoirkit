@@ -383,8 +383,23 @@ class Database(metaclass=abc.ABCMeta):
             yield row[0]
 
     def select_one(self, query, bindings=None):
+        '''
+        Select a single row, or None if no rows match your query.
+        '''
         cur = self.execute(query, bindings)
         return cur.fetchone()
+
+    def select_one_value(self, query, bindings=None):
+        '''
+        Select a single column out of a single row, or None if no rows match
+        your query.
+        '''
+        cur = self.execute(query, bindings)
+        row = cur.fetchone()
+        if row:
+            return row[0]
+        else:
+            return None
 
     def update(self, table, pairs, where_key) -> None:
         if isinstance(table, type) and issubclass(table, Object):
