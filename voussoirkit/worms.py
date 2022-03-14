@@ -97,6 +97,7 @@ class Database(metaclass=abc.ABCMeta):
         self.on_commit_queue = []
         self.on_rollback_queue = []
         self.savepoints = []
+        self.last_commit_id = None
 
     @abc.abstractmethod
     def _init_column_index(self):
@@ -151,6 +152,7 @@ class Database(metaclass=abc.ABCMeta):
 
         self.savepoints.clear()
         self.sql.commit()
+        self.last_commit_id = RNG.getrandbits(32)
 
     def get_tables(self) -> set[str]:
         '''
