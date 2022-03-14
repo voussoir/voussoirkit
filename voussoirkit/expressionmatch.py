@@ -225,8 +225,11 @@ class ExpressionTree:
         if self.token is None:
             return '""'
         t = self.token
-        if ' ' in t:
-            t = f'"{t}"'
+        if isinstance(t, str):
+            if ' ' in t:
+                t = f'"{t}"'
+        else:
+            t = repr(t)
 
         output = t
         indent = 1
