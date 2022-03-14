@@ -167,7 +167,7 @@ class Database(metaclass=abc.ABCMeta):
         self.assert_table_exists(table)
         (qmarks, bindings) = sqlhelpers.delete_filler(pairs)
         query = f'DELETE FROM {table} {qmarks}'
-        self.execute(query, bindings)
+        return self.execute(query, bindings)
 
     def execute(self, query, bindings=[]):
         if bindings is None:
@@ -273,7 +273,7 @@ class Database(metaclass=abc.ABCMeta):
         (qmarks, bindings) = sqlhelpers.insert_filler(column_names, data)
 
         query = f'INSERT INTO {table} VALUES({qmarks})'
-        self.execute(query, bindings)
+        return self.execute(query, bindings)
 
     def normalize_db_row(self, db_row, table) -> dict:
         '''
@@ -407,7 +407,7 @@ class Database(metaclass=abc.ABCMeta):
         self.assert_table_exists(table)
         (qmarks, bindings) = sqlhelpers.update_filler(pairs, where_key=where_key)
         query = f'UPDATE {table} {qmarks}'
-        self.execute(query, bindings)
+        return self.execute(query, bindings)
 
 class DatabaseWithCaching(Database, metaclass=abc.ABCMeta):
     def __init__(self):
