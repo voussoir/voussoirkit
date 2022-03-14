@@ -26,14 +26,28 @@ class DeletedObject(WormException):
     '''
     pass
 
+# snake-cased because I want the ergonomics of a function from the caller's end.
+class raise_without_rollback:
+    def __init__(self, exc):
+        self.exc = exc
+
 def slice_before(li, item):
     index = li.index(item)
     return li[:index]
 
 def transaction(method):
     '''
-    Open a savepoint before running the method.
-    If the method fails, roll back to that savepoint.
+    This decorator can be added to functions that modify your worms database.
+    A savepoint is opened, then your function is run, then we roll back to the
+    savepoint if an exception is raised.
+
+    This decorator adds the keyword argument 'commit' to your function, so that
+    callers can commit it immediately.
+
+    If you want to raise an exception without rolling back, you can return
+    worms.raise_without_rollback(exc). This could be useful if you want to
+    preserve some kind of attempted action in the database while still raising
+    the action's failure.
     '''
     @functools.wraps(method)
     def wrapped_transaction(self, *args, commit=False, **kwargs):
@@ -52,9 +66,17 @@ def transaction(method):
             database.rollback(savepoint=savepoint_id)
             raise
 
+        if isinstance(result, raise_without_rollback):
+            raise result.exc from result.exc
+
         if commit:
             database.commit(message=method.__qualname__)
         elif not is_root:
+            # In order to prevent a huge pile-up of savepoints when a
+            # @transaction calls another @transaction many times, the sub-call
+            # savepoints are removed from the stack. When an exception occurs,
+            # we're going to rollback from the rootmost savepoint anyway, we'll
+            # never rollback one sub-transaction.
             database.release_savepoint(savepoint=savepoint_id)
         return result
 
