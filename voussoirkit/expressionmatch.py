@@ -94,6 +94,7 @@ class ExpressionTree:
 
         if self_token not in OPERATORS:
             t = self_token
+            t = t.replace('\\', '\\\\')
             t = t.replace('"', '\\"')
             t = t.replace('(', '\\(')
             t = t.replace(')', '\\)')
