@@ -154,15 +154,6 @@ class Database(metaclass=abc.ABCMeta):
         self.sql.commit()
         self.last_commit_id = RNG.getrandbits(32)
 
-    def get_tables(self) -> set[str]:
-        '''
-        Return the set of all table names in the database.
-        '''
-        query = 'SELECT name FROM sqlite_master WHERE type = "table"'
-        table_rows = self.select(query)
-        tables = set(name for (name,) in table_rows)
-        return tables
-
     def delete(self, table, pairs) -> None:
         if isinstance(table, type) and issubclass(table, Object):
             table = table.table
@@ -266,6 +257,15 @@ class Database(metaclass=abc.ABCMeta):
         object_rows = self.select(query, bindings)
         for object_row in object_rows:
             yield object_class(self, object_row)
+
+    def get_tables(self) -> set[str]:
+        '''
+        Return the set of all table names in the database.
+        '''
+        query = 'SELECT name FROM sqlite_master WHERE type = "table"'
+        table_rows = self.select(query)
+        tables = set(name for (name,) in table_rows)
+        return tables
 
     def insert(self, table, data) -> None:
         if isinstance(table, type) and issubclass(table, Object):
@@ -597,6 +597,9 @@ class Object(metaclass=abc.ABCMeta):
       Initialized with a single argument, the requested ID.
     '''
     def __init__(self, database):
+        '''
+        Your subclass should call super().__init__(database).
+        '''
         # Used for transaction
         self._worms_database = database
         self.deleted = False
@@ -632,6 +635,9 @@ class Object(metaclass=abc.ABCMeta):
     def assert_not_deleted(self) -> None:
         '''
         Raises DeletedObject if this object is deleted.
+
+        You need to set self.deleted during any method that deletes the object
+        from the database.
         '''
         if self.deleted:
             raise DeletedObject(self)
