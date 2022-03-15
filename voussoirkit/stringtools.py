@@ -26,7 +26,8 @@ def comma_space_split(text) -> list:
     '''
     if text is None:
         return text
-    return re.split(r'[ ,]+', text.strip())
+    parts = re.split(r'[ ,]+', text.strip())
+    return [part for part in parts if part]
 
 def excise(text, mark_left, mark_right) -> str:
     '''
