@@ -115,6 +115,9 @@ class Database(metaclass=abc.ABCMeta):
     def _init_sql(self):
         '''
         Your subclass needs to set self.sql, which is a database connection.
+
+        It is recommended to set self.sql.row_factory = sqlite3.Row so that you
+        get dictionary-style named access to row members in your objects' init.
         '''
         raise NotImplementedError
 
@@ -276,20 +279,6 @@ class Database(metaclass=abc.ABCMeta):
 
         query = f'INSERT INTO {table} VALUES({qmarks})'
         return self.execute(query, bindings)
-
-    def normalize_db_row(self, db_row, table) -> dict:
-        '''
-        Raises KeyError if table is not one of the recognized tables.
-
-        Raises TypeError if db_row is not the right type.
-        '''
-        if isinstance(db_row, dict):
-            return db_row
-
-        if isinstance(db_row, (list, tuple)):
-            return dict(zip(self.COLUMNS[table], db_row))
-
-        raise TypeError(f'db_row should be {dict}, {list}, or {tuple}, not {type(db_row)}.')
 
     def release_savepoint(self, savepoint, allow_commit=False) -> None:
         '''
