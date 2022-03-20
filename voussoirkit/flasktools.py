@@ -3,13 +3,19 @@ import functools
 import gzip
 import io
 import json
+import random
 import time
 import werkzeug.wrappers
 
 from voussoirkit import bytestring
+from voussoirkit import cacheclass
 from voussoirkit import dotdict
-from voussoirkit import passwordy
 from voussoirkit import sentinel
+from voussoirkit import vlogging
+
+log = vlogging.get_logger(__name__)
+
+RNG = random.SystemRandom()
 
 GZIP_MINIMUM_SIZE = 500 * bytestring.BYTE
 GZIP_MAXIMUM_SIZE = 5 * bytestring.MIBIBYTE
@@ -20,7 +26,7 @@ RESPONSE_TYPES = (flask.Response, werkzeug.wrappers.Response)
 
 NOT_CACHED = sentinel.Sentinel('not cached', truthyness=False)
 
-def cached_endpoint(max_age):
+def cached_endpoint(max_age, etag_function=None, max_urls=1000):
     '''
     The cached_endpoint decorator can be used on slow endpoints that don't need
     to be constantly updated or endpoints that produce large, static responses.
@@ -30,67 +36,140 @@ def cached_endpoint(max_age):
     or personalized data, and you should not try to pass other headers through
     the response.
 
-    When the function is run, its return value is stored and a random etag is
+    When the function is run, its return value is stored and an etag is
     generated so that subsequent runs can respond with 304. This way, large
     response bodies do not need to be transmitted often.
 
-    Given a nonzero max_age, the endpoint will only be run once per max_age
-    seconds on a global basis (not per-user). This way, you can prevent a slow
-    function from being run very often. In-between requests will just receive
-    the previous return value (still using 200 or 304 as appropriate for the
-    client's provided etag).
-
-    With max_age=0, the function will be run every time to check if the value
-    has changed, but if it hasn't changed then we can still send a 304 response,
-    saving bandwidth.
-
     An example use case would be large-sized data dumps that don't need to be
     precisely up to date every time.
+
+    max_age:
+        Your endpoint function will only be called once per max_age seconds on
+        a global basis (not per-user). This way, you can prevent a slow function
+        from being run very often. In-between requests will just receive the
+        previous return value (still using 200 or 304 as appropriate for the
+        client's provided etag).
+
+        max_age will also be added to the Cache-Control response header.
+
+    etag_function:
+        If None, this decorator will call your endpoint function and compare the
+        return value with the stored return value to see if it has changed. If
+        it has not changed, the user will get a 304 and save their bandwidth,
+        however all of the computation done by your function to make that return
+        value is otherwise wasted. If your function is very expensive to run,
+        or if you want to use a small max_age, you might want to provide a
+        dedicated etag_function that takes into account more of the world state.
+
+        This function will be called before your endpoint function is called.
+        If the etag_function return value doesn't change, we assume the endpoint
+        function's value would not change either, and we return the 304, saving
+        both bandwidth and computation. This allows a cheap etag_function such
+        as "when was the last db commit" to save you from a more expensive
+        function call like "generate a json dump of database objects", since the
+        json output probably hasn't changed if there hasn't been a more recent
+        commit.
+
+        The function should take no arguments.
+
+        The max_age check comes before the etag_function check, so even the
+        etag_function won't be run if we're still within the age limit.
+
+    max_urls:
+        Every permutation of request path params dict will have a separate
+        cached value. You can control how many URLs will be kept in the
+        least-recently used cache.
     '''
     if max_age < 0:
         raise ValueError(f'max_age should be positive, not {max_age}.')
 
-    state = dotdict.DotDict({
-        'max_age': max_age,
-        'stored_value': NOT_CACHED,
-        'stored_etag': None,
-        'headers': {'ETag': None, 'Cache-Control': f'max-age={max_age}'},
-        'last_run': 0,
-    })
+    def new_state():
+        # The server_etag is kept separate from the client_etag so that there's
+        # no possibility of leaking anything important to the user from your
+        # etag_function. They will always get a random string.
+        state = dotdict.DotDict({
+            'max_age': max_age,
+            'stored_value': NOT_CACHED,
+            'client_etag': None,
+            'server_etag': None,
+            'headers': {'ETag': None, 'Cache-Control': f'max-age={max_age}'},
+            'last_run': 0,
+        })
+        return state
+
+    states = cacheclass.Cache(maxlen=max_urls)
 
     def wrapper(function):
-        def get_value(*args, **kwargs):
-            can_bail = (
-                state.stored_value is not NOT_CACHED and
-                state.max_age != 0 and
-                (time.time() - state.last_run) < state.max_age
-            )
-            if can_bail:
-                return state.stored_value
+        def can_reuse_state(state):
+            # This function does not necessarily indicate that the user will
+            # get a 304 as we are not checking their etag yet. After all, we
+            # shouldn't check their etag until we know whether the internal
+            # state is fresh enough to check against.
 
+            if state.stored_value is NOT_CACHED:
+                return False
+
+            if (time.monotonic() - state.last_run) < state.max_age:
+                return True
+
+            if etag_function is None:
+                return False
+
+            if state.server_etag == etag_function():
+                # log.debug('Reusing server etag %s.', state.server_etag)
+                return True
+
+        def update_state(state, *args, **kwargs):
             value = function(*args, **kwargs)
             if isinstance(value, flask.Response):
                 if value.headers.get('Content-Type'):
                     state.headers['Content-Type'] = value.headers.get('Content-Type')
                 value = value.response
 
+            # It's possible that both the max_age and etag_function have
+            # indicated the data is stale, but actually it's the same.
             if value != state.stored_value:
                 state.stored_value = value
-                state.stored_etag = passwordy.random_hex(20)
-                state.headers['ETag'] = state.stored_etag
+                # The user's request header will come in as a string anyway.
+                state.client_etag = str(RNG.getrandbits(32))
+                state.headers['ETag'] = state.client_etag
 
-            state.last_run = time.time()
+            # I would have liked to reuse the value from the call made in
+            # can_reuse_state, but I didn't want to assign it there in case
+            # there was some kind of exception here that would prevent the
+            # rest of the state from being correct.
+            # This function should be cheap by design anyway.
+            if etag_function is not None:
+                state.server_etag = etag_function()
+
+            state.last_run = time.monotonic()
             return value
 
         @functools.wraps(function)
         def wrapped(*args, **kwargs):
-            value = get_value(*args, **kwargs)
+            # Should I use a threading.Lock to prevent two simultaneous requests
+            # from running the expensive function, and force one of them to
+            # wait for the other to finish?
+
+            state_key = (request.path, tuple(sorted(request.args.items())))
+            state = states.get(state_key)
+
+            exists = (state is not None)
+            if not exists:
+                state = new_state()
+
+            if not can_reuse_state(state):
+                update_state(state, *args, **kwargs)
 
             client_etag = request.headers.get('If-None-Match', None)
-            if client_etag == state.stored_etag:
+            # log.debug('client_etag=%s state.client_etag=%s', client_etag, state.client_etag)
+            if client_etag == state.client_etag:
                 response = flask.Response(status=304, headers=state.headers)
             else:
-                response = flask.Response(value, status=200, headers=state.headers)
+                response = flask.Response(state.stored_value, status=200, headers=state.headers)
+
+            if not exists and response.status_code in {200, 304}:
+                states[state_key] = state
 
             return response
         return wrapped
