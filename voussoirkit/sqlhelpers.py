@@ -9,6 +9,27 @@ statements.
 import re
 import types
 
+class Inject:
+    '''
+    When making UPDATE or DELETE statements, you may wish to use WHERE clauses
+    that are not simply data values, such as sqlite function calls. When making
+    your pairs dict for update_filler or delete_filler, you can let the value of
+    a pair be an Inject class with a string, and that string will be directly
+    injected into the query.
+
+    You should not use an Inject for any user-provided strings, but you could
+    let the user pick between two different Injects prepared by you.
+
+    >>> pairs = {
+    ...     'domain': 'example.com',
+    ...     'url': sqlhelpers.Inject('REPLACE(url, "http://", "https://")'),
+    ... }
+    >>> sqlhelpers.update_filler(pairs=pairs, where_key='domain')
+    ('SET url = REPLACE(url, "http://", "https://") WHERE domain == ?', ['example.com'])
+    '''
+    def __init__(self, string):
+        self.string = string
+
 def delete_filler(pairs):
     '''
     Manually aligning the bindings for DELETE statements is annoying.
@@ -17,7 +38,7 @@ def delete_filler(pairs):
 
     >>> pairs={'test': 'toast', 'ping': 'pong'}
     >>> delete_filler(pairs)
-    ('WHERE test = ? AND ping = ?', ['toast', 'pong'])
+    ('WHERE test == ? AND ping == ?', ['toast', 'pong'])
 
     In context:
     (qmarks, bindings) = delete_filler(pairs)
@@ -27,8 +48,11 @@ def delete_filler(pairs):
     qmarks = []
     bindings = []
     for (key, value) in pairs.items():
-        qmarks.append(f'{key} = ?')
-        bindings.append(value)
+        if isinstance(value, Inject):
+            qmarks.append(f'{key} == {value.string}')
+        else:
+            qmarks.append(f'{key} == ?')
+            bindings.append(value)
     qmarks = ' AND '.join(qmarks)
     qmarks = f'WHERE {qmarks}'
     return (qmarks, bindings)
@@ -111,8 +135,11 @@ def update_filler(pairs, where_key):
     qmarks = []
     bindings = []
     for (key, value) in pairs.items():
-        qmarks.append(f'{key} = ?')
-        bindings.append(value)
+        if isinstance(value, Inject):
+            qmarks.append(f'{key} = {value.string}')
+        else:
+            qmarks.append(f'{key} = ?')
+            bindings.append(value)
     bindings.append(where_value)
     setters = ', '.join(qmarks)
     qmarks = 'SET {setters} WHERE {where_key} == ?'
