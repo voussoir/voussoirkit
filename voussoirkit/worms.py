@@ -122,7 +122,7 @@ class Database(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     def assert_table_exists(self, table) -> None:
-        if table not in self.get_tables():
+        if table not in self.COLUMN_INDEX:
             raise BadTable(f'Table {table} does not exist.')
 
     def close(self):
