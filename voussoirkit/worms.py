@@ -266,8 +266,7 @@ class Database(metaclass=abc.ABCMeta):
         Return the set of all table names in the database.
         '''
         query = 'SELECT name FROM sqlite_master WHERE type = "table"'
-        table_rows = self.select(query)
-        tables = set(name for (name,) in table_rows)
+        tables = set(self.select_column(query))
         return tables
 
     def insert(self, table, data) -> None:
