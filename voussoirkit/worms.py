@@ -5,6 +5,7 @@ import abc
 import functools
 import random
 import re
+import sqlite3
 import typing
 
 from voussoirkit import sqlhelpers
@@ -433,7 +434,7 @@ class DatabaseWithCaching(Database, metaclass=abc.ABCMeta):
         object_table = object_class.table
         object_cache = self.caches.get(object_class, None)
 
-        if isinstance(db_row, dict):
+        if isinstance(db_row, (dict, sqlite3.Row)):
             object_id = db_row['id']
         else:
             object_index = self.COLUMN_INDEX[object_table]
