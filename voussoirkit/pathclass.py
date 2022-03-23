@@ -143,6 +143,7 @@ class Path:
         path = os.fspath(path)
 
         if isinstance(path, str):
+            path = os.path.expanduser(path)
             path = os.path.abspath(path)
             self._absolute_path = path
             (drive, remainder) = os.path.splitdrive(path)
