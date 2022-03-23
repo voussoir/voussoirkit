@@ -163,7 +163,7 @@ class Database(metaclass=abc.ABCMeta):
         self.sql.commit()
         self.last_commit_id = RNG.getrandbits(32)
 
-    def delete(self, table, pairs) -> None:
+    def delete(self, table, pairs) -> sqlite3.Cursor:
         if isinstance(table, type) and issubclass(table, Object):
             table = table.table
         self.assert_table_exists(table)
@@ -276,13 +276,12 @@ class Database(metaclass=abc.ABCMeta):
         tables = set(self.select_column(query))
         return tables
 
-    def insert(self, table, data) -> None:
+    def insert(self, table, data) -> sqlite3.Cursor:
         if isinstance(table, type) and issubclass(table, Object):
             table = table.table
         self.assert_table_exists(table)
         column_names = self.COLUMNS[table]
         (qmarks, bindings) = sqlhelpers.insert_filler(column_names, data)
-
         query = f'INSERT INTO {table} VALUES({qmarks})'
         return self.execute(query, bindings)
 
@@ -434,7 +433,7 @@ class Database(metaclass=abc.ABCMeta):
         else:
             return None
 
-    def update(self, table, pairs, where_key) -> None:
+    def update(self, table, pairs, where_key) -> sqlite3.Cursor:
         if isinstance(table, type) and issubclass(table, Object):
             table = table.table
         self.assert_table_exists(table)
