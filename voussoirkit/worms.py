@@ -45,6 +45,10 @@ def transaction(method):
     This decorator adds the keyword argument 'commit' to your function, so that
     callers can commit it immediately.
 
+    This decorator adds the attribute 'is_worms_transaction = True' to your
+    function. You can use this to distinguish readonly vs writing methods during
+    runtime.
+
     If you want to raise an exception without rolling back, you can return
     worms.raise_without_rollback(exc). This could be useful if you want to
     preserve some kind of attempted action in the database while still raising
@@ -81,6 +85,7 @@ def transaction(method):
             database.release_savepoint(savepoint=savepoint_id)
         return result
 
+    wrapped_transaction.is_worms_transaction = True
     return wrapped_transaction
 
 class Database(metaclass=abc.ABCMeta):
