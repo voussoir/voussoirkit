@@ -384,7 +384,7 @@ class Database(metaclass=abc.ABCMeta):
             self.savepoints.clear()
             self.on_commit_queue.clear()
 
-    def savepoint(self, message=None) -> str:
+    def savepoint(self, message=None) -> int:
         savepoint_id = RNG.getrandbits(32)
         if message:
             log.log(5, 'Savepoint %s for %s.', savepoint_id, message)
