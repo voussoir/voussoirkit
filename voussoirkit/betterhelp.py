@@ -1,5 +1,8 @@
 import argparse
-import colorama
+try:
+    import colorama
+except ImportError:
+    colorama = None
 import io
 import os
 import re
@@ -131,7 +134,7 @@ def make_helptext(
     # Even though this text is going out on stderr, we only colorize it if
     # both stdout and stderr are tty because as soon as pipe buffers are
     # involved, even on stdout, things start to get weird.
-    if do_colors and pipeable.stdout_tty() and pipeable.stderr_tty():
+    if do_colors and colorama and pipeable.stdout_tty() and pipeable.stderr_tty():
         colorama.init()
         color = dotdict.DotDict(
             positional=colorama.Style.BRIGHT + colorama.Fore.CYAN,
@@ -148,7 +151,7 @@ def make_helptext(
             flag='',
             command='',
             reset='',
-            required_asterisk=colorama.Style.BRIGHT + colorama.Fore.RED + '(*)' + colorama.Style.RESET_ALL,
+            required_asterisk='(*)',
         )
 
     if program_name is None:
