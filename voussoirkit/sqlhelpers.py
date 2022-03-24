@@ -238,6 +238,14 @@ def _extract_columns_from_table(create_table_statement):
     column_names = [c for c in column_names if c.lower() not in constraints]
     return column_names
 
+def _remove_script_comments(script):
+    lines = []
+    for line in script.splitlines():
+        if re.match(r'^\s*--', line):
+            continue
+        lines.append(line)
+    return '\n'.join(lines)
+
 def _reverse_index(columns):
     return {column: index for (index, column) in enumerate(columns)}
 
@@ -257,6 +265,7 @@ def extract_table_column_map(script):
     }
     '''
     columns = {}
+    script = _remove_script_comments(script)
     create_table_statements = _extract_create_table_statements(script)
     for create_table_statement in create_table_statements:
         table_name = _extract_table_name(create_table_statement)
