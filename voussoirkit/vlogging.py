@@ -53,7 +53,12 @@ def add_loud(log):
 
 def add_root_handler(level):
     handler = StreamHandler()
-    handler.setFormatter(Formatter('{levelname}:{name}:{message}', style='{'))
+    if level <= LOUD:
+        handler.setFormatter(Formatter('{levelname}:{name}.{funcName}.{lineno}:{message}', style='{'))
+    elif level <= DEBUG:
+        handler.setFormatter(Formatter('{levelname}:{name}.{funcName}:{message}', style='{'))
+    else:
+        handler.setFormatter(Formatter('{levelname}:{name}:{message}', style='{'))
     handler.setLevel(level)
     root.addHandler(handler)
     return handler
