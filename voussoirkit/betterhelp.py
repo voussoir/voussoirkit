@@ -183,6 +183,7 @@ def make_helptext(
     named_actions = []
     required_named_actions = []
     optional_named_actions = []
+    store_types = {argparse._StoreAction, argparse._AppendAction}
     flag_types = {argparse._StoreTrueAction, argparse._StoreFalseAction, argparse._StoreConstAction}
     flag_actions = []
 
@@ -194,7 +195,7 @@ def make_helptext(
             all_command_names.update(action.choices.keys())
             continue
 
-        if type(action) is argparse._StoreAction:
+        if type(action) in store_types:
             if action.option_strings == []:
                 positional_actions.append(action)
                 all_positional_names.add(action.dest)
