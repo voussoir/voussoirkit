@@ -38,6 +38,7 @@ root.setLevel(NOTSET)
 LOUD = 1
 SILENT = 99999999999
 
+ARGV_LEVEL = NOTSET
 _did_earlybird = False
 
 def add_loud(log):
@@ -208,12 +209,14 @@ def main_decorator(main):
     betterhelp.HELPTEXT_EPILOGUES.add(BETTERHELP_EPILOGUE)
     @functools.wraps(main)
     def wrapped(argv, *args, **kwargs):
+        global ARGV_LEVEL
         # The reason we don't call basic_config is that another module may have
         # attached a root handler for another purpose.
         # However we do check _did_earlybird so that we don't get double
         # handlers from this module.
         if not _did_earlybird:
             (level, argv) = get_level_by_argv(argv)
+            ARGV_LEVEL = level
             add_root_handler(level)
         return main(argv, *args, **kwargs)
     return wrapped
