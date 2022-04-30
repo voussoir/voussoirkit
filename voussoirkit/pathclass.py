@@ -358,7 +358,18 @@ class Path:
         return os.path.isfile(self)
 
     @property
+    def is_junction(self):
+        try:
+            return bool(os.readlink(self))
+        except (FileNotFoundError, OSError):
+            return False
+
+    @property
     def is_link(self):
+        return self.is_symlink or self.is_junction
+
+    @property
+    def is_symlink(self):
         return os.path.islink(self)
 
     def join(self, subpath, **spawn_kwargs):
