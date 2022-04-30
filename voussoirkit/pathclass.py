@@ -223,6 +223,8 @@ class Path:
             raise NotEnoughSpace(path=self, reserve=reserve, free=free)
         return free
 
+    # ASSERTS
+
     def assert_exists(self):
         if not self.exists:
             raise NotExists(self)
@@ -231,23 +233,17 @@ class Path:
         if self.exists:
             raise Exists(self)
 
-    def assert_not_file(self):
-        if self.is_file:
-            raise IsFile(self)
-
-    def assert_not_directory(self):
-        if self.is_dir:
-            raise IsDirectory(self)
-
-    assert_not_dir = assert_not_directory
-
-    def assert_not_link(self):
-        if self.is_link:
-            raise IsLink(self)
+    #
 
     def assert_is_file(self):
         if not self.is_file:
             raise NotFile(self)
+
+    def assert_not_file(self):
+        if self.is_file:
+            raise IsFile(self)
+
+    #
 
     def assert_is_directory(self):
         if not self.is_dir:
@@ -255,9 +251,23 @@ class Path:
 
     assert_is_dir = assert_is_directory
 
+    def assert_not_directory(self):
+        if self.is_dir:
+            raise IsDirectory(self)
+
+    assert_not_dir = assert_not_directory
+
+    #
+
     def assert_is_link(self):
         if not self.is_link:
             raise NotLink(self)
+
+    def assert_not_link(self):
+        if self.is_link:
+            raise IsLink(self)
+
+    #
 
     def add_extension(self, extension):
         extension = Extension(extension)
