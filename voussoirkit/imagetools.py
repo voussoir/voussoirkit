@@ -1,4 +1,5 @@
 import copy
+import io
 import PIL.ExifTags
 import PIL.Image
 
@@ -111,6 +112,11 @@ def rotate_by_exif(image):
     except KeyError:
         return (image, exif)
 
+    fp = getattr(exif, 'fp', None)
+    if isinstance(fp, io.BufferedReader):
+        exif.fp = io.BytesIO()
+        exif.fp.write(fp.read())
+        exif.fp.seek(0)
     exif = copy.deepcopy(exif)
 
     if rotation == 1:
