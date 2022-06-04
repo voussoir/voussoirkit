@@ -426,17 +426,18 @@ class Database(metaclass=abc.ABCMeta):
         cur = self.execute(query, bindings)
         return cur.fetchone()
 
-    def select_one_value(self, query, bindings=None):
+    def select_one_value(self, query, bindings=None, fallback=None):
         '''
-        Select a single column out of a single row, or None if no rows match
-        your query.
+        Select a single column out of a single row, or fallback if no rows match
+        your query. The fallback can help you distinguish between rows that
+        don't exist and a null value.
         '''
         cur = self.execute(query, bindings)
         row = cur.fetchone()
         if row:
             return row[0]
         else:
-            return None
+            return fallback
 
     def update(self, table, pairs, where_key) -> sqlite3.Cursor:
         if isinstance(table, type) and issubclass(table, Object):
