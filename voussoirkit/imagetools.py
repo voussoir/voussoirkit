@@ -1,7 +1,10 @@
 import copy
+import datetime
 import io
 import PIL.ExifTags
 import PIL.Image
+
+from voussoirkit import pathclass
 
 ORIENTATION_KEY = None
 for (ORIENTATION_KEY, val) in PIL.ExifTags.TAGS.items():
@@ -58,6 +61,29 @@ def fit_into_bounds(
         return (image_width, image_height)
 
     return (new_width, new_height)
+
+def get_exif_datetime(image) -> datetime.datetime:
+    # Thanks Payne
+    # https://stackoverflow.com/a/4765242
+    if isinstance(image, pathclass.Path):
+        image = PIL.Image.open(image.absolute_path)
+    elif isinstance(image, str):
+        image = PIL.Image.open(image)
+
+    exif = image.getexif()
+    if not exif:
+        return
+
+    exif = {
+        PIL.ExifTags.TAGS[key]: value
+        for (key, value) in exif.items()
+        if key in PIL.ExifTags.TAGS
+    }
+    exif_date = exif.get('DateTimeOriginal') or exif.get('DateTime') or exif.get('DateTimeDigitized')
+    if not exif_date:
+        return
+
+    return datetime.datetime.strptime(exif_date, '%Y:%m:%d %H:%M:%S')
 
 def pad_to_square(image, background_color=None) -> PIL.Image:
     '''
