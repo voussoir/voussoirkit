@@ -197,6 +197,15 @@ class Database(metaclass=abc.ABCMeta):
             log.loud(line)
             cur.execute(line)
 
+    def exists(self, query, bindings=None) -> bool:
+        '''
+        query should be a SELECT query.
+
+        Returns True if at least one row was found, False if no rows found.
+        '''
+        row = self.select_one(query, bindings)
+        return (row is not None)
+
     def get_object_by_id(self, object_class, object_id):
         '''
         Select an object by its ID.
