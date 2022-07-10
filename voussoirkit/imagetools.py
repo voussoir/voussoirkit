@@ -1,8 +1,10 @@
 import copy
 import datetime
+import dateutil.parser
 import io
 import PIL.ExifTags
 import PIL.Image
+import re
 
 from voussoirkit import pathclass
 
@@ -83,7 +85,8 @@ def get_exif_datetime(image) -> datetime.datetime:
     if not exif_date:
         return
 
-    return datetime.datetime.strptime(exif_date, '%Y:%m:%d %H:%M:%S')
+    exif_date = re.sub(r'(\d\d\d\d):(\d\d):(\d\d)', r'\1-\2-\3', exif_date)
+    return dateutil.parser.parse(exif_date)
 
 def pad_to_square(image, background_color=None) -> PIL.Image:
     '''
