@@ -143,7 +143,8 @@ def download_plan(plan):
 
     if plan.remote_total_bytes is None:
         # Since we didn't do a head, let's fill this in now.
-        plan.remote_total_bytes = int(download_stream.headers.get('Content-Length', None))
+        plan.remote_total_bytes = download_stream.headers.get('Content-Length', None)
+        plan.remote_total_bytes = None if plan.remote_total_bytes is None else int(plan.remote_total_bytes)
 
     progressbar = progressbars.normalize_progressbar(plan.progressbar, total=plan.remote_total_bytes)
 
@@ -309,7 +310,8 @@ def prepare_plan(
         # I'm using a GET instead of an actual HEAD here because some servers respond
         # differently, even though they're not supposed to.
         head = request('get', url, stream=True, headers=temp_headers, auth=auth)
-        remote_total_bytes = int(head.headers.get('content-length', None))
+        remote_total_bytes = head.headers.get('content-length', None)
+        remote_total_bytes = None if remote_total_bytes is None else int(remote_total_bytes)
         server_respects_range = (head.status_code == 206 and 'content-range' in head.headers)
         head.connection.close()
     else:
