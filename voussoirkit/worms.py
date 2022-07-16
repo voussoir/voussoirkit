@@ -132,11 +132,12 @@ class Database(metaclass=abc.ABCMeta):
         self._worms_transaction_lock = threading.Lock()
         self._worms_transaction_owner = None
         self.transaction = TransactionContextManager(database=self)
-        # If your IDs are integers, you could change this to int. This way, when
-        # taking user input as strings, they will automatically be converted to
-        # int when querying and caching, and you don't have to do the conversion
-        # on the application side.
-        self.id_type = str
+        # Since user input usually comes in the form of strings -- from command
+        # line, http requests -- and the IDs are usually ints in the database,
+        # we'll do the data conversion before making queries or responses,
+        # so you don't have to do it in your application.
+        # But if your application uses string IDs, set self.id_type = str
+        self.id_type = int
         self.last_commit_id = None
 
     @abc.abstractmethod
