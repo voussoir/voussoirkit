@@ -1,6 +1,7 @@
 import copy
 import datetime
 import dateutil.parser
+import exifread
 import io
 import PIL.ExifTags
 import PIL.Image
@@ -82,11 +83,24 @@ def get_exif_datetime(image) -> datetime.datetime:
         if key in PIL.ExifTags.TAGS
     }
     exif_date = exif.get('DateTimeOriginal') or exif.get('DateTime') or exif.get('DateTimeDigitized')
+
     if not exif_date:
-        return
+        return None
 
     exif_date = re.sub(r'(\d\d\d\d):(\d\d):(\d\d)', r'\1-\2-\3', exif_date)
     return dateutil.parser.parse(exif_date)
+
+def exifread(path) -> dict:
+    if isinstance(path, PIL.Image.Image):
+        handle = io.BytesIO()
+        path.save(handle, format='JPEG', exif=path.getexif(), quality=10)
+        handle.seek(0)
+    elif isinstance(path, pathclass.Path):
+        handle = path.open('rb')
+    elif isinstance(path, str):
+        handle = open(path, 'rb')
+
+    return exifread.process_file(handle)
 
 def pad_to_square(image, background_color=None) -> PIL.Image:
     '''
