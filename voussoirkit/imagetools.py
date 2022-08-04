@@ -9,6 +9,8 @@ import re
 
 from voussoirkit import pathclass
 
+_exifread = exifread
+
 ORIENTATION_KEY = None
 for (ORIENTATION_KEY, val) in PIL.ExifTags.TAGS.items():
     if val == 'Orientation':
@@ -65,14 +67,7 @@ def fit_into_bounds(
 
     return (new_width, new_height)
 
-def get_exif_datetime(image) -> datetime.datetime:
-    # Thanks Payne
-    # https://stackoverflow.com/a/4765242
-    if isinstance(image, pathclass.Path):
-        image = PIL.Image.open(image.absolute_path)
-    elif isinstance(image, str):
-        image = PIL.Image.open(image)
-
+def _get_exif_datetime_pil(image):
     exif = image.getexif()
     if not exif:
         return
@@ -85,6 +80,32 @@ def get_exif_datetime(image) -> datetime.datetime:
     exif_date = exif.get('DateTimeOriginal') or exif.get('DateTime') or exif.get('DateTimeDigitized')
 
     if not exif_date:
+        return None
+
+    return exif_date
+
+def _get_exif_datetime_exifread(path):
+    path = pathclass.Path(path)
+    exif = _exifread.process_file(path.open('rb'))
+    exif_date = exif.get('EXIF DateTimeOriginal') or exif.get('Image DateTime') or exif.get('EXIF DateTimeDigitized')
+    if not exif_date:
+        return None
+
+    exif_date = exif_date.values
+    return exif_date
+
+def get_exif_datetime(image) -> datetime.datetime:
+    # Thanks Payne
+    # https://stackoverflow.com/a/4765242
+    if isinstance(image, (str, pathclass.Path)):
+        exif_date = _get_exif_datetime_exifread(image)
+    elif isinstance(image, PIL.Image.Image):
+        exif_date = _get_exif_datetime_pil(image)
+
+    if not exif_date:
+        return None
+
+    if exif_date.startswith('0000:'):
         return None
 
     exif_date = re.sub(r'(\d\d\d\d):(\d\d):(\d\d)', r'\1-\2-\3', exif_date)
@@ -100,7 +121,7 @@ def exifread(path) -> dict:
     elif isinstance(path, str):
         handle = open(path, 'rb')
 
-    return exifread.process_file(handle)
+    return _exifread.process_file(handle)
 
 def pad_to_square(image, background_color=None) -> PIL.Image:
     '''
