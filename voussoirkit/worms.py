@@ -421,13 +421,12 @@ class Database(metaclass=abc.ABCMeta):
         tables = set(self.select_column(query))
         return tables
 
-    def insert(self, table, data) -> sqlite3.Cursor:
+    def insert(self, table, pairs) -> sqlite3.Cursor:
         if isinstance(table, type) and issubclass(table, Object):
             table = table.table
         self.assert_table_exists(table)
-        column_names = self.COLUMNS[table]
-        (qmarks, bindings) = sqlhelpers.insert_filler(column_names, data)
-        query = f'INSERT INTO {table} VALUES({qmarks})'
+        (qmarks, bindings) = sqlhelpers.insert_filler(pairs)
+        query = f'INSERT INTO {table} {qmarks}'
         return self.execute(query, bindings)
 
     def normalize_object_id(self, object_class, object_id):
