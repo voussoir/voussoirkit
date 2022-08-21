@@ -337,6 +337,10 @@ class Database(metaclass=abc.ABCMeta):
         row = self.select_one(query, bindings)
         return (row is not None)
 
+    def explain(self, query, bindings=None) -> str:
+        exp = self.execute('EXPLAIN QUERY PLAN ' + query, bindings)
+        return '\n'.join(str(tuple(x)) for x in exp.fetchall())
+
     def get_object_by_id(self, object_class, object_id):
         '''
         Select an object by its ID.
