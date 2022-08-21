@@ -1,5 +1,6 @@
 import glob
 import os
+import re
 import shutil
 
 _glob = glob
@@ -728,6 +729,22 @@ def glob_patternize(piece):
             piece = piece.replace(character, replacement, 1)
             break
     return piece
+
+def natural_sorter(path):
+    '''
+    This function is used as the `key` argument in
+    paths.sort(key=pathclass.natural_sorter).
+
+    Used for sorting strings in 'natural' order instead of lexicographic order,
+    so that you get 1 2 3 4 5 6 7 8 9 10 11 12 13 ...
+    instead of 1 10 11 12 13 2 3 4 5 ...
+
+    Thank you Mark Byers
+    http://stackoverflow.com/a/11150413
+    '''
+    convert = lambda text: int(text) if text.isdigit() else text.lower()
+    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key.absolute_path)]
+    return alphanum_key(path)
 
 def normalize_drive(name):
     if type(name) is Drive:
