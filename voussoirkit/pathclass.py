@@ -320,6 +320,10 @@ class Path:
         Return Paths that match a glob pattern within this directory.
         '''
         pattern = normalize_basename_glob(pattern)
+        trychild = self.with_child(pattern)
+        if trychild.exists:
+            return [trychild.correct_case()]
+
         # By sidestepping the glob function and going straight for fnmatch
         # filter, we have slightly different behavior than normal, which is
         # that glob.glob treats .* as hidden files and won't match them with
@@ -331,6 +335,10 @@ class Path:
 
     def glob_directories(self, pattern):
         pattern = normalize_basename_glob(pattern)
+        trychild = self.with_child(pattern)
+        if trychild.is_directory:
+            return [trychild.correct_case()]
+
         # Instead of turning all children into Path objects and filtering by
         # the stat, let's filter by the stat from scandir first.
         children = (e.name for e in os.scandir(self) if e.is_dir())
@@ -340,6 +348,10 @@ class Path:
 
     def glob_files(self, pattern):
         pattern = normalize_basename_glob(pattern)
+        trychild = self.with_child(pattern)
+        if trychild.is_file:
+            return [trychild.correct_case()]
+
         children = (e.name for e in os.scandir(self) if e.is_file())
         children = winglob.fnmatch_filter(children, pattern)
         items = [self.with_child(c, _case_correct=self._case_correct) for c in children]
@@ -648,14 +660,26 @@ def glob(pattern):
     elif pattern == '..':
         return [cwd().parent]
 
+    trypath = Path(pattern)
+    if trypath.exists:
+        return [trypath.correct_case()]
+
     (dirname, pattern) = os.path.split(pattern)
     return Path(dirname).glob(pattern)
 
 def glob_directories(pattern):
+    trypath = Path(pattern)
+    if trypath.is_directory:
+        return [trypath.correct_case()]
+
     (dirname, pattern) = os.path.split(pattern)
     return Path(dirname).glob_directories(pattern)
 
 def glob_files(pattern):
+    trypath = Path(pattern)
+    if trypath.is_file:
+        return [trypath.correct_case()]
+
     (dirname, pattern) = os.path.split(pattern)
     return Path(dirname).glob_files(pattern)
 
