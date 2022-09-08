@@ -338,7 +338,7 @@ class Database(metaclass=abc.ABCMeta):
         return (row is not None)
 
     def explain(self, query, bindings=None) -> str:
-        exp = self.execute('EXPLAIN QUERY PLAN ' + query, bindings)
+        exp = self.execute_read('EXPLAIN QUERY PLAN ' + query, bindings)
         return '\n'.join(str(tuple(x)) for x in exp.fetchall())
 
     def get_object_by_id(self, object_class, object_id):
