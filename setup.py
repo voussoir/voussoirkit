@@ -12,6 +12,8 @@ setuptools.setup(
     url='https://github.com/voussoir/voussoirkit',
     install_requires=[
         'pyperclip',
+        'python-dateutil',
+        'exifread',
         'pywin32;platform_system=="Windows"',
         'winshell;platform_system=="Windows"',
     ]
