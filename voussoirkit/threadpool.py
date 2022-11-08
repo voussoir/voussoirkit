@@ -17,6 +17,9 @@ Here are some examples of threadpool in use:
 >>>     if job.value is not None:
 >>>         yield job.value
 
+Also consider:
+log.error(''.join(traceback.format_exception(None, job.exception, job.exception.__traceback__)))
+
 2. Git-fetching a bunch of repositories with no error handling:
 
 >>> def git_fetch(d):
