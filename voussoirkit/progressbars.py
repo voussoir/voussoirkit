@@ -284,7 +284,7 @@ def do_nothing(*args, **kwargs):
 
 def normalize(progressbar, total=None, *, topic=None) -> typing.Union[Progress, None]:
     if progressbar is None:
-        return None
+        return DoNothing()
 
     elif isinstance(progressbar, Progress):
         progressbar.set_total(total=total)
