@@ -249,9 +249,11 @@ class Database(metaclass=abc.ABCMeta):
         if self._worms_transaction_owner:
             self.rollback()
 
+        log.loud('Closing sql_read.')
         self.sql_read.close()
         del self.sql_read
 
+        log.loud('Closing sql_write.')
         self.sql_write.close()
         del self.sql_write
 
