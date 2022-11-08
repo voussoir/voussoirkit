@@ -4,6 +4,26 @@ import sys
 
 from voussoirkit import pipeable
 
+def _render_colons(hours, minutes, seconds):
+    parts = []
+    if hours is not None:
+        parts.append(f'{hours:02d}:')
+    if minutes is not None:
+        parts.append(f'{minutes:02d}:')
+    parts.append(f'{seconds:02d}')
+
+    return ''.join(parts)
+
+def _render_letters(hours, minutes, seconds):
+    parts = []
+    if hours is not None:
+        parts.append(f'{hours:02d}h')
+    if minutes is not None:
+        parts.append(f'{minutes:02d}m')
+    parts.append(f'{seconds:02d}s')
+
+    return ''.join(parts)
+
 def hms_to_seconds(hms) -> float:
     '''
     Convert hh:mm:ss string to an integer or float of seconds.
@@ -34,35 +54,40 @@ def hms_letters_to_seconds(hms) -> float:
         seconds += int(minutes) * 60
     return seconds
 
-def seconds_to_hms(seconds, force_minutes=False, force_hours=False) -> str:
+def rounds(seconds):
+    if seconds > 0 and seconds < 1:
+        return 1
+    else:
+        return round(seconds)
+
+def _seconds_to_hms(
+        seconds,
+        renderer,
+        *,
+        force_minutes=False,
+        force_hours=False,
+    ):
+    seconds = rounds(seconds)
+    (minutes, seconds) = divmod(seconds, 60)
+    (hours, minutes) = divmod(minutes, 60)
+
+    if not (hours or force_hours):
+        hours = None
+
+    if not (minutes or hours or force_hours or force_minutes):
+        minutes = None
+
+    return renderer(hours, minutes, seconds)
+
+def seconds_to_hms(seconds, **kwargs) -> str:
     '''
     Convert integer number of seconds to an hh:mm:ss string.
     Only the necessary fields are used.
     '''
-    seconds = math.ceil(seconds)
-    (minutes, seconds) = divmod(seconds, 60)
-    (hours, minutes) = divmod(minutes, 60)
-    parts = []
-    if hours or force_hours:
-        parts.append(hours)
-    if hours or minutes or force_hours or force_minutes:
-        parts.append(minutes)
-    parts.append(seconds)
-    hms = ':'.join(f'{part:02d}' for part in parts)
-    return hms
+    return _seconds_to_hms(seconds, renderer=_render_colons, **kwargs)
 
-def seconds_to_hms_letters(seconds, force_minutes=False, force_hours=False) -> str:
-    seconds = math.ceil(seconds)
-    (minutes, seconds) = divmod(seconds, 60)
-    (hours, minutes) = divmod(minutes, 60)
-    parts = []
-    if hours or force_hours:
-        parts.append(f'{hours:02d}h')
-    if hours or minutes or force_hours or force_minutes:
-        parts.append(f'{minutes:02d}m')
-    parts.append(f'{seconds:02d}s')
-    hms = ''.join(parts)
-    return hms
+def seconds_to_hms_letters(seconds, **kwargs) -> str:
+    return _seconds_to_hms(seconds, renderer=_render_letters, **kwargs)
 
 def main(args):
     lines = pipeable.input_many(args, strip=True, skip_blank=True)
