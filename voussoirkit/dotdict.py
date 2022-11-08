@@ -14,6 +14,9 @@ class DotDict:
             self.__dict__.update(__dict)
         self.__dict__.update(**kwargs)
 
+    def __delattr__(self, key):
+        self.__dict__.pop(key, None)
+
     def __getattr__(self, key):
         try:
             return self.__dict__[key]
