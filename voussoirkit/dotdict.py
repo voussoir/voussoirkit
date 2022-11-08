@@ -28,10 +28,13 @@ class DotDict:
     def __setattr__(self, key, value):
         self.__dict__[key] = value
 
-    def __iter__(self):
+    def _to_dict(self):
         display = self.__dict__.copy()
         display.pop('_DotDict__default')
-        return iter(display.items())
+        return display
+
+    def __iter__(self):
+        return iter(self._to_dict().items())
 
     def __repr__(self):
         display = self.__dict__.copy()
