@@ -6,14 +6,13 @@ import collections
 import hashlib
 import os
 import shutil
-import sys
 import time
 
 from voussoirkit import bytestring
 from voussoirkit import dotdict
 from voussoirkit import pathclass
+from voussoirkit import progressbars
 from voussoirkit import ratelimiter
-from voussoirkit import safeprint
 from voussoirkit import sentinel
 from voussoirkit import vlogging
 from voussoirkit import winglob
@@ -60,42 +59,22 @@ class SourceNotFile(SpinalException):
 class SpinalError(SpinalException):
     pass
 
-def callback_progress_v1(path, written_bytes, total_bytes):
-    '''
-    Example of a copy callback function.
-
-    Prints "filename written/total (percent%)"
-    '''
-    if written_bytes >= total_bytes:
-        ends = '\r\n'
-    else:
-        ends = ''
-    percent = (100 * written_bytes) / max(total_bytes, 1)
-    percent = f'{percent:07.3f}'
-    written = '{:,}'.format(written_bytes)
-    total = '{:,}'.format(total_bytes)
-    written = written.rjust(len(total), ' ')
-    status = f'{path.absolute_path} {written}/{total} ({percent}%)\r'
-    safeprint.safeprint(status, end=ends)
-    sys.stdout.flush()
-
 def copy_directory(
         source,
         destination=None,
         *,
         bytes_per_second=None,
-        callback_directory_progress=None,
-        callback_file_progress=None,
         callback_permission_denied=None,
         callback_post_file=None,
         callback_pre_directory=None,
         callback_pre_file=None,
-        callback_verify_hash_progress=None,
         chunk_size='dynamic',
         destination_new_root=None,
+        directory_progressbar=None,
         dry_run=False,
         exclude_directories=None,
         exclude_filenames=None,
+        file_progressbar=None,
         files_per_second=None,
         hash_class=None,
         overwrite=OVERWRITE_OLD,
@@ -103,6 +82,7 @@ def copy_directory(
         skip_symlinks=True,
         stop_event=None,
         verify_hash=False,
+        verify_hash_progressbar=None,
     ):
     '''
     Copy all of the contents from source to destination,
@@ -117,16 +97,6 @@ def copy_directory(
 
     bytes_per_second:
         Passed into each `copy_file` as `bytes_per_second`.
-
-    callback_directory_progress:
-        This function will be called after each file copy with three arguments:
-        name of file copied, number of bytes written to destination directory
-        so far, total bytes needed (based on precalcsize).
-        If `precalcsize` is False, this function will receive written bytes
-        for both written and total, showing 100% always.
-
-    callback_file_progress:
-        Passed into each `copy_file` as `callback_progress`.
 
     callback_permission_denied:
         Passed into `walk` and each `copy_file` as `callback_permission_denied`.
@@ -150,9 +120,6 @@ def copy_directory(
         If you think copy_dir should be rewritten as a generator instead,
         I agree!
 
-    callback_verify_hash_progress:
-        Passed into each `copy_file` as `callback_verify_hash_progress`.
-
     chunk_size:
         Passed into each `copy_file` as `chunk_size`.
 
@@ -162,6 +129,13 @@ def copy_directory(
         Thus, this path acts as a root and the rest of the path is matched.
 
         `destination` and `destination_new_root` are mutually exclusive.
+
+    directory_progressbar:
+        An instance of voussoirkit.progressbars.ProgressBar.
+        This progressbar will be updated after each file copy with the number of
+        bytes written into the destination directory so far. If `precalcsize` is
+        True, the progressbar will have its total set to that value. Otherwise
+        it will be indeterminate.
 
     dry_run:
         Do everything except the actual file copying.
@@ -176,6 +150,9 @@ def copy_directory(
         Maximum number of files to be processed per second. Helps to keep CPU
         usage low.
 
+    file_progressbar:
+        Passed into each `copy_file` as `progressbar`.
+
     hash_class:
         Passed into each `copy_file` as `hash_class`.
 
@@ -184,9 +161,7 @@ def copy_directory(
 
     precalcsize:
         If True, calculate the size of source before beginning the copy.
-        This number can be used in the callback_directory_progress function.
-        Else, callback_directory_progress will receive written bytes as total
-        bytes (showing 100% always).
+        This number can be used in the directory_progressbar.
         This may take a while if the source directory is large.
 
     skip_symlinks:
@@ -200,6 +175,9 @@ def copy_directory(
 
     verify_hash:
         Passed into each `copy_file` as `verify_hash`.
+
+    verify_hash_progressbar:
+        Passed into each `copy_file` as `verify_hash_progressbar`.
 
     Returns a dotdict containing at least these values:
     `source` pathclass.Path
@@ -236,7 +214,11 @@ def copy_directory(
     else:
         total_bytes = 0
 
-    callback_directory_progress = callback_directory_progress or do_nothing
+    directory_progressbar = progressbars.normalize(
+        directory_progressbar,
+        topic=destination.absolute_path,
+        total=total_bytes if precalcsize else None,
+    )
     callback_pre_directory = callback_pre_directory or do_nothing
     callback_pre_file = callback_pre_file or do_nothing
     callback_post_file = callback_post_file or do_nothing
@@ -311,28 +293,26 @@ def copy_directory(
             bytes_per_second=bytes_per_second,
             callback_permission_denied=callback_permission_denied,
             callback_pre_copy=callback_pre_file,
-            callback_progress=callback_file_progress,
-            callback_verify_hash_progress=callback_verify_hash_progress,
             chunk_size=chunk_size,
             dry_run=dry_run,
             hash_class=hash_class,
             overwrite=overwrite,
+            progressbar=file_progressbar,
             verify_hash=verify_hash,
+            verify_hash_progressbar=verify_hash_progressbar,
         )
 
         if copied.written:
             written_files += 1
             written_bytes += copied.written_bytes
 
-        if precalcsize is False:
-            callback_directory_progress(copied.destination, written_bytes, written_bytes)
-        else:
-            callback_directory_progress(copied.destination, written_bytes, total_bytes)
-
+        directory_progressbar.step(written_bytes)
         callback_post_file(copied)
 
         if files_per_second is not None:
             files_per_second.limit(1)
+
+    directory_progressbar.done()
 
     results = dotdict.DotDict(
         source=source,
@@ -350,17 +330,17 @@ def copy_file(
         source,
         destination=None,
         *,
-        destination_new_root=None,
         bytes_per_second=None,
-        callback_verify_hash_progress=None,
-        callback_progress=None,
         callback_permission_denied=None,
         callback_pre_copy=None,
         chunk_size='dynamic',
+        destination_new_root=None,
         dry_run=False,
         hash_class=None,
         overwrite=OVERWRITE_OLD,
+        progressbar=None,
         verify_hash=False,
+        verify_hash_progressbar=None,
     ):
     '''
     Copy a file from one place to another.
@@ -396,15 +376,6 @@ def copy_file(
         This function may return the BAIL sentinel (return spinal.BAIL) and
         that file will not be copied.
 
-    callback_progress:
-        If provided, this function will be called after writing
-        each chunk_size bytes to destination with three parameters:
-        the Path object being copied, number of bytes written so far,
-        total number of bytes needed.
-
-    callback_verify_hash_progress:
-        Passed into `hash_file` as callback_progress when verifying the hash.
-
     chunk_size:
         An integer number of bytes to read and write at a time.
         Or, the string 'dynamic' to enable dynamic chunk sizing that aims to
@@ -429,10 +400,16 @@ def copy_file(
         If any other value, the file will not be overwritten. False or None
         would be good values to pass.
 
+    progressbar:
+        An instance of voussoirkit.progressbars.ProgressBar.
+
     verify_hash:
         If True, the copied file will be read back after the copy is complete,
         and its hash will be compared against the hash of the source file.
         If hash_class is None, then the global HASH_CLASS is used.
+
+    verify_hash_progressbar:
+        Passed into `hash_file` as `progressbar` when verifying the hash.
 
     Returns a dotdict containing at least these values:
     `source` pathclass.Path
@@ -448,6 +425,7 @@ def copy_file(
 
     source = pathclass.Path(source)
     source.correct_case()
+    source_bytes = source.size
 
     if not source.is_file:
         raise SourceNotFile(source)
@@ -456,7 +434,11 @@ def copy_file(
         destination = new_root(source, destination_new_root)
     destination = pathclass.Path(destination)
 
-    callback_progress = callback_progress or do_nothing
+    progressbar = progressbars.normalize(
+        progressbar,
+        topic=destination.absolute_path,
+        total=0 if dry_run else source_bytes,
+    )
     callback_pre_copy = callback_pre_copy or do_nothing
 
     if destination.is_dir:
@@ -484,11 +466,8 @@ def copy_file(
         return results
 
     if dry_run:
-        if callback_progress is not None:
-            callback_progress(destination, 0, 0)
+        progressbar.done()
         return results
-
-    source_bytes = source.size
 
     if callback_pre_copy(source, destination, dry_run=dry_run) is BAIL:
         return results
@@ -551,7 +530,7 @@ def copy_file(
         destination_handle.write(data_chunk)
         results.written_bytes += data_bytes
 
-        callback_progress(destination, results.written_bytes, source_bytes)
+        progressbar.step(results.written_bytes)
 
         if bytes_per_second is not None:
             bytes_per_second.limit(data_bytes)
@@ -560,9 +539,7 @@ def copy_file(
             chunk_time = time.perf_counter() - chunk_start
             chunk_size = dynamic_chunk_sizer(chunk_size, chunk_time, IDEAL_CHUNK_TIME)
 
-    if results.written_bytes == 0:
-        # For zero-length files, we want to get at least one call in there.
-        callback_progress(destination, results.written_bytes, source_bytes)
+    progressbar.done()
 
     # Fin
     log.loud('Closing source handle.')
@@ -576,7 +553,7 @@ def copy_file(
     if verify_hash:
         file_hash = _verify_hash(
             destination,
-            callback_progress=callback_verify_hash_progress,
+            progressbar=verify_hash_progressbar,
             hash_class=hash_class,
             known_hash=results.hash.hexdigest(),
             known_size=source_bytes,
@@ -631,8 +608,8 @@ def hash_file(
         hash_class,
         *,
         bytes_per_second=None,
-        callback_progress=None,
         chunk_size='dynamic',
+        progressbar=None,
     ):
     '''
     hash_class:
@@ -643,24 +620,26 @@ def hash_file(
         an existing Ratelimiter object, or a string parseable by bytestring.
         The bytestring BYTE, KIBIBYTE, etc constants may help.
 
-    callback_progress:
-        A function that takes three parameters:
-        path object, bytes ingested so far, bytes total
-
     chunk_size:
         An integer number of bytes to read at a time.
         Or, the string 'dynamic' to enable dynamic chunk sizing that aims to
         keep a consistent pace of progress bar updates.
+
+    progressbar:
+        An instance from voussoirkit.progressbars.
     '''
     path = pathclass.Path(path)
     path.assert_is_file()
     hasher = hash_class()
 
     bytes_per_second = limiter_or_none(bytes_per_second)
-    callback_progress = callback_progress or do_nothing
+    progressbar = progressbars.normalize(
+        progressbar,
+        topic=path.absolute_path,
+        total=path.size,
+    )
 
     checked_bytes = 0
-    file_size = path.size
 
     handle = path.open('rb')
 
@@ -680,7 +659,7 @@ def hash_file(
             hasher.update(chunk)
 
             checked_bytes += this_size
-            callback_progress(path, checked_bytes, file_size)
+            progressbar.step(checked_bytes)
 
             if bytes_per_second is not None:
                 bytes_per_second.limit(this_size)
@@ -689,6 +668,7 @@ def hash_file(
                 chunk_time = time.perf_counter() - chunk_start
                 chunk_size = dynamic_chunk_sizer(chunk_size, chunk_time, IDEAL_CHUNK_TIME)
 
+    progressbar.done()
     return hasher
 
 def is_xor(*args):
