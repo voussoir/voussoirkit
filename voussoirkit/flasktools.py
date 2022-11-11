@@ -299,6 +299,11 @@ def gzip_response(request, response):
 
     return response
 
+def atom_response(soup, *args, **kwargs):
+    response = flask.Response(str(soup), *args, **kwargs)
+    response.headers['Content-Type'] = 'application/atom+xml;charset=utf-8',
+    return response
+
 def json_response(j, *args, **kwargs):
     dumped = json.dumps(j)
     response = flask.Response(dumped, *args, **kwargs)
