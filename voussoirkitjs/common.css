@@ -1,0 +1,269 @@
+/*
+This file contains styles that I want on almost all webpages that I make,
+not specific to one project.
+*/
+
+/* SCREEN SIZE CAPTURE ****************************************************************************/
+
+/*
+These properties are used by javascript functions in common.js.
+See common.is_narrow_mode, is_wide_mode.
+getComputedStyle(document.documentElement).getPropertyValue("--narrow").trim() === "1"
+*/
+@media screen and (min-width: 800px)
+{
+    :root
+    {
+        --wide: 1;
+    }
+}
+@media screen and (max-width: 800px)
+{
+    :root
+    {
+        --narrow: 1;
+    }
+}
+
+/**************************************************************************************************/
+
+html
+{
+    height: 100vh;
+    box-sizing: border-box;
+    color: var(--color_text_normal);
+}
+
+*, *:before, *:after
+{
+    box-sizing: inherit;
+    color: inherit;
+}
+
+body
+{
+    display: grid;
+    grid-template:
+        "header" auto
+        "content_body" 1fr
+        /1fr;
+
+    min-height: 100%;
+    margin: 0;
+    padding: 8px;
+    grid-row-gap: 8px;
+
+    background-color: var(--color_primary);
+}
+
+a
+{
+    color: var(--color_text_link);
+    cursor: pointer;
+}
+
+input, select, textarea
+{
+    background-color: var(--color_textfields);
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled
+{
+    background-color: var(--color_text_placeholder);
+}
+
+input::placeholder,
+textarea::placeholder
+{
+    color: var(--color_text_placeholder);
+    opacity: 1;
+}
+
+/* ELEMENTS I USE OFTEN ***************************************************************************/
+
+#header
+{
+    grid-area: header;
+    display: flex;
+    flex-direction: row;
+
+    height: 18px;
+    margin: 0;
+    background-color: var(--color_transparency);
+}
+#header button
+{
+    border: 0;
+    cursor: pointer;
+    background-color: transparent;
+}
+.header_element
+{
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#content_body
+{
+    grid-area: content_body;
+    display: grid;
+    grid-auto-rows: min-content;
+    grid-gap: 8px;
+}
+
+.panel
+{
+    background-color: var(--color_transparency);
+    border-radius: 5px;
+    padding: 8px;
+}
+
+/* NONSEMANTICS ***********************************************************************************/
+
+.hidden
+{
+    display: none !important;
+}
+
+.bold
+{
+    font-weight: bold;
+}
+
+/* BUTTONS ****************************************************************************************/
+
+button,
+button *
+{
+    color: var(--color_text_normal);
+}
+button:disabled
+{
+    background-color: #cccccc !important;
+}
+button
+{
+    border-top: 2px solid var(--color_highlight);
+    border-left: 2px solid var(--color_highlight);
+    border-right: 2px solid var(--color_shadow);
+    border-bottom: 2px solid var(--color_shadow);
+}
+button:active
+{
+    border-top: 2px solid var(--color_shadow);
+    border-left: 2px solid var(--color_shadow);
+    border-right: 2px solid var(--color_highlight);
+    border-bottom: 2px solid var(--color_highlight);
+}
+.gray_button
+{
+    background-color: #cccccc;
+}
+.green_button
+{
+    background-color: #6df16f;
+}
+.red_button
+{
+    background-color: #ff4949;
+}
+.yellow_button
+{
+    background-color: #ffea57;
+}
+
+/* TABBED CONTAINER *******************************************************************************/
+
+.tabbed_container
+{
+    display: flex;
+    flex-direction: column;
+}
+.tabbed_container .tab_buttons
+{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+.tabbed_container .tab_button
+{
+    /* outline: none; prevents the blue outline left after clicking on it */
+    outline: none;
+    flex: 1;
+    font-family: inherit;
+    font-size: 1.3em;
+    border-radius: 8px 8px 0 0;
+    background-color: transparent;
+}
+.tabbed_container .tab_button:hover
+{
+    background-color: var(--color_transparency);
+}
+.tabbed_container .tab,
+.tabbed_container .tab_button
+{
+    border-width: 2px;
+    border-style: solid;
+    border-color: #888;
+}
+.tabbed_container .tab_button.tab_button_inactive
+{
+    border-top-color: transparent;
+    border-left-color: transparent;
+    border-right-color: transparent;
+}
+.tabbed_container .tab_button.tab_button_active
+{
+    background-color: var(--color_transparency);
+    border-bottom-color: transparent;
+}
+.tabbed_container .tab
+{
+    /* This will be set by javascript after the tabs have been initialized.
+    That way, the tab panes don't have a missing top border while the dom is
+    loading or if javascript is disabled.
+    /*border-top-color: transparent;*/
+}
+
+/* MESSAGE BUBBLES ********************************************************************************/
+
+#message_area
+{
+    display: grid;
+    grid-auto-flow: row;
+    grid-auto-rows: min-content;
+    grid-gap: 8px;
+    padding: 8px;
+    overflow-y: auto;
+    background-color: var(--color_transparency);
+}
+#message_area > :last-child
+{
+    /*
+    For some reason, the message_area's 8px padding doesn't apply to the bottom
+    when the container is scrolled.
+    */
+    margin-bottom: 8px;
+}
+
+.message_bubble
+{
+    padding: 2px;
+    word-wrap: break-word;
+}
+.message_bubble *
+{
+    color: var(--color_text_bubble);
+}
+.message_positive
+{
+    background-color: #afa;
+}
+.message_negative
+{
+    background-color: #faa;
+}
