@@ -87,7 +87,11 @@ def _get_exif_datetime_pil(image):
 def _get_exif_datetime_exifread(path):
     path = pathclass.Path(path)
     exif = _exifread.process_file(path.open('rb'))
-    exif_date = exif.get('EXIF DateTimeOriginal') or exif.get('Image DateTime') or exif.get('EXIF DateTimeDigitized')
+    exif_date = (
+        exif.get('EXIF DateTimeOriginal') or
+        exif.get('Image DateTime') or
+        exif.get('EXIF DateTimeDigitized')
+    )
     if not exif_date:
         return None
 
