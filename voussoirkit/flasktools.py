@@ -239,6 +239,8 @@ def give_theme_cookie(function, *, cookie_name, default_theme):
     def wrapped(*args, **kwargs):
         old_theme = request.cookies.get(cookie_name, None)
         new_theme = request.args.get('theme', None)
+        if new_theme is not None and any(badchar in new_theme for badchar in {'..', '/', '\\'}):
+            new_theme = None
         theme = new_theme or old_theme or default_theme
 
         # The original data structure for request.cookies is immutable and we
