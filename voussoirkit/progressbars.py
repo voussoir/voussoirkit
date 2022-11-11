@@ -97,6 +97,14 @@ DEFAULT_TOTAL_TOSTRING = lambda total: '?' if total is None else str(total)
 DEFAULT_VALUE_TOSTRING = lambda value, total=0, total_string='': str(value).rjust(len(total_string))
 
 class Bar1(Progress):
+    '''
+    Looks like this:
+    Example   0 ................................................................ 100
+    Example  25 ################................................................ 100
+    Example  50 ################################................................ 100
+    Example  75 ################################################................ 100
+    Example 100 ################################################################ 100
+    '''
     def __init__(
             self,
             total=None,
@@ -225,6 +233,26 @@ class Bar1(Progress):
         pipeable.stderr(line, end=end)
         self._last_value = value
 
+def Bar1_comma(*args, **kwargs):
+    return Bar1(
+        *args,
+        total_tostring=_total_tostring_comma,
+        value_tostring=_value_tostring_comma,
+        **kwargs,
+    )
+
+bar1_comma = Bar1_comma
+
+def Bar1_bytestring(*args, **kwargs):
+    return Bar1(
+        *args,
+        total_tostring=_total_tostring_bytestring(),
+        value_tostring=_value_tostring_bytestring(),
+        **kwargs,
+    )
+
+bar1_bytestring = Bar1_bytestring
+
 class DoNothing(Progress):
     '''
     You can use this when you don't want to use a real progress bar class, but
@@ -238,14 +266,14 @@ class DoNothing(Progress):
 
 # Common presets ###################################################################################
 
-def total_tostring_bytestring(**kwargs):
+def _total_tostring_bytestring(**kwargs):
     def total_tostring(total):
         if total is None:
             return '?'
         return bytestring.bytestring(total, **kwargs)
     return total_tostring
 
-def value_tostring_bytestring(**kwargs):
+def _value_tostring_bytestring(**kwargs):
     decimals = kwargs.get('decimal_places', 3)
     just = 8 + decimals + (1 if decimals else 0)
     def value_tostring(value, total=0, total_string=''):
@@ -253,29 +281,13 @@ def value_tostring_bytestring(**kwargs):
         return bytestring.bytestring(value, **kwargs).rjust(just, ' ')
     return value_tostring
 
-def total_tostring_comma(total):
+def _total_tostring_comma(total):
     if total is None:
         return '?'
     return f'{total:,}'
 
-def value_tostring_comma(value, total=0, total_string=''):
+def _value_tostring_comma(value, total=0, total_string=''):
     return f'{value:,}'.rjust(len(total_string))
-
-def bar1_comma(*args, **kwargs):
-    return Bar1(
-        *args,
-        total_tostring=total_tostring_comma,
-        value_tostring=value_tostring_comma,
-        **kwargs,
-    )
-
-def bar1_bytestring(*args, **kwargs):
-    return Bar1(
-        *args,
-        total_tostring=total_tostring_bytestring(),
-        value_tostring=value_tostring_bytestring(),
-        **kwargs,
-    )
 
 # Helper functions #################################################################################
 
