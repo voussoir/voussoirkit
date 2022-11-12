@@ -75,38 +75,39 @@ def random_hex(length):
     return token
 
 def passwordy_argparse(args):
-    if args.sentence:
-        password = make_sentence(args.length, args.separator)
-    else:
-        if not any([args.letters, args.digits, args.hex, args.binary, args.punctuation]):
-            letters = True
-            digits = True
+    for index in range(args.count):
+        if args.sentence:
+            password = make_sentence(args.length, args.separator)
         else:
-            letters = args.letters
-            digits = args.digits
-        password = make_password(
-            args.length,
-            binary=args.binary,
-            digits=digits,
-            hex=args.hex,
-            letters=letters,
-            punctuation=args.punctuation,
-        )
-    if args.lower:
-        password = password.lower()
-    elif args.upper:
-        password = password.upper()
+            if not any([args.letters, args.digits, args.hex, args.binary, args.punctuation]):
+                letters = True
+                digits = True
+            else:
+                letters = args.letters
+                digits = args.digits
+            password = make_password(
+                args.length,
+                binary=args.binary,
+                digits=digits,
+                hex=args.hex,
+                letters=letters,
+                punctuation=args.punctuation,
+            )
+        if args.lower:
+            password = password.lower()
+        elif args.upper:
+            password = password.upper()
 
-    if args.groups_of is not None:
-        chunks = gentools.chunk_generator(password, args.groups_of)
-        chunks = (''.join(chunk) for chunk in chunks)
-        password = args.separator.join(chunks)
+        if args.groups_of is not None:
+            chunks = gentools.chunk_generator(password, args.groups_of)
+            chunks = (''.join(chunk) for chunk in chunks)
+            password = args.separator.join(chunks)
 
-    prefix = args.prefix or ''
-    suffix = args.suffix or ''
-    password = f'{prefix}{password}{suffix}'
+        prefix = args.prefix or ''
+        suffix = args.suffix or ''
+        password = f'{prefix}{password}{suffix}'
 
-    pipeable.stdout(password)
+        pipeable.stdout(password)
     return 0
 
 def main(argv):
@@ -153,6 +154,14 @@ def main(argv):
         help='''
         In sentence mode, the words will be joined with this string.
         In normal mode, the --groups-of chunks will be joined with this string.
+        ''',
+    )
+    parser.add_argument(
+        '--count',
+        type=int,
+        default=1,
+        help='''
+        Generate this many passwords, to be printed out one per line.
         ''',
     )
     parser.add_argument(
