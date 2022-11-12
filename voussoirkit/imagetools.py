@@ -210,3 +210,10 @@ def rotate_by_exif(image):
     exif[ORIENTATION_KEY] = 1
 
     return (image, exif)
+
+def save_to_bytes(image, *save_args, **save_kwargs):
+    bio = io.BytesIO()
+    image.save(bio, *save_args, **save_kwargs)
+    bio.seek(0)
+    blob = bio.read()
+    return blob
