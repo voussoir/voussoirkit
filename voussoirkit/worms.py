@@ -99,7 +99,7 @@ class TransactionContextManager:
 
     def __enter__(self):
         log.loud('Entering transaction.')
-        self.database.begin()
+        self.database.begin(transaction_mode='IMMEDIATE')
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
@@ -235,9 +235,12 @@ class Database(metaclass=abc.ABCMeta):
         if table not in self.COLUMN_INDEX:
             raise BadTable(f'Table {table} does not exist.')
 
-    def begin(self):
+    def begin(self, transaction_mode='DEFERRED'):
+        if transaction_mode not in {'DEFERRED', 'IMMEDIATE', 'EXCLUSIVE'}:
+            raise ValueError(transaction_mode)
+
         self.acquire_transaction_lock()
-        self.execute('BEGIN')
+        self.execute(f'BEGIN {transaction_mode}')
 
     def close(self):
         # Wrapped in hasattr because if the object fails __init__, Python will
