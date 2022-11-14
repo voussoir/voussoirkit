@@ -20,7 +20,7 @@ log = vlogging.get_logger(__name__)
 RNG = random.SystemRandom()
 
 GZIP_MINIMUM_SIZE = 500 * bytestring.BYTE
-GZIP_MAXIMUM_SIZE = 5 * bytestring.MIBIBYTE
+GZIP_MAXIMUM_SIZE = 5 * bytestring.MEBIBYTE
 GZIP_LEVEL = 3
 
 REQUEST_TYPES = (flask.Request, werkzeug.wrappers.Request, werkzeug.local.LocalProxy)

@@ -27,7 +27,7 @@ OVERWRITE_ALL = sentinel.Sentinel('overwrite all files')
 OVERWRITE_OLD = sentinel.Sentinel('overwrite old files')
 
 # Number of bytes to read and write at a time
-CHUNK_SIZE = 2 * bytestring.MIBIBYTE
+CHUNK_SIZE = 2 * bytestring.MEBIBYTE
 
 # When using dynamic chunk sizing, this is the ideal time to process a
 # single chunk, in seconds.
@@ -506,7 +506,7 @@ def copy_file(
 
     dynamic_chunk_size = chunk_size == 'dynamic'
     if dynamic_chunk_size:
-        chunk_size = bytestring.MIBIBYTE
+        chunk_size = bytestring.MEBIBYTE
 
     while True:
         chunk_start = time.perf_counter()
@@ -645,7 +645,7 @@ def hash_file(
 
     dynamic_chunk_size = chunk_size == 'dynamic'
     if dynamic_chunk_size:
-        chunk_size = bytestring.MIBIBYTE
+        chunk_size = bytestring.MEBIBYTE
 
     with handle:
         while True:
