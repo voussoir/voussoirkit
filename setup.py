@@ -11,9 +11,10 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     url='https://github.com/voussoir/voussoirkit',
     install_requires=[
+        'exifread',
+        'portalocker',
         'pyperclip',
         'python-dateutil',
-        'exifread',
         'pywin32;platform_system=="Windows"',
         'winshell;platform_system=="Windows"',
     ]

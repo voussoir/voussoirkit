@@ -5,6 +5,10 @@ copying files and folders.
 import collections
 import hashlib
 import os
+try:
+    import portalocker
+except ImportError:
+    portalocker = None
 import shutil
 import time
 
@@ -508,6 +512,9 @@ def copy_file(
     if dynamic_chunk_size:
         chunk_size = bytestring.MEBIBYTE
 
+    if portalocker is not None:
+        portalocker.lock(source_handle, portalocker.LockFlags.EXCLUSIVE)
+
     while True:
         chunk_start = time.perf_counter()
 
@@ -538,6 +545,9 @@ def copy_file(
         if dynamic_chunk_size:
             chunk_time = time.perf_counter() - chunk_start
             chunk_size = dynamic_chunk_sizer(chunk_size, chunk_time, IDEAL_CHUNK_TIME)
+
+    if portalocker is not None:
+        portalocker.unlock(source_handle)
 
     progressbar.done()
 
