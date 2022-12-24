@@ -489,15 +489,18 @@ def copy_file(
             else:
                 raise
 
+    log.loud('Copying file %s', source.absolute_path)
     log.loud('Opening source handle.')
     source_handle = handlehelper(source, 'rb')
-    log.loud('Opening dest handle.')
-    destination_handle = handlehelper(destination, 'wb')
-
-    if source_handle is None and destination_handle:
-        destination_handle.close()
+    if source_handle is None:
         return results
 
+    if portalocker is not None:
+        log.loud('Locking source file.')
+        portalocker.lock(source_handle, portalocker.LockFlags.EXCLUSIVE)
+
+    log.loud('Opening dest handle.')
+    destination_handle = handlehelper(destination, 'wb')
     if destination_handle is None:
         source_handle.close()
         return results
@@ -511,9 +514,6 @@ def copy_file(
     dynamic_chunk_size = chunk_size == 'dynamic'
     if dynamic_chunk_size:
         chunk_size = bytestring.MEBIBYTE
-
-    if portalocker is not None:
-        portalocker.lock(source_handle, portalocker.LockFlags.EXCLUSIVE)
 
     while True:
         chunk_start = time.perf_counter()
