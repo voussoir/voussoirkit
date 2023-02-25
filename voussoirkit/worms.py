@@ -139,6 +139,7 @@ class Database(metaclass=abc.ABCMeta):
         # But if your application uses string IDs, set self.id_type = str
         self.id_type = int
         self.last_commit_id = None
+        self._memdb_random = RNG.getrandbits(16)
 
     @abc.abstractmethod
     def _init_column_index(self):
@@ -173,7 +174,7 @@ class Database(metaclass=abc.ABCMeta):
         if isinstance(path, pathclass.Path):
             path = path.absolute_path
         if path == ':memory:':
-            sql_read = sqlite3.connect('file:memdb1?mode=memory&cache=shared&mode=ro', uri=True)
+            sql_read = sqlite3.connect(f'file:{self._memdb_random}?mode=memory&cache=shared', uri=True)
             sql_read.row_factory = sqlite3.Row
         else:
             log.debug('Connecting to sqlite file "%s".', path)
@@ -186,7 +187,7 @@ class Database(metaclass=abc.ABCMeta):
             path = path.absolute_path
 
         if path == ':memory:':
-            sql_write = sqlite3.connect('file:memdb1?mode=memory&cache=shared', uri=True)
+            sql_write = sqlite3.connect(f'file:{self._memdb_random}?mode=memory&cache=shared', uri=True)
             sql_write.row_factory = sqlite3.Row
         else:
             log.debug('Connecting to sqlite file "%s".', path)
