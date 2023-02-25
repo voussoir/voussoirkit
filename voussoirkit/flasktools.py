@@ -150,6 +150,8 @@ def cached_endpoint(max_age, etag_function=None, max_urls=1000):
             state.last_run = time.monotonic()
             return value
 
+        log.debug('Decorating %s with cached_endpoint.', function)
+
         @functools.wraps(function)
         def wrapped(*args, **kwargs):
             # Should I use a threading.Lock to prevent two simultaneous requests
