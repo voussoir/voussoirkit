@@ -114,14 +114,13 @@ def cached_endpoint(max_age, etag_function=None, max_urls=1000):
             if state.stored_value is NOT_CACHED:
                 return False
 
-            if (time.monotonic() - state.last_run) < state.max_age:
-                return True
+            if (time.monotonic() - state.last_run) > state.max_age:
+                return False
 
             if etag_function is None:
                 return False
 
             if state.server_etag == etag_function():
-                # log.debug('Reusing server etag %s.', state.server_etag)
                 return True
 
         def update_state(state, *args, **kwargs):
@@ -248,6 +247,7 @@ def give_theme_cookie(function, *, cookie_name, default_theme):
         # The original data structure for request.cookies is immutable and we
         # must turn it into this multidict.
         request.cookies = werkzeug.datastructures.MultiDict(request.cookies)
+
         # By injecting the cookie here, we allow the endpoint function to check
         # request.cookies even if the client didn't actually have one when they
         # started the request.
