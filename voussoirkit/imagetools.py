@@ -5,6 +5,7 @@ import exifread
 import io
 import PIL.ExifTags
 import PIL.Image
+import PIL.ImageCms
 import re
 
 from voussoirkit import pathclass
@@ -38,6 +39,20 @@ def checkerboard_image(color_1, color_2, image_size, checker_size) -> PIL.Image:
             x += offset * checker_size
             image.paste(checker, (x, y))
         offset = not offset
+    return image
+
+def convert_to_srgb(image):
+    '''
+    Thank you Andriy Makukha
+    https://stackoverflow.com/a/50623824
+    '''
+    icc = image.info.get('icc_profile', '')
+    if icc:
+        image = PIL.ImageCms.profileToProfile(
+            image,
+            inputProfile=PIL.ImageCms.ImageCmsProfile(io.BytesIO(icc)),
+            outputProfile=PIL.ImageCms.createProfile('sRGB'),
+        )
     return image
 
 def fit_into_bounds(
