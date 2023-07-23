@@ -808,6 +808,7 @@ class Object(metaclass=abc.ABCMeta):
         '''
         Your subclass should call super().__init__(database).
         '''
+        super().__init__()
         # Used for transaction
         self._worms_database = database
         self.deleted = False
