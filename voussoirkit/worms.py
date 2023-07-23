@@ -651,14 +651,15 @@ class DatabaseWithCaching(Database, metaclass=abc.ABCMeta):
         object_table = object_class.table
         object_cache = self.caches.get(object_class, None)
 
+        if object_cache is None:
+            log.loud('The %s table is not cached. Returning new instance.', object_class.table)
+            return object_class(self, db_row)
+
         if isinstance(db_row, (dict, sqlite3.Row)):
             object_id = db_row['id']
         else:
             object_index = self.COLUMN_INDEX[object_table]
             object_id = db_row[object_index['id']]
-
-        if object_cache is None:
-            return object_class(self, db_row)
 
         try:
             instance = object_cache[object_id]
