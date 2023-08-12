@@ -309,7 +309,7 @@ def prepare_plan(
     if do_head:
         # I'm using a GET instead of an actual HEAD here because some servers respond
         # differently, even though they're not supposed to.
-        head = request('get', url, stream=True, headers=temp_headers, auth=auth)
+        head = request('get', url, stream=True, headers=temp_headers, auth=auth, verify_ssl=verify_ssl)
         remote_total_bytes = head.headers.get('content-length', None)
         remote_total_bytes = None if remote_total_bytes is None else int(remote_total_bytes)
         server_respects_range = (head.status_code == 206 and 'content-range' in head.headers)
