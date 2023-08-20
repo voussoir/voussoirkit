@@ -249,7 +249,14 @@ def main_log_context(subject, level, **kwargs):
     log = vlogging.getLogger()
     handler = LogHandler(subject, **kwargs)
     handler.setLevel(level)
-    handler.setFormatter(vlogging.Formatter('{levelname}:{name}:{message}', style='{'))
+    datefmt = '%Y-%m-%dT%H:%M:%S'
+    formatter = vlogging.Formatter(
+        '[{asctime}.{msecs:03.0f}] {levelname}:{name}:{message}',
+        style='{',
+        datefmt=datefmt,
+    )
+    formatter.default_msec_format = '%s.%03d'
+    handler.setFormatter(formatter)
     context = LogHandlerContext(log, handler)
     return context
 

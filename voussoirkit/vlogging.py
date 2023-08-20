@@ -54,12 +54,15 @@ def add_loud(log):
 
 def add_root_handler(level):
     handler = StreamHandler()
+    datefmt = '%Y-%m-%dT%H:%M:%S'
     if level <= LOUD:
-        handler.setFormatter(Formatter('{levelname}:{name}.{funcName}.{lineno}:{message}', style='{'))
+        formatter = Formatter('[{asctime}.{msecs:03.0f}] {levelname}:{name}.{funcName}.{lineno}:{message}', style='{', datefmt=datefmt)
     elif level <= DEBUG:
-        handler.setFormatter(Formatter('{levelname}:{name}.{funcName}:{message}', style='{'))
+        formatter = Formatter('[{asctime}.{msecs:03.0f}] {levelname}:{name}.{funcName}:{message}', style='{', datefmt=datefmt)
     else:
-        handler.setFormatter(Formatter('{levelname}:{name}:{message}', style='{'))
+        formatter = Formatter('[{asctime}.{msecs:03.0f}] {levelname}:{name}:{message}', style='{', datefmt=datefmt)
+    formatter.default_msec_format = '%s.%03d'
+    handler.setFormatter(formatter)
     handler.setLevel(level)
     root.addHandler(handler)
     return handler
