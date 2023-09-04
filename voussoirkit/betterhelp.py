@@ -518,8 +518,13 @@ def make_helptext(
 
     # PUT IT ALL TOGETHER
 
+    if command_name is None:
+        header_name = program_name
+    else:
+        header_name = f'{program_name} {command_name}'
+
     parts = [
-        niceprints.equals_header(program_name) if do_headline else None,
+        niceprints.equals_header(header_name) if do_headline else None,
         program_description,
         main_invocation,
         '\n\n'.join(argument_helps),
