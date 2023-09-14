@@ -178,11 +178,13 @@ def output(stream, line, *, end):
         stream.flush()
 
 def stdout(line='', end='\n'):
+    line = line.replace('\r\n', '\n')
     # In pythonw, stdout is None.
     if sys.stdout is not None:
         output(sys.stdout, line, end=end)
 
 def stderr(line='', end='\n'):
+    line = line.replace('\r\n', '\n')
     # In pythonw, stderr is None.
     if sys.stderr is not None:
         output(sys.stderr, line, end=end)
