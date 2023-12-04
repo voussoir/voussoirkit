@@ -40,7 +40,7 @@ def kbps_argparse(args):
 
     (time, size, kibs) = kbps(time=time, size=size, kbps=kibs)
 
-    print(f'{hms.seconds_to_hms(time)} @ {kibs} kbps = {bytestring.bytestring(size)}')
+    print(f'{hms.seconds_to_hms_letters(time)} @ {round(kibs, 4)} kbps = {bytestring.bytestring(size)}')
 
 def main(argv):
     parser = argparse.ArgumentParser()
