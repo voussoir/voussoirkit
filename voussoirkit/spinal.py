@@ -279,6 +279,10 @@ def copy_directory(
     written_bytes = 0
 
     for (source_file, destination_file) in walker:
+        if not source_file.is_file:
+            log.warning('%s disappeared during directory copy.', source_file.absolute_path)
+            continue
+
         if stop_event and stop_event.is_set():
             break
 
