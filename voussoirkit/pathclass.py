@@ -2,6 +2,7 @@ import glob
 import os
 import re
 import shutil
+import typing
 
 _glob = glob
 
@@ -439,6 +440,14 @@ class Path:
         '''
         with self.open(mode, **kwargs) as handle:
             return handle.readlines()
+
+    def readlines_generator(self, mode, **kwargs) -> typing.Generator:
+        '''
+        Shortcut function for opening the file handle and reading lines from it
+        as a generator instead of a list.
+        '''
+        with self.open(mode, **kwargs) as handle:
+            yield from handle
 
     @property
     def relative_path(self):
