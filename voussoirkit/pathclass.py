@@ -94,6 +94,9 @@ class Extension:
     def __hash__(self):
         return hash(self.ext)
 
+    def __len__(self):
+        return len(self.ext)
+
     def __repr__(self):
         return f'Extension({repr(self.ext)})'
 
