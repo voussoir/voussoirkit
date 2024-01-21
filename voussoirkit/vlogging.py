@@ -61,7 +61,6 @@ def add_root_handler(level):
         formatter = Formatter('[{asctime}.{msecs:03.0f}] {levelname}:{name}.{funcName}:{message}', style='{', datefmt=datefmt)
     else:
         formatter = Formatter('[{asctime}.{msecs:03.0f}] {levelname}:{name}:{message}', style='{', datefmt=datefmt)
-    formatter.default_msec_format = '%s.%03d'
     handler.setFormatter(formatter)
     handler.setLevel(level)
     root.addHandler(handler)
