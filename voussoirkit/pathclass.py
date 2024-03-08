@@ -437,6 +437,14 @@ class Path:
         with self.open(mode, **kwargs) as handle:
             return handle.read()
 
+    def read_generator(self, mode, chunk_size, **kwargs):
+        with self.open(mode, **kwargs) as handle:
+            while True:
+                chunk = handle.read(chunk_size)
+                if not chunk:
+                    break
+                yield chunk
+
     def readlines(self, mode, **kwargs):
         '''
         Shortcut function for opening the file handle and reading lines from it.
