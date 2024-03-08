@@ -80,6 +80,15 @@ class Cache:
         except KeyError:
             return fallback
 
+    def keys(self):
+        return list(self.cache.keys())
+
+    def items(self):
+        return [(key, value) for (key, (value, timestamp)) in self.cache.items()]
+
+    def values(self):
+        return [value for (value, timestamp) in self.cache.values()]
+
     def pop(self, key):
         '''
         Remove the key and return its value, or raise KeyError.
