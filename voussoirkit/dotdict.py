@@ -20,10 +20,10 @@ class DotDict:
     def __getattr__(self, key):
         try:
             return self.__dict__[key]
-        except KeyError:
+        except KeyError as exc:
             if self.__default is not NO_DEFAULT:
                 return self.__default
-            raise
+            raise AttributeError from exc
 
     def __setattr__(self, key, value):
         self.__dict__[key] = value
