@@ -1,4 +1,18 @@
 import os
+import psutil
+
+def getpid(process_name):
+    pids = []
+    target = process_name.lower()
+    for process in psutil.process_iter():
+        # print(dir(process))
+        try:
+            print(process.cmdline())
+        except:
+            pass
+        if process.name().lower() == target:
+            pids.append(process.pid)
+    return pids
 
 def quote(arg) -> str:
     if os.name == 'nt':
