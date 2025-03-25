@@ -227,7 +227,7 @@ class Database(metaclass=abc.ABCMeta):
         # time here.
         thread_id = threading.current_thread().ident
         if self._worms_transaction_owner == thread_id:
-            return False
+            raise TransactionActive()
 
         log.loud(f'{thread_id} wants the transaction lock.')
         self._worms_transaction_lock.acquire()
