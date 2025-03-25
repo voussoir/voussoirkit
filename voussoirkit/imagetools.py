@@ -12,10 +12,8 @@ from voussoirkit import pathclass
 
 _exifread = exifread
 
-ORIENTATION_KEY = None
-for (ORIENTATION_KEY, val) in PIL.ExifTags.TAGS.items():
-    if val == 'Orientation':
-        break
+ORIENTATION_KEY = {val: key for (key, val) in PIL.ExifTags.TAGS.items()}.get('Orientation', None)
+GEOLOCATION_KEY = {ifd.name: ifd.value for ifd in PIL.ExifTags.IFD}.get('GPSInfo', None)
 
 def checkerboard_image(color_1, color_2, image_size, checker_size) -> PIL.Image:
     '''
@@ -166,7 +164,7 @@ def replace_color(image, from_color, to_color):
                 pixels[x, y] = to_color
     return image
 
-def rotate_by_exif(image):
+def rotate_by_exif(image, exif=None):
     '''
     Rotate the image according to its exif data, so that it will display
     correctly even if saved without the exif.
@@ -176,16 +174,18 @@ def rotate_by_exif(image):
 
     You should be able to call image.save('filename.jpg', exif=exif) with
     these returned values.
-    (To my knowledge, I can not put the exif back into the Image object itself.
-    There is getexif but no setexif or putexif, etc.)
+
+    To my knowledge, I can not put the exif back into the Image object itself.
+    There is getexif but no setexif or putexif, etc.
     '''
     # Thank you Scabbiaza
     # https://stackoverflow.com/a/26928142
 
-    try:
-        exif = image.getexif()
-    except AttributeError:
-        return (image, exif)
+    if exif is None:
+        try:
+            exif = image.getexif()
+        except AttributeError:
+            return (image, exif)
 
     if exif is None:
         return (image, exif)
