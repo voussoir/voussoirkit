@@ -433,12 +433,15 @@ class Database(metaclass=abc.ABCMeta):
         tables = set(self.select_column(query))
         return tables
 
-    def insert(self, table, pairs) -> sqlite3.Cursor:
+    def insert(self, table, pairs, *, ignore_duplicate=False) -> sqlite3.Cursor:
         if isinstance(table, type) and issubclass(table, Object):
             table = table.table
         self.assert_table_exists(table)
         (qmarks, bindings) = sqlhelpers.insert_filler(pairs)
-        query = f'INSERT INTO {table} {qmarks}'
+        if ignore_duplicate:
+            query = f'INSERT OR IGNORE INTO {table} {qmarks}'
+        else:
+            query = f'INSERT INTO {table} {qmarks}'
         return self.execute(query, bindings)
 
     def normalize_object_id(self, object_class, object_id):
