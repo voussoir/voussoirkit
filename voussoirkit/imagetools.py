@@ -155,6 +155,34 @@ def pad_to_square(image, background_color=None) -> PIL.Image:
     new_image.paste(image, (diff_w, diff_h))
     return new_image
 
+def remove_geolocation(image, exif=None):
+    if exif is None:
+        try:
+            exif = image.getexif()
+        except AttributeError:
+            return (image, exif)
+
+    if exif is None:
+        return (image, exif)
+
+    fp = getattr(exif, 'fp', None)
+    if isinstance(fp, io.BufferedReader):
+        exif.fp = io.BytesIO()
+        exif.fp.write(fp.read())
+        exif.fp.seek(0)
+    exif = copy.deepcopy(exif)
+
+    print(exif)
+    for (key, value) in PIL.ExifTags.GPSTAGS.items():
+        print(key)
+        if key in exif:
+            exif.pop(key)
+
+    if GEOLOCATION_KEY in exif:
+        exif.pop(GEOLOCATION_KEY)
+
+    return (image, exif)
+
 def replace_color(image, from_color, to_color):
     image = image.copy()
     pixels = image.load()
