@@ -25,6 +25,12 @@ def _render_letters(hours, minutes, seconds):
     return ''.join(parts)
 
 def hms_to_seconds(hms) -> float:
+    if any(x in hms for x in 'hms'):
+        return hms_letters_to_seconds(hms)
+    else:
+        return hms_colons_to_seconds(hms)
+
+def hms_colons_to_seconds(hms) -> float:
     '''
     Convert hh:mm:ss string to an integer or float of seconds.
     '''
@@ -43,15 +49,15 @@ def hms_to_seconds(hms) -> float:
     return seconds
 
 def hms_letters_to_seconds(hms) -> float:
-    match = re.match(r'(?:(\d+)h)?(?:(\d+)m)?(\d+)s?', hms.strip())
+    match = re.match(r'(?:([\d\.]+)h)?(?:([\d\.]+)m)?(?:([\d\.]+)s)?', hms.strip())
     if not match:
         raise ValueError(f'{hms} does not match 00h00m00s pattern')
     (hours, minutes, seconds) = match.groups()
-    seconds = int(seconds)
+    seconds = float(seconds or 0)
     if hours:
-        seconds += int(hours) * 3600
+        seconds += float(hours or 0) * 3600
     if minutes:
-        seconds += int(minutes) * 60
+        seconds += float(minutes or 0) * 60
     return seconds
 
 def rounds(seconds):
