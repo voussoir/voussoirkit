@@ -111,12 +111,17 @@ def update_filler(pairs, where_key):
     cur.execute(query, bindings)
     '''
     pairs = pairs.copy()
-    where_value = pairs.pop(where_key)
-    if isinstance(where_value, tuple):
-        (where_value, pairs[where_key]) = where_value
-    if isinstance(where_value, dict):
-        where_value = where_value['old']
-        pairs[where_key] = where_value['new']
+    if isinstance(where_key, tuple):
+        wheres = {k: pairs.pop(k) for k in where_key}
+    else:
+        wheres = {where_key: pairs.pop(where_key)}
+
+    for (where_key, where_value) in wheres.items():
+        if isinstance(where_value, tuple):
+            (wheres[where_key], pairs[where_key]) = where_value
+        if isinstance(where_value, dict):
+            wheres[where_key] = where_value['old']
+            pairs[where_key] = where_value['new']
 
     if len(pairs) == 0:
         raise ValueError('No pairs left after where_key.')
@@ -129,10 +134,12 @@ def update_filler(pairs, where_key):
         else:
             qmarks.append(f'{key} = ?')
             bindings.append(value)
-    bindings.append(where_value)
+
+    wheres = list(wheres.items())
+    bindings.extend(value for (key, value) in wheres)
+    wheres = ' AND '.join(f'{key} = ?' for (key, value) in wheres)
     setters = ', '.join(qmarks)
-    qmarks = 'SET {setters} WHERE {where_key} == ?'
-    qmarks = qmarks.format(setters=setters, where_key=where_key)
+    qmarks = f'SET {setters} WHERE {wheres}'
     return (qmarks, bindings)
 
 def executescript(conn, script):
