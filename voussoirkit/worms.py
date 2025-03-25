@@ -173,6 +173,7 @@ class Database(metaclass=abc.ABCMeta):
         '''
         if isinstance(path, pathclass.Path):
             path = path.absolute_path
+
         if path == ':memory:':
             sql_read = sqlite3.connect(f'file:{self._memdb_random}?mode=memory&cache=shared', uri=True)
             sql_read.row_factory = sqlite3.Row
@@ -180,6 +181,7 @@ class Database(metaclass=abc.ABCMeta):
             log.debug('Connecting to sqlite file "%s".', path)
             sql_read = sqlite3.connect(f'file:{path}?mode=ro', uri=True)
             sql_read.row_factory = sqlite3.Row
+
         return sql_read
 
     def _make_sqlite_write_connection(self, path):
@@ -193,6 +195,7 @@ class Database(metaclass=abc.ABCMeta):
             log.debug('Connecting to sqlite file "%s".', path)
             sql_write = sqlite3.connect(path)
             sql_write.row_factory = sqlite3.Row
+
         return sql_write
 
     def assert_no_transaction(self) -> None:
@@ -331,12 +334,11 @@ class Database(metaclass=abc.ABCMeta):
         lines = (line for line in lines if line)
         cur = self.sql_write.cursor()
         for line in lines:
-            log.loud(line)
             cur.execute(line)
 
     def exists(self, query, bindings=None) -> bool:
         '''
-        query should be a SELECT query.
+        query should be a SELECT query, usually `SELECT 1 FROM table WHERE`.
 
         Returns True if at least one row was found, False if no rows found.
         '''
