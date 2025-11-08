@@ -81,6 +81,7 @@ def copy_directory(
         file_progressbar=None,
         files_per_second=None,
         hash_class=None,
+        lock_source_file=True,
         overwrite=OVERWRITE_OLD,
         precalcsize=False,
         skip_symlinks=True,
@@ -159,6 +160,9 @@ def copy_directory(
 
     hash_class:
         Passed into each `copy_file` as `hash_class`.
+
+    lock_source_file:
+        Passed into each `copy_file` as `lock_source_file`.
 
     overwrite:
         Passed into each `copy_file` as `overwrite`.
@@ -304,6 +308,7 @@ def copy_directory(
             chunk_size=chunk_size,
             dry_run=dry_run,
             hash_class=hash_class,
+            lock_source_file=lock_source_file,
             overwrite=overwrite,
             progressbar=file_progressbar,
             verify_hash=verify_hash,
@@ -345,6 +350,7 @@ def copy_file(
         destination_new_root=None,
         dry_run=False,
         hash_class=None,
+        lock_source_file=True,
         overwrite=OVERWRITE_OLD,
         progressbar=None,
         verify_hash=False,
@@ -399,6 +405,10 @@ def copy_file(
         Note that if the function returns early due to dry_run or file not
         needing overwrite, this won't be set, so be prepared to handle None.
         If None, the hash will not be calculated.
+
+    lock_source_file:
+        If True, attempt to lock the source file from being modified while we
+        are copying it, to prevent corruption.
 
     overwrite:
         This option decides what to do when the destination file already exists.
@@ -499,9 +509,19 @@ def copy_file(
     if source_handle is None:
         return results
 
-    if portalocker is not None:
+    source_file_lock = None
+    if lock_source_file and portalocker is not None:
         log.loud('Locking source file.')
-        portalocker.lock(source_handle, portalocker.LockFlags.EXCLUSIVE)
+        try:
+            source_file_lock = portalocker.Lock(
+                source.absolute_path,
+                mode='rb',
+                flags=portalocker.LockFlags.EXCLUSIVE | portalocker.LockFlags.NON_BLOCKING,
+                timeout=10,
+            )
+            source_file_lock.acquire()
+        except portalocker.exceptions.LockException:
+            pass
 
     log.loud('Opening dest handle.')
     destination_handle = handlehelper(destination, 'wb')
@@ -550,8 +570,8 @@ def copy_file(
             chunk_time = time.perf_counter() - chunk_start
             chunk_size = dynamic_chunk_sizer(chunk_size, chunk_time, IDEAL_CHUNK_TIME)
 
-    if portalocker is not None:
-        portalocker.unlock(source_handle)
+    if source_file_lock is not None:
+        source_file_lock.release()
 
     progressbar.done()
 
