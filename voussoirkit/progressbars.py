@@ -129,7 +129,7 @@ class Bar1(Progress):
 
         if width is WIDTH_AUTO:
             self.width = shutil.get_terminal_size().columns - 2
-            self.width = min(80, self.width)
+            self.width = min(120, self.width)
         else:
             self.width = width
 
