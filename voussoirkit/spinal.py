@@ -81,7 +81,7 @@ def copy_directory(
         file_progressbar=None,
         files_per_second=None,
         hash_class=None,
-        lock_source_file=True,
+        lock_files=True,
         overwrite=OVERWRITE_OLD,
         precalcsize=False,
         skip_symlinks=True,
@@ -161,8 +161,8 @@ def copy_directory(
     hash_class:
         Passed into each `copy_file` as `hash_class`.
 
-    lock_source_file:
-        Passed into each `copy_file` as `lock_source_file`.
+    lock_files:
+        Passed into each `copy_file` as `lock_files`.
 
     overwrite:
         Passed into each `copy_file` as `overwrite`.
@@ -308,7 +308,7 @@ def copy_directory(
             chunk_size=chunk_size,
             dry_run=dry_run,
             hash_class=hash_class,
-            lock_source_file=lock_source_file,
+            lock_files=lock_files,
             overwrite=overwrite,
             progressbar=file_progressbar,
             verify_hash=verify_hash,
@@ -350,7 +350,7 @@ def copy_file(
         destination_new_root=None,
         dry_run=False,
         hash_class=None,
-        lock_source_file=True,
+        lock_files=True,
         overwrite=OVERWRITE_OLD,
         progressbar=None,
         verify_hash=False,
@@ -406,9 +406,10 @@ def copy_file(
         needing overwrite, this won't be set, so be prepared to handle None.
         If None, the hash will not be calculated.
 
-    lock_source_file:
-        If True, attempt to lock the source file from being modified while we
-        are copying it, to prevent corruption.
+    lock_files:
+        If True, attempt to lock the source file and destination file while we
+        are copying it, to prevent corruption. Only works if portalocker is
+        installed.
 
     overwrite:
         This option decides what to do when the destination file already exists.
@@ -494,8 +495,22 @@ def copy_file(
 
     def handlehelper(path, mode):
         try:
-            handle = path.open(mode)
-            return handle
+            if lock_files and portalocker is not None:
+                log.loud(f'Locking {path.absolute_path}.')
+                lock = portalocker.Lock(
+                    path.absolute_path,
+                    mode=mode,
+                    flags=portalocker.LockFlags.EXCLUSIVE | portalocker.LockFlags.NON_BLOCKING,
+                    timeout=10,
+                )
+                handle = lock.acquire()
+                return (handle, lock)
+            else:
+                lock = None
+                handle = path.open(mode)
+                return (handle, lock)
+        except portalocker.exceptions.LockException:
+            raise
         except PermissionError as exception:
             if callback_permission_denied is not None:
                 callback_permission_denied(exception)
@@ -505,29 +520,20 @@ def copy_file(
 
     log.loud('Copying file %s', source.absolute_path)
     log.loud('Opening source handle.')
-    source_handle = handlehelper(source, 'rb')
+    (source_handle, source_lock) = handlehelper(source, 'rb')
     if source_handle is None:
         return results
 
-    source_file_lock = None
-    if lock_source_file and portalocker is not None:
-        log.loud('Locking source file.')
-        try:
-            source_file_lock = portalocker.Lock(
-                source.absolute_path,
-                mode='rb',
-                flags=portalocker.LockFlags.EXCLUSIVE | portalocker.LockFlags.NON_BLOCKING,
-                timeout=10,
-            )
-            source_file_lock.acquire()
-        except portalocker.exceptions.LockException:
-            pass
-
     log.loud('Opening dest handle.')
-    destination_handle = handlehelper(destination, 'wb')
+    if destination.is_file:
+        os.chmod(destination.absolute_path, 0o777)
+    (destination_handle, destination_lock) = handlehelper(destination, 'wb')
     if destination_handle is None:
+        if source_lock:
+            source_lock.release()
         source_handle.close()
         return results
+    os.utime(destination.absolute_path, (315600000, 315600000))
 
     if hash_class is not None:
         results.hash = hash_class()
@@ -570,8 +576,11 @@ def copy_file(
             chunk_time = time.perf_counter() - chunk_start
             chunk_size = dynamic_chunk_sizer(chunk_size, chunk_time, IDEAL_CHUNK_TIME)
 
-    if source_file_lock is not None:
-        source_file_lock.release()
+    if source_lock is not None:
+        source_lock.release()
+
+    if destination_lock is not None:
+        destination_lock.release()
 
     progressbar.done()
 
