@@ -362,6 +362,22 @@ class Path:
         items = [self.with_child(c, _case_correct=self._case_correct) for c in children]
         return items
 
+    def glob_many(self, patterns):
+        '''
+        Given many glob patterns, yield the results as a single generator.
+        Saves you from having to write the nested loop.
+        '''
+        for pattern in patterns:
+            yield from self.glob(pattern)
+
+    def glob_many_directories(self, patterns):
+        for pattern in patterns:
+            yield from self.glob_directories(pattern)
+
+    def glob_many_files(self, patterns):
+        for pattern in patterns:
+            yield from self.glob_files(pattern)
+
     @property
     def is_directory(self):
         return os.path.isdir(self)
