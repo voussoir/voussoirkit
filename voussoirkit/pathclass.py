@@ -135,6 +135,7 @@ class Path:
             self._parts = path._parts
             self._absolute_path = path._absolute_path
             self._extension = path._extension
+            self._case_correct = path._case_correct
             return
 
         if isinstance(path, (tuple, list)):
