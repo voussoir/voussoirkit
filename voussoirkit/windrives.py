@@ -14,7 +14,7 @@ log = vlogging.getLogger(__name__, 'windrives')
 
 def get_all_volumes():
     '''
-    Return a list of volume paths like \\?\Volume{GUID}\ for all volumes,
+    Return a list of volume paths like \\\\?\\Volume{GUID}\\ for all volumes,
     whether they are mounted or not.
 
     Note: This will include recovery / EFI partitions, which may not be what
@@ -55,9 +55,9 @@ def get_all_volumes():
 def get_drive_info(path):
     '''
     Given a drive path as either:
-    - a letter like C or C:\, or
+    - a letter like C or C:\\, or
     - a mount path, or
-    - a volume path like \\?\Volume{GUID},
+    - a volume path like \\\\?\\Volume{GUID},
     return a dictionary containing its attributes.
 
     Thanks Nicholas Orlowski
@@ -132,7 +132,7 @@ def get_drive_map():
 def get_drive_mounts():
     '''
     Return a list of all connected drives as either:
-    - a letter like C:\ if the volume has a letter, or
+    - a letter like C:\\ if the volume has a letter, or
     - a mount path if the volume does not have a letter.
     '''
     mounts = []
@@ -157,8 +157,8 @@ def get_drive_mount_by_name(name):
 
 def get_volume_mount(volume):
     '''
-    Given a volume path like \\?\Volume{GUID}\, return either:
-    - a letter like C:\ if the volume has a letter, or
+    Given a volume path like \\\\?\\Volume{GUID}\\, return either:
+    - a letter like C:\\ if the volume has a letter, or
     - a mount path if the volume does not have a letter, or
     - emptystring if the volume is not mounted at all.
 
