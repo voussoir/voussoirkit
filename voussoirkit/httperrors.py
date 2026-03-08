@@ -35,7 +35,11 @@ code will not be affected.
 '''
 import requests
 
-class HTTP4XX(requests.exceptions.HTTPError): pass
+class HTTPError(requests.exceptions.HTTPError):
+    def __str__(self):
+        return type(self).__name__
+
+class HTTP4XX(HTTPError): pass
 class HTTP400(HTTP4XX): pass
 class HTTP401(HTTP4XX): pass
 class HTTP402(HTTP4XX): pass
@@ -137,7 +141,7 @@ class HTTP497(HTTP4XX): pass
 class HTTP498(HTTP4XX): pass
 class HTTP499(HTTP4XX): pass
 
-class HTTP5XX(requests.exceptions.HTTPError): pass
+class HTTP5XX(HTTPError): pass
 class HTTP500(HTTP5XX): pass
 class HTTP501(HTTP5XX): pass
 class HTTP502(HTTP5XX): pass
