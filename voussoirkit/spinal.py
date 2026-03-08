@@ -283,6 +283,7 @@ def copy_directory(
     written_bytes = 0
 
     for (source_file, destination_file) in walker:
+        log.loud(f'Working on file {source_file.absolute_path}.')
         if not source_file.is_file:
             log.warning('%s disappeared during directory copy.', source_file.absolute_path)
             continue
@@ -482,6 +483,7 @@ def copy_file(
     )
 
     if not should_overwrite:
+        log.loud(f'Don\'t need to overwrite {destination.absolute_path}.')
         return results
 
     if dry_run:
@@ -489,6 +491,7 @@ def copy_file(
         return results
 
     if callback_pre_copy(source, destination, dry_run=dry_run) is BAIL:
+        log.loud('Bailing due to callback_pre_copy.')
         return results
 
     destination.parent.makedirs(exist_ok=True)
