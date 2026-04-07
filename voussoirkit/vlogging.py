@@ -54,14 +54,7 @@ def add_loud(log):
 
 def add_root_handler(level):
     handler = StreamHandler()
-    datefmt = '%Y-%m-%dT%H:%M:%S'
-    if level <= LOUD:
-        formatter = Formatter('[{asctime}.{msecs:03.0f}] {levelname}:{name}.{funcName}.{lineno}:{message}', style='{', datefmt=datefmt)
-    elif level <= DEBUG:
-        formatter = Formatter('[{asctime}.{msecs:03.0f}] {levelname}:{name}.{funcName}:{message}', style='{', datefmt=datefmt)
-    else:
-        formatter = Formatter('[{asctime}.{msecs:03.0f}] {levelname}:{name}:{message}', style='{', datefmt=datefmt)
-    handler.setFormatter(formatter)
+    handler.setFormatter(make_formatter(level))
     handler.setLevel(level)
     root.addHandler(handler)
     return handler
@@ -222,3 +215,13 @@ def main_decorator(main):
             add_root_handler(level)
         return main(argv, *args, **kwargs)
     return wrapped
+
+def make_formatter(level):
+    datefmt = '%Y-%m-%dT%H:%M:%S'
+    if level <= LOUD:
+        formatter = Formatter('[{asctime}.{msecs:03.0f}] {levelname}:{name}.{funcName}.{lineno}:{message}', style='{', datefmt=datefmt)
+    elif level <= DEBUG:
+        formatter = Formatter('[{asctime}.{msecs:03.0f}] {levelname}:{name}.{funcName}:{message}', style='{', datefmt=datefmt)
+    else:
+        formatter = Formatter('[{asctime}.{msecs:03.0f}] {levelname}:{name}:{message}', style='{', datefmt=datefmt)
+    return formatter
