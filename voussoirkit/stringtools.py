@@ -84,6 +84,13 @@ def remove_control_characters(text) -> str:
     '''
     return ''.join(c for c in text if unicodedata.category(c)[0] != 'C')
 
+def replace_smartquotes(text):
+    text = text.replace('“', '"')
+    text = text.replace('”', '"')
+    text = text.replace('’', "'")
+    text = text.replace('‘', "'")
+    return text
+
 def title_capitalize(text) -> str:
     text = text.strip().title()
     articles = [
