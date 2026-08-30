@@ -8,6 +8,10 @@ your print statements more interesting.
 These functions only do the minimum amount of transformation for their effect.
 You should do your uppercase/lowercase, text wrap, etc. before calling
 these functions.
+
+These functions return the formatted text as string. They do not call `print`
+directly. So you have the freedom to use these for regular prints, logging, or
+writing to a text file.
 '''
 import shutil
 
@@ -84,12 +88,16 @@ def in_box(text, *, boxchars=SINGLE_BOX, title=''):
     new_lines.append(boxchars.lower_left + bottom + boxchars.lower_right)
     return '\n'.join(new_lines)
 
-def solid_hash_header(text):
+def solid_hash_header(text, width=None):
     '''
     # Sample text ##############################################################
+
+    If width is None, this function automatically determines your terminal size
+    to span the entire width.
     '''
-    cli_width = shutil.get_terminal_size()[0]
-    # One left hash, space, and space after text.
-    right_count = cli_width - (stringtools.unicode_width(text) + 3)
+    if width is None:
+        width = shutil.get_terminal_size()[0] - 1
+    # One left hash + space + space after text = 3.
+    right_count = width - (stringtools.unicode_width(text) + 3)
     right_hashes = '#' * right_count
     return f'# {text} {right_hashes}'
