@@ -19,10 +19,11 @@ from voussoirkit import vlogging
 
 log = vlogging.getLogger(__name__, 'downloady')
 
-USERAGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
+USERAGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36'
 
 HEADERS = {
     'User-Agent': USERAGENT,
+    'Accept-Encoding': 'gzip, deflate',
 }
 
 FILENAME_BADCHARS = '*?"<>|\r\n'
