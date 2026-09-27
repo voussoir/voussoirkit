@@ -170,7 +170,7 @@ def make_helptext(
     if all_command_names is None:
         all_command_names = set()
 
-    # GATHER UP ARGUMENT TYPES
+    # GATHER UP ARGUMENT TYPES #####################################################################
     # Here we go through the list of actions in the parser and classify them
     # into a few basic types, which will be rendered and colorized in
     # different ways.
@@ -214,7 +214,7 @@ def make_helptext(
             raise TypeError(f'betterhelp doesn\'t know what to do with {action}.')
         dest_to_action[action.dest] = action
 
-    # COLORIZE ARGUMENT INVOCATIONS
+    # RENDER ARGUMENT INVOCATIONS ##################################################################
     # Here we generate invocation strings for each of the arguments. That is,
     # an argument called `--scales` with type=int and nargs=+ will be shown as
     # `--scales int [int, ...]`. Each type of argument has different
@@ -254,8 +254,6 @@ def make_helptext(
         action_invocations[action] = [inv]
         main_invocation.append(inv)
 
-    ##
-
     for action in named_actions:
         action_invocations[action] = []
         for alias in action.option_strings:
@@ -276,8 +274,6 @@ def make_helptext(
     if optional_named_actions:
         main_invocation.append(f'{color.named}[options]{color.reset}')
 
-    ##
-
     for action in flag_actions:
         action_invocations[action] = []
         for alias in action.option_strings:
@@ -287,7 +283,7 @@ def make_helptext(
     if flag_actions:
         main_invocation.append(f'{color.flag}[flags]{color.reset}')
 
-    # COLORIZE ARGUMENT NAMES THAT APPEAR IN OTHER TEXTS
+    # COLORIZE ARGUMENT NAMES THAT APPEAR IN OTHER TEXTS ###########################################
     # Now that we know the names of all the different types of arguments, we
     # can use them to colorize the program description and the help text of
     # each individual argument. This makes it really easy to see when one
@@ -306,7 +302,7 @@ def make_helptext(
             text = re.sub(rf'((?:^|\s){flag}(?:\b))', rf'{color.flag}\1{color.reset}', text)
         return text
 
-    # PUTTING TOGETHER PROGRAM DESCRIPTION & ARGUMENT HELPS
+    # PUTTING TOGETHER PROGRAM DESCRIPTION & ARGUMENT HELPS ########################################
     # This is the portion that actually constructs the majority of the help
     # text, by combining the program's own help description with the invocation
     # tips and help texts of each of the arguments.
@@ -338,7 +334,7 @@ def make_helptext(
     else:
         main_invocation = ''
 
-    # SUBPARSER PREVIEWS
+    # SUBPARSER PREVIEWS ###########################################################################
     # If this program has subparsers, we will generate a preview of their name
     # and description. If full_subparsers is True, we also show their full
     # invocation and argument helps.
@@ -369,7 +365,7 @@ def make_helptext(
         subparser_previews = '\n\n'.join(subparser_previews)
         subparser_previews = f'{color.command}Commands{color.reset}\n--------\n\n{subparser_previews}'
 
-    # COLORIZE EXAMPLE INVOCATIONS
+    # EXAMPLE INVOCATIONS ##########################################################################
     # Here we take example invocation strings provided by the program itself,
     # and run them through the argparser to colorize the positional, named,
     # and flag arguments.
@@ -517,7 +513,7 @@ def make_helptext(
     else:
         subparser_epilogue = None
 
-    # PUT IT ALL TOGETHER
+    # PUT IT ALL TOGETHER ##########################################################################
 
     if command_name is None:
         header_name = program_name
@@ -558,11 +554,9 @@ def print_helptext(text) -> None:
 ################################################################################
 
 def _go_single(parser, argv, *, args_postprocessor=None):
-    can_bare = can_use_bare(parser)
-
     needs_help = (
         any(arg.lower() in HELP_ARGS for arg in argv) or
-        len(argv) == 0 and not can_bare
+        len(argv) == 0 and not can_use_bare(parser)
     )
     if needs_help:
         do_colors = os.environ.get('NO_COLOR', None) is None
@@ -576,7 +570,6 @@ def _go_single(parser, argv, *, args_postprocessor=None):
 
 def _go_multi(parser, argv, *, args_postprocessor=None):
     subparsers = get_subparser_action(parser).choices
-    can_bare = can_use_bare(parser)
 
     def main(argv):
         args = parser.parse_args(argv)
@@ -587,27 +580,44 @@ def _go_multi(parser, argv, *, args_postprocessor=None):
     all_command_names = set(subparsers.keys())
     command = listget(argv, 0, '').lower()
 
-    if command == '' and can_bare:
+    if command == '' and can_use_bare(parser):
         return main(argv)
 
     do_colors = os.environ.get('NO_COLOR', None) is None
 
     if command == 'helpall':
-        print_helptext(make_helptext(parser, full_subparsers=True, all_command_names=all_command_names, do_colors=do_colors))
+        print_helptext(make_helptext(
+            parser,
+            full_subparsers=True,
+            all_command_names=all_command_names,
+            do_colors=do_colors,
+        ))
         return 1
 
     if command == '':
-        print_helptext(make_helptext(parser, all_command_names=all_command_names, do_colors=do_colors))
+        print_helptext(make_helptext(
+            parser,
+            all_command_names=all_command_names,
+            do_colors=do_colors,
+        ))
         because = 'you did not choose a command'
         pipeable.stderr(f'\nYou are seeing the default help text because {because}.')
         return 1
 
     if command in HELP_COMMANDS:
-        print_helptext(make_helptext(parser, all_command_names=all_command_names, do_colors=do_colors))
+        print_helptext(make_helptext(
+            parser,
+            all_command_names=all_command_names,
+            do_colors=do_colors,
+        ))
         return 1
 
     if command not in subparsers:
-        print_helptext(make_helptext(parser, all_command_names=all_command_names, do_colors=do_colors))
+        print_helptext(make_helptext(
+            parser,
+            all_command_names=all_command_names,
+            do_colors=do_colors,
+        ))
         because = f'"{command}" was not recognized'
         pipeable.stderr(f'\nYou are seeing the default help text because {because}.')
         return 1
@@ -617,7 +627,12 @@ def _go_multi(parser, argv, *, args_postprocessor=None):
 
     no_args = len(arguments) == 0 and not can_use_bare(subparser)
     if no_args or any(arg.lower() in HELP_ARGS for arg in arguments):
-        print_helptext(make_helptext(subparser, command_name=command, all_command_names=all_command_names, do_colors=do_colors))
+        print_helptext(make_helptext(
+            subparser,
+            command_name=command,
+            all_command_names=all_command_names,
+            do_colors=do_colors,
+        ))
         return 1
 
     return main(argv)
