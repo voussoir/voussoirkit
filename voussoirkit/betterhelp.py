@@ -145,6 +145,7 @@ def make_helptext(
             required_asterisk=colorama.Style.BRIGHT + colorama.Fore.RED + '(*)' + colorama.Style.RESET_ALL,
         )
     else:
+        do_colors = False
         color = dotdict.DotDict(
             positional='',
             named='',
