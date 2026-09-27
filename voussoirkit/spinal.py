@@ -32,6 +32,7 @@ OVERWRITE_OLD = sentinel.Sentinel('overwrite old files')
 
 # Number of bytes to read and write at a time
 CHUNK_SIZE = 2 * bytestring.MEBIBYTE
+CHUNK_SIZE_DYNAMIC = sentinel.Sentinel('dynamic')
 
 # When using dynamic chunk sizing, this is the ideal time to process a
 # single chunk, in seconds.
@@ -72,7 +73,7 @@ def copy_directory(
         callback_post_file=None,
         callback_pre_directory=None,
         callback_pre_file=None,
-        chunk_size='dynamic',
+        chunk_size=CHUNK_SIZE_DYNAMIC,
         destination_new_root=None,
         directory_progressbar=None,
         dry_run=False,
@@ -347,7 +348,7 @@ def copy_file(
         bytes_per_second=None,
         callback_permission_denied=None,
         callback_pre_copy=None,
-        chunk_size='dynamic',
+        chunk_size=CHUNK_SIZE_DYNAMIC,
         destination_new_root=None,
         dry_run=False,
         hash_class=None,
@@ -393,8 +394,8 @@ def copy_file(
 
     chunk_size:
         An integer number of bytes to read and write at a time.
-        Or, the string 'dynamic' to enable dynamic chunk sizing that aims to
-        keep a consistent pace of progress bar updates.
+        Or, the sentinel CHUNK_SIZE_DYNAMIC to enable dynamic chunk sizing that
+        aims to keep a consistent pace of progress bar updates.
 
     dry_run:
         Do everything except the actual file copying.
@@ -544,7 +545,7 @@ def copy_file(
         hash_class = HASH_CLASS
         results.hash = HASH_CLASS()
 
-    dynamic_chunk_size = chunk_size == 'dynamic'
+    dynamic_chunk_size = chunk_size == CHUNK_SIZE_DYNAMIC
     if dynamic_chunk_size:
         chunk_size = bytestring.MEBIBYTE
 
@@ -654,7 +655,7 @@ def hash_file(
         hash_class,
         *,
         bytes_per_second=None,
-        chunk_size='dynamic',
+        chunk_size=CHUNK_SIZE_DYNAMIC,
         progressbar=None,
     ):
     '''
@@ -668,8 +669,8 @@ def hash_file(
 
     chunk_size:
         An integer number of bytes to read at a time.
-        Or, the string 'dynamic' to enable dynamic chunk sizing that aims to
-        keep a consistent pace of progress bar updates.
+        Or, the sentinel CHUNK_SIZE_DYNAMIC to enable dynamic chunk sizing that
+        aims to keep a consistent pace of progress bar updates.
 
     progressbar:
         An instance from voussoirkit.progressbars.
@@ -689,7 +690,7 @@ def hash_file(
 
     handle = path.open('rb')
 
-    dynamic_chunk_size = chunk_size == 'dynamic'
+    dynamic_chunk_size = chunk_size == CHUNK_SIZE_DYNAMIC
     if dynamic_chunk_size:
         chunk_size = bytestring.MEBIBYTE
 
