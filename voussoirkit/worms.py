@@ -300,6 +300,10 @@ class Database(metaclass=abc.ABCMeta):
         return self.execute(query, bindings)
 
     def execute_read(self, query, bindings=[]):
+        '''
+        Your query will be executed over the read connection, so therefore does
+        not require a transaction and can only perform read operations.
+        '''
         if bindings is None:
             bindings = []
 
@@ -315,6 +319,10 @@ class Database(metaclass=abc.ABCMeta):
         return cur
 
     def execute(self, query, bindings=[]):
+        '''
+        Your query will be executed over the write connection. You must have a
+        transaction active before calling here or else NoTransaction is raised.
+        '''
         self.assert_transaction_active()
         if bindings is None:
             bindings = []
@@ -327,6 +335,9 @@ class Database(metaclass=abc.ABCMeta):
         '''
         The problem with Python's default executescript is that it executes a
         COMMIT before running your script. If I wanted a commit I'd write one!
+
+        Your script will be executed over the write connection. You must have a
+        transaction active before calling here or else NoTransaction is raised.
         '''
         self.assert_transaction_active()
         lines = re.split(r';(:?\n|$)', script)
