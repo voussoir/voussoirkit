@@ -288,18 +288,18 @@ def make_helptext(
     # can use them to colorize the program description and the help text of
     # each individual argument. This makes it really easy to see when one
     # argument has an influence on another argument.
-    # If you use a positional argument that is a common noun this can be
-    # a bit annoying.
+    # Your helptext must contain backticks (`) around the command or argument
+    # name that you want to reference so that it doesn't pick up common nouns.
 
     def colorize_names(text):
         for command in all_command_names:
-            text = re.sub(rf'((?:^|\s){command}(?:\b))', rf'{color.command}\1{color.reset}', text)
+            text = re.sub(rf'`({command})`', rf'{color.command}\1{color.reset}', text)
         for positional in all_positional_names:
-            text = re.sub(rf'((?:^|\s){positional}(?:\b))', rf'{color.positional}\1{color.reset}', text)
+            text = re.sub(rf'`({positional})`', rf'{color.positional}\1{color.reset}', text)
         for named in all_named_names:
-            text = re.sub(rf'((?:^|\s){named}(?:\b))', rf'{color.named}\1{color.reset}', text)
+            text = re.sub(rf'`({named})`', rf'{color.named}\1{color.reset}', text)
         for flag in all_flags_names:
-            text = re.sub(rf'((?:^|\s){flag}(?:\b))', rf'{color.flag}\1{color.reset}', text)
+            text = re.sub(rf'`({flag})`', rf'{color.flag}\1{color.reset}', text)
         return text
 
     # PUTTING TOGETHER PROGRAM DESCRIPTION & ARGUMENT HELPS ########################################
