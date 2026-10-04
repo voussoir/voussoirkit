@@ -212,9 +212,9 @@ class Database(metaclass=abc.ABCMeta):
         '''
         If no transaction is running, the caller gets the lock.
 
-        If a transaction is running on the same thread as the caller, the caller
-        does not get the lock but the function returns so it can do its work,
-        since it is a descendant of the original transaction call.
+        If a transaction is running on the same thread as the caller, we raise
+        TransactionActive. Your thread should not be calling this more than
+        once, especially if you are using the transaction context manager.
 
         If a transaction is running and the caller is on a different thread, it
         gets blocked until the previous transaction finishes.
