@@ -1,3 +1,4 @@
+import math
 import shutil
 import typing
 
@@ -96,6 +97,10 @@ DEFAULT_RATELIMIT = 8
 DEFAULT_TOTAL_TOSTRING = lambda total: '?' if total is None else str(total)
 DEFAULT_VALUE_TOSTRING = lambda value, total=0, total_string='': str(value).rjust(len(total_string))
 
+DOTHASH_CHARS = ['.', '#']
+SHADE_CHARS = ['.', '░', '▒', '▓', '█']
+EIGHTHS_CHARS = ['.', '▏', '▎', '▍', '▌', '▋', '▊', '▉', '█']
+
 class Bar1(Progress):
     '''
     Looks like this:
@@ -109,6 +114,7 @@ class Bar1(Progress):
             self,
             total=None,
             *,
+            chars=DOTHASH_CHARS,
             ratelimit=DEFAULT_RATELIMIT,
             show_topic=True,
             topic=None,
@@ -122,14 +128,12 @@ class Bar1(Progress):
         self.total = None
         self._last_value = 0
 
-        self.solid_char = '#'
-        self.blank_char = '.'
+        self.chars = chars
 
         self.ratelimiter = normalize_ratelimiter(ratelimit)
 
         if width is WIDTH_AUTO:
-            self.width = shutil.get_terminal_size().columns - 2
-            self.width = min(120, self.width)
+            self.width = min(120, shutil.get_terminal_size().columns - 2)
         else:
             self.width = width
 
@@ -197,14 +201,18 @@ class Bar1(Progress):
         value_string = self.value_tostring(value, self.total, self.total_string)
 
         if self._done:
-            bar = self.solid_char * self.bar_width
+            bar = self.chars[-1] * self.bar_width
         elif self.total is None:
-            bar = (self.blank_char * self._ind_animation_index) + self.solid_char
-            bar = bar.ljust(self.bar_width, self.blank_char)
+            bar = (self.chars[0] * self._ind_animation_index) + self.chars[-1]
+            bar = bar.ljust(self.bar_width, self.chars[0])
             self._ind_animation_index = (self._ind_animation_index + 1) % self.bar_width
         else:
-            solid_count = round(value / self.value_per_block)
-            bar = (self.solid_char * solid_count).ljust(self.bar_width, self.blank_char)
+            block_count = value / self.value_per_block
+            solid_count = math.floor(block_count)
+            last_block_percentage = block_count - solid_count
+            last_char_index = math.floor(last_block_percentage * len(self.chars))
+            last_char = self.chars[last_char_index]
+            bar = ((self.chars[-1] * solid_count) + last_char).ljust(self.bar_width, self.chars[0])
 
         return f'{self.topic_render}{value_string} {bar} {self.total_string}'
 
