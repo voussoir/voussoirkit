@@ -161,6 +161,9 @@ class Database(metaclass=abc.ABCMeta):
         they can be separate connections so that the readers can not get blocked
         by the writers.
 
+        Your _init_sql should take no arguments, so that the connections can be
+        reinitialized by calling the method again.
+
         You can do it yourself or use the provided _init_connections to get the
         basic handles going. Then use the rest of this method to do any other
         setup your application needs.
