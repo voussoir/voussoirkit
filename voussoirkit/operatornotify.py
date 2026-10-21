@@ -153,7 +153,7 @@ class LogHandlerContext:
     of this to notify. This saves you from having to call handler.notify
     yourself, because it will occur when the context ends.
     '''
-    def __init__(self, log, handler):
+    def __init__(self, log, subject, level, **kwargs):
         '''
         The handler will be added to the logger at the beginning of the context
         and removed at the end. All of the log lines captured during the context
@@ -161,12 +161,12 @@ class LogHandlerContext:
 
         log:
             Your logger from logging.getLogger
-
-        handler:
-            Your operatornotify.LogHandler
         '''
         self.log = log
-        self.handler = handler
+        self.handler = LogHandler(subject, **kwargs)
+        self.handler.setLevel(level)
+        formatter = vlogging.make_formatter(level)
+        self.handler.setFormatter(formatter)
 
     def __enter__(self):
         self.log.addHandler(self.handler)
@@ -216,11 +216,16 @@ def main_decorator(subject, *, log_return_value=True, **context_kwargs):
             if parsed.level is None:
                 return main(argv, *main_args, **main_kwargs)
 
-            context = main_log_context(
-                subject=parsed.subject or subject,
-                level=parsed.level,
-                **context_kwargs,
-            )
+            if parsed.level:
+                context = LogHandlerContext(
+                    log=vlogging.root,
+                    subject=parsed.subject or subject,
+                    level=parsed.level,
+                    **context_kwargs,
+                )
+            else:
+                context = contextlib.nullcontext()
+
             with context:
                 status = main(argv, *main_args, **main_kwargs)
                 if log_return_value:
@@ -228,37 +233,6 @@ def main_decorator(subject, *, log_return_value=True, **context_kwargs):
                 return status
         return wrapped
     return wrapper
-
-def main_log_context(subject, level, **kwargs):
-    '''
-    Returns a context manager with which you'll wrap your function.
-    Will be nullcontext if the level is None (user did not opt in).
-
-    With that context:
-    1. A handler is added to the root logger.
-    2. Operatornotify captures all log messages and any fatal exception
-       that kills your function.
-    3. Results are sent at the end of the context, when your function returns.
-
-    Additional **kwargs go to LogHandler init, so you can
-    pass notify_every_line, etc.
-    '''
-    if level is None:
-        return contextlib.nullcontext()
-
-    log = vlogging.getLogger()
-    handler = LogHandler(subject, **kwargs)
-    handler.setLevel(level)
-    datefmt = '%Y-%m-%dT%H:%M:%S'
-    formatter = vlogging.Formatter(
-        '[{asctime}.{msecs:03.0f}] {levelname}:{name}:{message}',
-        style='{',
-        datefmt=datefmt,
-    )
-    formatter.default_msec_format = '%s.%03d'
-    handler.setFormatter(formatter)
-    context = LogHandlerContext(log, handler)
-    return context
 
 def parse_argv(argv):
     '''
