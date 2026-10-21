@@ -201,6 +201,31 @@ class Database(metaclass=abc.ABCMeta):
 
         return sql_write
 
+    def _execute_with_io_recovery(self, sql, query, bindings):
+        '''
+        In my case, a database file on an external USB drive in use by a
+        server/daemon becomes permanently unusable if there is a USB connection
+        dropout. This method will close and re-open the connection to start
+        anew. This does not attempt to recover the current transaction, and will
+        raise the exception, but it should mean the connection is usable to try
+        again.
+        '''
+        try:
+            cur = sql.cursor()
+            cur.execute(query, bindings)
+            return cur
+        except sqlite3.OperationalError as exc:
+            if exc.sqlite_errorcode == 266:
+                log.warning(' '.join([
+                    'Attempting to recover from SQLite error',
+                    f'{exc.sqlite_errorcode} {exc.sqlite_errorname}',
+                    'by reinitializing connections.',
+                ]))
+                self.close()
+                self._init_sql()
+                raise
+            raise
+
     def assert_no_transaction(self) -> None:
         thread_id = threading.current_thread().ident
         if self._worms_transaction_owner == thread_id:
@@ -316,10 +341,8 @@ class Database(metaclass=abc.ABCMeta):
         else:
             sql = self.sql_read
 
-        cur = sql.cursor()
         log.loud('%s %s', query, bindings)
-        cur.execute(query, bindings)
-        return cur
+        return self._execute_with_io_recovery(sql, query, bindings)
 
     def execute(self, query, bindings=[]):
         '''
@@ -329,10 +352,8 @@ class Database(metaclass=abc.ABCMeta):
         self.assert_transaction_active()
         if bindings is None:
             bindings = []
-        cur = self.sql_write.cursor()
         log.loud('%s %s', query, bindings)
-        cur.execute(query, bindings)
-        return cur
+        return self._execute_with_io_recovery(self.sql_write, query, bindings)
 
     def executescript(self, script) -> None:
         '''
