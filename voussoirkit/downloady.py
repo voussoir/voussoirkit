@@ -528,7 +528,7 @@ def download_argparse(args):
         else:
             break
 
-@vlogging.main_decorator
+@vlogging.main_decorator(log=log)
 def main(argv):
     parser = argparse.ArgumentParser(description=__doc__)
 

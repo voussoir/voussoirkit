@@ -2,10 +2,17 @@
 operatornotify
 ==============
 
-This module is designed to notify the program operator of important events.
-By default, it just logs at the WARNING level, but if you create your own
-file my_operatornotify.py somewhere on your PYTHONPATH with a function
-notify(subject, body=''), all calls to operatornotify.notify will go there.
+This module is designed to notify the program operator of important events
+through the `notify` function. Most of the time, we are interested in being
+notified when a program fails, but of course you can also notify when something
+good happens, too.
+
+By default, calling `notify` emits a log at the WARNING level, which is not very
+interesting. But if you create your own file my_operatornotify.py somewhere on
+your PYTHONPATH with a function notify(subject, body=''), all calls to
+operatornotify.notify will go there. This module essentially self-monkeypatches
+`notify` with your function.
+
 For example, you might define your own file that sends emails, texts, or MQTT.
 This allows the same calling code to behave differently on your dev / prod
 environments, or other use cases you can imagine.
@@ -16,11 +23,13 @@ leveraging Python's sys.path order (cwd first, ...).
 Alternatively, you can monkeypatch this module after importing it with a new
 notify function in cases where you don't want to deal with import paths.
 
-Authoring your my_operatornotify.notify function:
+Some things to consider when authoring your my_operatornotify.notify function:
 1. It is intended that both arguments are strings, but you may wish to call
    str() to always be safe.
 2. If sending over a medium that doesn't distinguish subject / body
    (e.g. text message), consider concatenating subject+body.
+3. Be careful that an exception during your notify function (network error, disk
+   error) doesn't wind up making things worse!
 
 This module should ONLY be called by application code, not library code.
 Ideally, the application should provide a flag --operatornotify for the user
@@ -32,7 +41,9 @@ If your application already uses the logging module, consider these options:
 - wrap your function call in a operatornotify.LogHandlerContext, or
 - add @operatornotify.main_decorator to your main function.
 
-Examples:
+You can also run this file on the command line to pipe the output of another
+program to notify:
+
 > some_process && operatornotify --subject success || operatornotify --subject fail
 > some_process 2>&1 | operatornotify --subject "Results of some_process" --body !i
 '''
@@ -66,8 +77,8 @@ program with the following arguments:
     logging stack. This option will not affect those.
 
 --operatornotify-subject X
-    Overrides the application's default subject line. Also opts in to logging
-    at the WARNING level if --operatornotify-level isn't used.
+    Overrides the application's default subject line. Also implicitly opts in to
+    logging at the WARNING level if --operatornotify-level isn't provided.
 '''
 
 ####################################################################################################
@@ -88,14 +99,15 @@ except ImportError:
 
 class LogHandler(vlogging.StreamHandler):
     '''
-    This handler makes it easy to integrate operatornotify into your
-    application that already uses the logging module.
+    This handler makes it easy to integrate operatornotify into your application
+    that already uses the logging module.
 
     Create an instance of this class and add it to your logger. Use setLevel
     and other filtering tools to get messages of interest. You may choose to
     get notified for each log line individually, or buffer them and send them
     all together. When you are ready to send the buffered contents,
     call handler.notify().
+
     If no messages have been logged yet, handler.notify will do nothing.
     '''
     def __init__(self, subject, notify_every_line=False):
@@ -153,7 +165,7 @@ class LogHandlerContext:
     of this to notify. This saves you from having to call handler.notify
     yourself, because it will occur when the context ends.
     '''
-    def __init__(self, log, subject, level, **kwargs):
+    def __init__(self, log, handler):
         '''
         The handler will be added to the logger at the beginning of the context
         and removed at the end. All of the log lines captured during the context
@@ -163,10 +175,7 @@ class LogHandlerContext:
             Your logger from logging.getLogger
         '''
         self.log = log
-        self.handler = LogHandler(subject, **kwargs)
-        self.handler.setLevel(level)
-        formatter = vlogging.make_formatter(level)
-        self.handler.setFormatter(formatter)
+        self.handler = handler
 
     def __enter__(self):
         self.log.addHandler(self.handler)
@@ -188,10 +197,10 @@ class LogHandlerContext:
         self.handler.notify()
         self.log.removeHandler(self.handler)
 
-def main_decorator(subject, *, log_return_value=True, **context_kwargs):
+def main_decorator(subject, **log_handler_kwargs):
     '''
     Add this decorator to your application's main function to automatically
-    wrap it in a main_log_context and log the final return value. For example:
+    wrap it in a LogHandlerContext, and enable the commandline options.
 
     @operatornotify.main_decorator(subject='myprogram.py')
     def main(argv):
@@ -204,7 +213,17 @@ def main_decorator(subject, *, log_return_value=True, **context_kwargs):
     1. Allow the user to opt into operatornotify by --operatornotify or
        --operatornotify-level X.
     2. Remove those args from argv so your argparse doesn't know the difference.
-    3. Wrap main call with main_log_context.
+    3. Wrap main call with LogHandlerContext.
+
+    Your additional kwargs will go to the log handler, so you can do:
+
+    @operatornotify.main_decorator(subject='myprogram.py', log_every_line=True)
+
+    This is done as an argument to the decorator rather than a commandline
+    argument because normally the nature of the application dictates this
+    decision. For example, a webserver or other daemon probably wants to notify
+    every line, but a quick commandline utility probably doesn't. It seems
+    unlikely that the user would want to specify this.
     '''
     betterhelp.HELPTEXT_EPILOGUES.add(BETTERHELP_EPILOGUE)
     def wrapper(main):
@@ -216,33 +235,21 @@ def main_decorator(subject, *, log_return_value=True, **context_kwargs):
             if parsed.level is None:
                 return main(argv, *main_args, **main_kwargs)
 
-            if parsed.level:
-                context = LogHandlerContext(
-                    log=vlogging.root,
-                    subject=parsed.subject or subject,
-                    level=parsed.level,
-                    **context_kwargs,
-                )
-            else:
-                context = contextlib.nullcontext()
+            handler = LogHandler(parsed.subject or subject, **log_handler_kwargs)
+            handler.setLevel(parsed.level)
+            handler.setFormatter(vlogging.make_formatter(parsed.level))
+            vlogging.root.addHandler(handler)
 
+            context = LogHandlerContext(log=vlogging.root, handler=handler)
             with context:
-                status = main(argv, *main_args, **main_kwargs)
-                if log_return_value:
-                    log.info('Program finished, returned %s.', status)
-                return status
+                return main(argv, *main_args, **main_kwargs)
         return wrapped
     return wrapper
 
 def parse_argv(argv):
     '''
-    Parses argv looking for the following arguments:
-    --operatornotify to opt in to notifications and logging at the default
-      level, WARNING.
-    --operatornotify-level X where X is e.g. debug, info, warning, error.
-    --operatornotify-subject X where X is any string. This allows the user to
-      override the default subject line provided by the application. Opts in
-      to logging at WARNING by default.
+    Parse argv looking for operatornotify arguments.
+    Please see the BETTERHELP_EPILOGUE.
 
     Returns a dotdict with these keys:
     - argv, which has all --operatornotify* arguments removed.
@@ -298,7 +305,7 @@ def operatornotify_argparse(args):
     )
     return 0
 
-@vlogging.main_decorator
+@vlogging.main_decorator(log=log)
 def main(argv):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
