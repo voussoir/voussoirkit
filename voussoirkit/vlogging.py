@@ -216,7 +216,7 @@ def main_decorator(*, log, log_return_level=(INFO, WARNING)):
             try:
                 status = main(parsed.argv, *main_args, **main_kwargs)
             except KeyboardInterrupt:
-                pass
+                status = KeyboardInterrupt
             except Exception as exc:
                 exc_text = traceback.format_exception(exc)
                 exc_text = ''.join(exc_text)
