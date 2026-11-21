@@ -314,8 +314,9 @@ class Database(metaclass=abc.ABCMeta):
                 self.rollback()
                 raise
 
-        self.savepoints.clear()
         self.sql_write.commit()
+        self.savepoints.clear()
+        self.on_rollback_queue.clear()
         self.last_commit_id = RNG.getrandbits(32)
         self.release_transaction_lock()
 
