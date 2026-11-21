@@ -77,21 +77,12 @@ def basic_config(level):
     handler.setLevel(level)
     root.addHandler(handler)
 
-def basic_config_by_argv(argv):
-    '''
-    This function does basic_config with a level set by the flags in argv, then
-    returns the rest of argv which you can pass to your argparser.
-    '''
-    (level, argv) = get_level_by_argv(argv)
-    basic_config(level)
-    return argv
-
 def earlybird_config():
     '''
-    This function will call basic_config_by_argv and **overwrite** sys.argv with
-    the remaining arguments. You can import vlogging and call this function
-    before doing anything else to ensure that logging is ready from the very
-    beginning.
+    This function does basic_config with a level set by the flags in argv, then
+    **overwrites** sys.argv with the remaining arguments. You can import
+    vlogging and call this function before doing anything else to ensure that
+    logging is ready from the very beginning.
 
     This can be used if waiting until main runs (@main_decorator) is too
     late because you have log statements that run while your modules / imports
@@ -101,7 +92,9 @@ def earlybird_config():
     to debug because sys.argv is permanently altered.
     '''
     global _did_earlybird
-    sys.argv = basic_config_by_argv(sys.argv)
+    parsed = parse_argv(sys.argv)
+    basic_config(parsed.level)
+    sys.argv = parsed.argv
     _did_earlybird = True
 
 def get_level_by_name(name):
