@@ -535,7 +535,7 @@ class Database(metaclass=abc.ABCMeta):
         earliest savepoint, the database will commit.
         '''
         if savepoint not in self.savepoints:
-            log.warn('Tried to release nonexistent savepoint %s.', savepoint)
+            log.warning('Tried to release nonexistent savepoint %s.', savepoint)
             return
 
         is_commit = savepoint == self.savepoints[0]
@@ -573,7 +573,7 @@ class Database(metaclass=abc.ABCMeta):
         If no savepoint is provided then rollback the entire transaction.
         '''
         if savepoint is not None and savepoint not in self.savepoints:
-            log.warn('Tried to restore nonexistent savepoint %s.', savepoint)
+            log.warning('Tried to restore nonexistent savepoint %s.', savepoint)
             return
 
         while len(self.on_rollback_queue) > 0:
