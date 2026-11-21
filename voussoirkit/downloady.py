@@ -527,6 +527,7 @@ def download_argparse(args):
                 raise
         else:
             break
+    return 0
 
 @vlogging.main_decorator(log=log)
 def main(argv):
