@@ -357,6 +357,7 @@ def make_helptext(
         elif sp.description is not None:
             first_para = textwrap.dedent(sp.description).split('\n\n')[0].strip()
             first_para = textwrap.indent(first_para, '    ')
+            first_para = colorize_names(first_para)
             sp_help.append(f'{first_para}')
         sp_help = '\n'.join(sp_help)
         subparser_previews.append(sp_help)
