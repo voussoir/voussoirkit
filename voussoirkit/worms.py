@@ -525,7 +525,7 @@ class Database(metaclass=abc.ABCMeta):
     def pragma_write(self, key, value) -> None:
         # We are bypassing self.execute because some pragmas are not allowed to
         # happen during transactions.
-        return self.sql_write.cursor().execute(f'PRAGMA {key} = {value}')
+        self.sql_write.cursor().execute(f'PRAGMA {key} = {value}')
 
     def release_savepoint(self, savepoint, allow_commit=False) -> None:
         '''
