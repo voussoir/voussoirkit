@@ -668,7 +668,7 @@ class DatabaseWithCaching(Database, metaclass=abc.ABCMeta):
         Your subclass needs to set self.caches, which is a dictionary of
         {object: cache} where object is one of your data object types
         (use the class itself as the key) and cache is a dictionary or
-        cacheclass.Cache or anything that supports subscripting.
+        cacheclass.Cache or anything that supports subscripting and `.clear`.
 
         If any types are omitted from this dictionary, objects of those
         types will not be cached.
@@ -676,7 +676,7 @@ class DatabaseWithCaching(Database, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     def clear_all_caches(self) -> None:
-        for cache in self.caches:
+        for cache in self.caches.values():
             cache.clear()
 
     def get_cached_instance(self, object_class, db_row):
