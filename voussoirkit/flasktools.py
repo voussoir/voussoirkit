@@ -395,3 +395,16 @@ def sse_generator():
         log.debug('SSE listener has disconnected.')
         with SSE_LISTENERS_LOCK:
             SSE_LISTENERS.remove(this_queue)
+
+class MyWSGIRequestHandler(werkzeug.serving.WSGIRequestHandler):
+    def log_request(self, code='-', size='-'):
+        log.info(
+            '%s "%s" %s %s',
+            self.address_string(),
+            self.requestline,
+            code,
+            size,
+        )
+
+    def log_error(self, format, *args):
+        log.warning('%s %s', self.address_string(), format % args)
