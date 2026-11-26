@@ -58,6 +58,8 @@ def add_loud(log):
     Add the `loud` method to the given logger.
     '''
     def loud(self, message, *args, **kwargs):
+        # This helps {funcName}.{lineno} find the right caller.
+        kwargs.setdefault('stacklevel', 2)
         if self.isEnabledFor(LOUD):
             self._log(LOUD, message, args, **kwargs)
 
